@@ -476,6 +476,13 @@ html, body, #root {
 }
 .btn-icon:hover { background: var(--border); }
 
+.sort-btn.active {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  background: var(--primary-light);
+}
+
+
 /* ══════════════════════════════════════════
    UNASSIGNED PANEL
 ══════════════════════════════════════════ */
@@ -1187,4 +1194,25 @@ input { font-family: inherit; }
   border: none;
   border-top: 1px solid var(--border);
   margin: 4px 0;
+}
+
+.sort-btn.active {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  background: var(--primary-light);
+}
+
+.support-load-help {
+  margin: 8px 0 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.support-load-help code {
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

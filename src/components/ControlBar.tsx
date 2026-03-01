@@ -31,6 +31,17 @@ export function ControlBar() {
     }
   }
 
+
+  const clearAll = () => {
+    const ok = window.confirm(
+      "Clear ALL app data? This removes loaded students, placements, and all snapshots. This cannot be undone."
+    )
+    if (ok) {
+      dispatch({ type: "CLEAR_ALL" })
+      setShowWarnings(false)
+    }
+  }
+
   const exportGrade = () => {
     const csv = buildPlacementCSV(state.classrooms, state.activeGrade)
     downloadFile(csv, `placement-grade-${state.activeGrade}.csv`)
@@ -66,7 +77,16 @@ export function ControlBar() {
         >
           Reset Grade
         </button>
+        <button
+          className="btn btn-danger"
+          onClick={clearAll}
+          disabled={!hasStudents && state.snapshots.length === 0}
+          title="Clear all app state"
+        >
+          Clear All
+        </button>
         <div className="divider" />
+
         <button
           className="btn btn-ghost"
           onClick={exportGrade}

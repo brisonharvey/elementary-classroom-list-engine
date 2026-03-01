@@ -81,6 +81,12 @@ export const SummaryPanel = memo(function SummaryPanel() {
       )}
 
       {/* Per-classroom stats table */}
+      <div className="support-load-help">
+        <strong>How Support Load is calculated:</strong> average of each student&apos;s
+        <code> academic tier + behavior tier + special education status bonus + referral count</code>,
+        where IEP adds +2 and Referral status adds +1.
+      </div>
+
       <div className="summary-table-wrap">
         <table className="summary-table">
           <thead>
@@ -100,8 +106,6 @@ export const SummaryPanel = memo(function SummaryPanel() {
           <tbody>
             {gradeClassrooms.map((c, i) => {
               const stats = roomStats[i]
-              const readingAvg = getRoomReadingAvg(c)
-              const mathAvg = getRoomMathAvg(c)
               const supportLoad = getRoomSupportLoad(c)
               const mapReadAvg =
                 c.students.length > 0 && c.students.some((s) => s.mapReading !== undefined)
