@@ -148,7 +148,9 @@ html, body, #root {
   background: var(--surface);
   border-bottom: 2px solid var(--border);
   flex-shrink: 0;
-  overflow: hidden;
+  position: relative;
+  z-index: 20;
+  overflow: visible;
 }
 
 /* ── Main workspace ── */
@@ -296,6 +298,7 @@ html, body, #root {
   gap: 2px;
   min-width: 160px;
   flex: 1;
+  position: relative;
 }
 
 .slider-header {
@@ -376,7 +379,7 @@ html, body, #root {
   left: 0;
   right: 0;
   bottom: calc(100% + 8px);
-  z-index: 5;
+  z-index: 200;
   background: #1f2937;
   color: #fff;
   font-size: 11px;
