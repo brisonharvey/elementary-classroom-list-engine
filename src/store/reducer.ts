@@ -26,7 +26,7 @@ export const initialState: AppState = {
   allStudents: [],
   classrooms: initializeClassrooms(),
   activeGrade: "K",
-  weights: { support: 50, reading: 50, math: 50 },
+  weights: { support: 50, behavior: 50, reading: 50, math: 50 },
   snapshots: [],
   placementWarnings: [],
 }
@@ -95,6 +95,7 @@ export function reducer(state: AppState, action: Action): AppState {
         allStudents,
         classrooms: freshClassrooms,
         snapshots: [],
+        placementWarnings: [],
       }
     }
 

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useApp } from "../store/AppContext"
+import { initialState } from "../store/reducer"
 import { buildPlacementCSV, downloadFile } from "../utils/exportUtils"
 
 export function ControlBar() {
@@ -9,6 +10,10 @@ export function ControlBar() {
   const barRef = useRef<HTMLDivElement>(null)
 
   const hasStudents = state.allStudents.length > 0
+  const hasResettableState = useMemo(
+    () => JSON.stringify(state) !== JSON.stringify(initialState),
+    [state]
+  )
 
   // Show warnings panel whenever a new (non-empty) warnings array arrives from AUTO_PLACE
   useEffect(() => {
@@ -27,6 +32,16 @@ export function ControlBar() {
     )
     if (ok) {
       dispatch({ type: "RESET_GRADE" })
+      setShowWarnings(false)
+    }
+  }
+
+  const clearAll = () => {
+    const ok = window.confirm(
+      "Clear ALL app data? This removes loaded students, placements, and all snapshots. This cannot be undone."
+    )
+    if (ok) {
+      dispatch({ type: "CLEAR_ALL" })
       setShowWarnings(false)
     }
   }
@@ -66,7 +81,16 @@ export function ControlBar() {
         >
           Reset Grade
         </button>
+        <button
+          className="btn btn-danger"
+          onClick={clearAll}
+          disabled={!hasResettableState}
+          title={hasResettableState ? "Clear all app state" : "No app changes to clear"}
+        >
+          Clear All
+        </button>
         <div className="divider" />
+
         <button
           className="btn btn-ghost"
           onClick={exportGrade}

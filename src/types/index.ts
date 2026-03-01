@@ -43,6 +43,7 @@ export interface Classroom {
 
 export interface Weights {
   support: number
+  behavior: number
   reading: number
   math: number
 }

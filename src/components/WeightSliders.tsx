@@ -51,6 +51,13 @@ export function WeightSliders() {
         color="#8b5cf6"
       />
       <Slider
+        label="Behavior Balance"
+        description="Distributes Tier 2/3 behavior needs and referral intensity"
+        value={weights.behavior}
+        onChange={update("behavior")}
+        color="#f97316"
+      />
+      <Slider
         label="Reading Balance"
         description="Distributes MAP Reading & iReady Reading levels"
         value={weights.reading}
