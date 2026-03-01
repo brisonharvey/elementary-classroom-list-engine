@@ -1,91 +1,571 @@
 id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher
-1,K,Alice,Nguyen,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson
-2,K,Bobby,Torres,M,None,false,false,1,1,3;13,82,78,Late 1,Late 1,0,Ms. Johnson
-3,K,Carmen,Walsh,F,Referral,false,false,2,3,2,35,40,Mid K,Early K,3,
-4,K,Derek,Park,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,
-5,K,Evelyn,Brooks,F,None,false,false,1,1,,91,88,Late 1,Late 1,0,Ms. Patel
-6,K,Felix,Grant,M,None,false,false,2,1,,55,60,Mid K,Late K,0,
-7,K,Gina,Foster,F,None,false,false,1,2,,74,68,Late K,Mid K,1,Ms. Johnson
-8,K,Hank,Reed,M,Referral,false,false,2,2,9,44,38,Mid K,Early K,2,
-9,K,Irene,Cox,F,None,false,false,1,1,8,77,80,Late 1,Late 1,0,
-10,K,James,Bell,M,IEP,true,false,3,3,,10,20,Early K,Early K,4,
-11,K,Karen,Hayes,F,None,false,false,1,1,,88,92,Late 1,Late 1,0,Ms. Patel
-12,K,Leo,Bryant,M,None,false,false,2,1,,50,55,Mid K,Mid K,0,
-13,K,Mia,Russell,F,Referral,false,false,2,2,2,30,28,Early K,Early K,1,
-14,K,Noah,Griffin,M,None,false,false,1,2,,65,70,Late K,Late K,0,
-15,K,Olivia,Diaz,F,None,false,false,1,1,,78,75,Late K,Mid K,0,
-16,1,Paul,Spencer,M,IEP,true,false,3,2,,22,28,Early 1,Mid 1,2,Mr. Rivera
-17,1,Quinn,Mitchell,F,None,false,false,1,1,,80,85,Late 2,Late 2,0,
-18,1,Rosa,Henderson,F,Referral,false,false,2,3,,38,32,Mid 1,Early 1,3,
-19,1,Sam,Perry,M,None,false,false,1,2,,72,68,Late 1,Mid 1,0,Mr. Rivera
-20,1,Tanya,Powell,F,IEP,true,true,3,3,,15,18,Early 1,Early 1,1,
-21,1,Umar,Barnes,M,None,false,false,2,1,,58,62,Mid 1,Mid 1,0,
-22,1,Vera,Wood,F,None,false,false,1,1,,85,88,Late 2,Late 2,0,Ms. Chen
-23,1,Will,Murphy,M,Referral,false,false,2,2,24,42,40,Mid 1,Mid 1,2,
-24,1,Xena,Ross,F,None,false,false,1,1,23,79,82,Late 2,Late 2,0,
-25,1,Yusuf,Price,M,None,false,false,2,2,,50,48,Mid 1,Mid 1,1,
-26,1,Zoey,Rivera,F,None,false,false,1,1,,90,88,Late 2,Late 2,0,Ms. Chen
-27,1,Aaron,Cook,M,IEP,true,false,3,2,,20,25,Early 1,Early 1,2,
-28,1,Beth,Morgan,F,None,false,false,1,1,,76,72,Mid 2,Mid 2,0,
-29,1,Carlos,James,M,None,false,false,2,1,,62,58,Mid 1,Mid 1,0,
-30,1,Diana,Watson,F,Referral,false,false,3,2,,28,30,Early 1,Early 1,3,
-31,2,Eddie,Brooks,M,IEP,true,false,3,3,,16,20,Early 2,Early 2,4,
-32,2,Fiona,Kelly,F,None,false,false,1,1,,84,80,Late 3,Late 3,0,Ms. Torres
-33,2,Gary,Sanders,M,Referral,false,false,2,2,,40,44,Mid 2,Mid 2,2,
-34,2,Heidi,Price,F,None,false,false,1,1,,88,90,Late 3,Late 3,0,Ms. Torres
-35,2,Ivan,Torres,M,None,false,false,2,1,,55,58,Mid 2,Mid 2,0,
-36,2,Julia,Lee,F,IEP,true,true,3,2,,14,18,Early 2,Early 2,1,
-37,2,Kyle,Harris,M,None,false,false,1,2,,70,65,Late 2,Mid 2,0,
-38,2,Luna,Clark,F,None,false,false,1,1,,82,85,Late 3,Late 3,0,
-39,2,Max,Adams,M,Referral,false,false,2,3,40,36,34,Early 2,Early 2,3,
-40,2,Nina,Wright,F,None,false,false,1,1,39,78,80,Late 3,Late 3,0,
-41,2,Oscar,King,M,None,false,false,2,1,,52,56,Mid 2,Mid 2,0,
-42,2,Petra,Scott,F,IEP,true,false,3,2,,18,22,Early 2,Early 2,2,
-43,2,Quinton,Green,M,None,false,false,1,1,,88,86,Late 3,Late 3,0,
-44,2,Ruby,Baker,F,Referral,false,false,2,2,,44,40,Mid 2,Early 2,1,
-45,2,Shane,Adams,M,None,false,false,1,1,,76,78,Mid 3,Mid 3,0,
-46,3,Teresa,Hill,F,IEP,true,false,3,2,,20,24,Early 3,Early 3,2,
-47,3,Ulrich,Young,M,None,false,false,1,1,,86,82,Late 4,Late 4,0,Mr. Okafor
-48,3,Violet,Allen,F,Referral,false,false,2,3,,38,42,Mid 3,Early 3,3,
-49,3,Wayne,Hernandez,M,None,false,false,1,2,,72,68,Mid 3,Mid 3,0,
-50,3,Xyla,Martinez,F,IEP,true,true,3,3,,12,16,Early 3,Early 3,1,
-51,3,Yoshi,Robinson,M,None,false,false,2,1,,56,60,Mid 3,Mid 3,0,Mr. Okafor
-52,3,Zara,Lewis,F,None,false,false,1,1,,84,88,Late 4,Late 4,0,
-53,3,Abe,Walker,M,Referral,false,false,2,2,54,40,36,Mid 3,Early 3,2,
-54,3,Bella,Hall,F,None,false,false,1,1,53,80,82,Late 4,Late 4,0,
-55,3,Corey,Allen,M,None,false,false,2,1,,54,58,Mid 3,Mid 3,0,
-56,3,Dani,Young,F,IEP,true,false,3,2,,18,20,Early 3,Early 3,2,
-57,3,Eric,Gonzalez,M,None,false,false,1,1,,90,88,Late 4,Late 4,0,
-58,3,Faye,Nelson,F,Referral,false,false,2,2,,44,42,Mid 3,Mid 3,1,
-59,3,Greg,Carter,M,None,false,false,1,1,,76,74,Mid 4,Mid 4,0,
-60,3,Hana,Mitchell,F,None,false,false,1,2,,68,64,Mid 3,Mid 3,0,
-61,4,Ian,Perez,M,IEP,true,false,3,3,,18,22,Early 4,Early 4,4,
-62,4,Jade,Roberts,F,None,false,false,1,1,,82,84,Late 5,Late 5,0,Ms. Kim
-63,4,Ken,Turner,M,Referral,false,false,2,2,,40,44,Mid 4,Mid 4,2,
-64,4,Lily,Phillips,F,None,false,false,1,1,,88,86,Late 5,Late 5,0,Ms. Kim
-65,4,Malik,Campbell,M,None,false,false,2,1,,58,62,Mid 4,Mid 4,0,
-66,4,Nora,Parker,F,IEP,true,true,3,2,,14,18,Early 4,Early 4,1,
-67,4,Omar,Evans,M,None,false,false,1,2,,70,66,Mid 4,Mid 4,0,
-68,4,Pam,Edwards,F,None,false,false,1,1,,84,88,Late 5,Late 5,0,
-69,4,Ravi,Collins,M,Referral,false,false,2,3,70,34,36,Early 4,Early 4,3,
-70,4,Sara,Stewart,F,None,false,false,1,1,69,78,80,Late 5,Late 5,0,
-71,4,Todd,Sanchez,M,None,false,false,2,1,,52,56,Mid 4,Mid 4,0,
-72,4,Uma,Morris,F,IEP,true,false,3,2,,20,24,Early 4,Early 4,2,
-73,4,Victor,Rogers,M,None,false,false,1,1,,86,84,Late 5,Late 5,0,
-74,4,Winnie,Reed,F,Referral,false,false,2,2,,42,40,Mid 4,Mid 4,1,
-75,4,Xavi,Cook,M,None,false,false,1,1,,76,78,Mid 5,Mid 5,0,
-76,5,Yara,Morgan,F,IEP,true,false,3,2,,20,26,Early 5,Early 5,2,
-77,5,Zeke,Bell,M,None,false,false,1,1,,84,80,Late 5,Late 5,0,Mr. Walsh
-78,5,Anna,Murphy,F,Referral,false,false,2,3,,38,42,Mid 5,Early 5,3,
-79,5,Ben,Rivera,M,None,false,false,1,2,,74,70,Mid 5,Mid 5,0,
-80,5,Chloe,Cooper,F,IEP,true,true,3,3,,14,16,Early 5,Early 5,1,
-81,5,Dan,Richardson,M,None,false,false,2,1,,58,62,Mid 5,Mid 5,0,Mr. Walsh
-82,5,Elisa,Cox,F,None,false,false,1,1,,88,90,Late 5,Late 5,0,
-83,5,Frank,Howard,M,Referral,false,false,2,2,84,40,38,Mid 5,Early 5,2,
-84,5,Greta,Ward,F,None,false,false,1,1,83,80,82,Late 5,Late 5,0,
-85,5,Henry,Torres,M,None,false,false,2,1,,56,58,Mid 5,Mid 5,0,
-86,5,Isla,Peterson,F,IEP,true,false,3,2,,18,22,Early 5,Early 5,2,
-87,5,Jake,Gray,M,None,false,false,1,1,,90,88,Late 5,Late 5,0,
-88,5,Kira,Ramirez,F,Referral,false,false,2,2,,44,42,Mid 5,Mid 5,1,
-89,5,Luis,James,M,None,false,false,1,1,,78,76,Mid 5,Mid 5,0,
-90,5,Maya,Watson,F,None,false,false,1,2,,66,68,Mid 5,Mid 5,0,
+1,K,Avery,Garcia,F,IEP,false,true,3,2,,18,16,Early K,Mid K,0,
+2,K,Jordan,Johnson,M,None,false,false,2,1,,19,17,Early K,Mid K,0,Ms. Patel
+3,K,Riley,Lopez,F,None,false,false,1,1,,20,18,Early K,Mid K,0,Ms. Brooks
+4,K,Parker,Martinez,M,None,false,false,1,1,,21,19,Early K,Mid K,0,Mr. Lee
+5,K,Morgan,Thomas,F,None,false,false,2,1,,22,20,Early K,Late K,0,Ms. Johnson
+6,K,Taylor,Harris,M,None,false,false,1,2,,23,21,Mid K,Late K,0,
+7,K,Cameron,Moore,F,None,false,false,1,1,,24,22,Mid K,Late K,0,Ms. Brooks
+8,K,Hayden,Patel,M,Referral,false,false,2,2,,25,23,Mid K,Late K,4,Mr. Lee
+9,K,Rowan,Nguyen,F,None,false,false,1,1,,26,24,Mid K,Early 1,0,Ms. Johnson
+10,K,Quinn,Brown,M,None,false,false,1,1,,27,25,Mid K,Early 1,0,Ms. Patel
+11,K,Alex,Wilson,F,None,false,false,2,2,,28,26,Late K,Early 1,0,
+12,K,Casey,Jackson,M,IEP,true,false,3,3,,29,27,Late K,Early 1,1,Mr. Lee
+13,K,Jamie,Martin,F,None,false,false,1,1,,30,28,Late K,Mid 1,0,Ms. Johnson
+14,K,Reese,Clark,M,None,false,false,2,1,,31,29,Late K,Mid 1,0,Ms. Patel
+15,K,Skyler,Kim,F,Referral,false,false,2,3,,32,30,Late K,Mid 1,3,Ms. Brooks
+16,K,Drew,Smith,M,None,false,false,1,2,,33,31,Early 1,Mid 1,0,
+17,K,Kendall,Davis,F,None,false,false,2,1,,34,32,Early 1,Early K,0,Ms. Johnson
+18,K,Logan,Anderson,M,None,false,false,1,1,,35,33,Early 1,Early K,0,Ms. Patel
+19,K,Sawyer,White,F,None,false,false,1,1,,36,34,Early 1,Early K,0,Ms. Brooks
+20,K,Emerson,Thompson,M,None,false,false,2,1,19,37,35,Early 1,Early K,0,Mr. Lee
+21,K,Avery,Garcia,F,None,false,false,1,2,,38,36,Mid 1,Mid K,0,
+22,K,Jordan,Johnson,M,Referral,false,false,2,2,,39,37,Mid 1,Mid K,2,Ms. Patel
+23,K,Riley,Lopez,F,IEP,true,false,3,2,,40,38,Mid 1,Mid K,0,Ms. Brooks
+24,K,Parker,Martinez,M,None,false,false,1,1,,41,39,Mid 1,Mid K,0,Mr. Lee
+25,K,Morgan,Thomas,F,None,false,false,1,1,,42,40,Mid 1,Late K,0,Ms. Johnson
+26,K,Taylor,Harris,M,None,false,false,2,2,,43,41,Early K,Late K,0,
+27,K,Cameron,Moore,F,None,false,false,1,1,,44,42,Early K,Late K,0,Ms. Brooks
+28,K,Hayden,Patel,M,None,false,false,1,1,,45,43,Early K,Late K,0,Mr. Lee
+29,K,Rowan,Nguyen,F,Referral,false,false,2,3,,46,44,Early K,Early 1,1,Ms. Johnson
+30,K,Quinn,Brown,M,None,false,false,1,1,,47,45,Early K,Early 1,0,Ms. Patel
+31,K,Alex,Wilson,F,None,false,false,1,2,,48,46,Mid K,Early 1,0,
+32,K,Casey,Jackson,M,None,false,false,2,1,31;29,49,47,Mid K,Early 1,0,Mr. Lee
+33,K,Jamie,Martin,F,None,false,false,1,1,,50,48,Mid K,Mid 1,0,Ms. Johnson
+34,K,Reese,Clark,M,IEP,false,false,3,3,,51,49,Mid K,Mid 1,1,Ms. Patel
+35,K,Skyler,Kim,F,None,false,false,2,1,,52,50,Mid K,Mid 1,0,Ms. Brooks
+36,K,Drew,Smith,M,Referral,false,false,2,2,,53,51,Late K,Mid 1,4,
+37,K,Kendall,Davis,F,None,false,false,1,1,,54,52,Late K,Early K,0,Ms. Johnson
+38,K,Logan,Anderson,M,None,false,false,2,1,,55,53,Late K,Early K,0,Ms. Patel
+39,K,Sawyer,White,F,None,false,false,1,1,38,56,54,Late K,Early K,0,Ms. Brooks
+40,K,Emerson,Thompson,M,None,false,false,1,1,,57,55,Late K,Early K,0,Mr. Lee
+41,K,Avery,Garcia,F,None,false,false,2,2,,58,56,Early 1,Mid K,0,
+42,K,Jordan,Johnson,M,None,false,false,1,1,,59,57,Early 1,Mid K,0,Ms. Patel
+43,K,Riley,Lopez,F,Referral,false,false,2,3,,60,58,Early 1,Mid K,3,Ms. Brooks
+44,K,Parker,Martinez,M,None,false,false,2,1,,61,59,Early 1,Mid K,0,Mr. Lee
+45,K,Morgan,Thomas,F,IEP,true,true,3,2,,62,60,Early 1,Late K,0,Ms. Johnson
+46,K,Taylor,Harris,M,None,false,false,1,2,,63,61,Mid 1,Late K,0,
+47,K,Cameron,Moore,F,None,false,false,2,1,,64,62,Mid 1,Late K,0,Ms. Brooks
+48,K,Hayden,Patel,M,None,false,false,1,1,,65,63,Mid 1,Late K,0,Mr. Lee
+49,K,Rowan,Nguyen,F,None,false,false,1,1,,66,64,Mid 1,Early 1,0,Ms. Johnson
+50,K,Quinn,Brown,M,Referral,false,false,2,2,,67,65,Mid 1,Early 1,2,Ms. Patel
+51,K,Alex,Wilson,F,None,false,false,1,2,,68,66,Early K,Early 1,0,
+52,K,Casey,Jackson,M,None,false,false,1,1,,69,67,Early K,Early 1,0,Mr. Lee
+53,K,Jamie,Martin,F,None,false,false,2,1,,70,68,Early K,Mid 1,0,Ms. Johnson
+54,K,Reese,Clark,M,None,false,false,1,1,,71,69,Early K,Mid 1,0,Ms. Patel
+55,K,Skyler,Kim,F,None,false,false,1,1,,72,70,Early K,Mid 1,0,Ms. Brooks
+56,K,Drew,Smith,M,IEP,true,false,3,3,,73,71,Mid K,Mid 1,1,
+57,K,Kendall,Davis,F,Referral,false,false,2,3,,74,72,Mid K,Early K,1,Ms. Johnson
+58,K,Logan,Anderson,M,None,false,false,1,1,57,75,73,Mid K,Early K,0,Ms. Patel
+59,K,Sawyer,White,F,None,false,false,2,1,,76,74,Mid K,Early K,0,Ms. Brooks
+60,K,Emerson,Thompson,M,None,false,false,1,1,,77,75,Mid K,Early K,0,Mr. Lee
+61,K,Avery,Garcia,F,None,false,false,1,2,,78,76,Late K,Mid K,0,
+62,K,Jordan,Johnson,M,None,false,false,2,1,,79,77,Late K,Mid K,0,Ms. Patel
+63,K,Riley,Lopez,F,None,false,false,1,1,62;60,80,78,Late K,Mid K,0,Ms. Brooks
+64,K,Parker,Martinez,M,Referral,false,false,2,2,,81,79,Late K,Mid K,4,Mr. Lee
+65,K,Morgan,Thomas,F,None,false,false,2,1,,82,80,Late K,Late K,0,Ms. Johnson
+66,K,Taylor,Harris,M,None,false,false,1,2,,83,81,Early 1,Late K,0,
+67,K,Cameron,Moore,F,IEP,false,false,3,2,,84,82,Early 1,Late K,0,Ms. Brooks
+68,K,Hayden,Patel,M,None,false,false,2,1,,85,83,Early 1,Late K,0,Mr. Lee
+69,K,Rowan,Nguyen,F,None,false,false,1,1,,86,84,Early 1,Early 1,0,Ms. Johnson
+70,K,Quinn,Brown,M,None,false,false,1,1,,87,85,Early 1,Early 1,0,Ms. Patel
+71,K,Alex,Wilson,F,Referral,false,false,2,3,,88,86,Mid 1,Early 1,3,
+72,K,Casey,Jackson,M,None,false,false,1,1,,89,87,Mid 1,Early 1,0,Mr. Lee
+73,K,Jamie,Martin,F,None,false,false,1,1,,90,88,Mid 1,Mid 1,0,Ms. Johnson
+74,K,Reese,Clark,M,None,false,false,2,1,,91,89,Mid 1,Mid 1,0,Ms. Patel
+75,K,Skyler,Kim,F,None,false,false,1,1,,92,90,Mid 1,Mid 1,0,Ms. Brooks
+76,K,Drew,Smith,M,None,false,false,1,2,,93,91,Early K,Mid 1,0,
+77,K,Kendall,Davis,F,None,false,false,2,1,76,94,92,Early K,Early K,0,Ms. Johnson
+78,K,Logan,Anderson,M,IEP,true,false,3,3,,95,93,Early K,Early K,1,Ms. Patel
+79,K,Sawyer,White,F,None,false,false,1,1,,96,94,Early K,Early K,0,Ms. Brooks
+80,K,Emerson,Thompson,M,None,false,false,2,1,,97,95,Early K,Early K,0,Mr. Lee
+81,K,Avery,Garcia,F,None,false,false,1,2,,98,96,Mid K,Mid K,0,
+82,K,Jordan,Johnson,M,None,false,false,1,1,,99,97,Mid K,Mid K,0,Ms. Patel
+83,K,Riley,Lopez,F,None,false,false,2,1,,99,98,Mid K,Mid K,0,Ms. Brooks
+84,K,Parker,Martinez,M,None,false,false,1,1,,99,99,Mid K,Mid K,0,Mr. Lee
+85,K,Morgan,Thomas,F,Referral,false,false,2,3,,99,99,Mid K,Late K,1,Ms. Johnson
+86,K,Taylor,Harris,M,None,false,false,2,2,,99,99,Late K,Late K,0,
+87,K,Cameron,Moore,F,None,false,false,1,1,,99,99,Late K,Late K,0,Ms. Brooks
+88,K,Hayden,Patel,M,None,false,false,1,1,,99,99,Late K,Late K,0,Mr. Lee
+89,K,Rowan,Nguyen,F,IEP,true,true,3,2,,99,99,Late K,Early 1,0,Ms. Johnson
+90,K,Quinn,Brown,M,None,false,false,1,1,,99,99,Late K,Early 1,0,Ms. Patel
+91,K,Alex,Wilson,F,None,false,false,1,2,,99,99,Early 1,Early 1,0,
+92,K,Casey,Jackson,M,Referral,false,false,2,2,,99,99,Early 1,Early 1,4,Mr. Lee
+93,K,Jamie,Martin,F,None,false,false,1,1,,99,99,Early 1,Mid 1,0,Ms. Johnson
+94,K,Reese,Clark,M,None,false,false,1,1,93;91,99,99,Early 1,Mid 1,0,Ms. Patel
+95,K,Skyler,Kim,F,None,false,false,2,1,,99,99,Early 1,Mid 1,0,Ms. Brooks
+96,1,Cameron,Lopez,F,IEP,false,true,3,2,,21,20,Early 1,Mid 1,0,
+97,1,Hayden,Martinez,M,None,false,false,2,1,,22,21,Early 1,Mid 1,0,Ms. Chen
+98,1,Rowan,Thomas,F,None,false,false,1,1,,23,22,Early 1,Mid 1,0,Ms. Gomez
+99,1,Quinn,Harris,M,None,false,false,1,1,,24,23,Early 1,Mid 1,0,Mr. Alvarez
+100,1,Alex,Moore,F,None,false,false,2,1,,25,24,Early 1,Late 1,0,Mr. Rivera
+101,1,Casey,Patel,M,None,false,false,1,2,,26,25,Mid 1,Late 1,0,
+102,1,Jamie,Nguyen,F,None,false,false,1,1,,27,26,Mid 1,Late 1,0,Ms. Gomez
+103,1,Reese,Brown,M,Referral,false,false,2,2,,28,27,Mid 1,Late 1,4,Mr. Alvarez
+104,1,Skyler,Wilson,F,None,false,false,1,1,,29,28,Mid 1,Early 2,0,Mr. Rivera
+105,1,Drew,Jackson,M,None,false,false,1,1,,30,29,Mid 1,Early 2,0,Ms. Chen
+106,1,Kendall,Martin,F,None,false,false,2,2,,31,30,Late 1,Early 2,0,
+107,1,Logan,Clark,M,IEP,true,false,3,3,,32,31,Late 1,Early 2,1,Mr. Alvarez
+108,1,Sawyer,Kim,F,None,false,false,1,1,,33,32,Late 1,Mid 2,0,Mr. Rivera
+109,1,Emerson,Smith,M,None,false,false,2,1,,34,33,Late 1,Mid 2,0,Ms. Chen
+110,1,Avery,Davis,F,Referral,false,false,2,3,,35,34,Late 1,Mid 2,3,Ms. Gomez
+111,1,Jordan,Anderson,M,None,false,false,1,2,,36,35,Early 2,Mid 2,0,
+112,1,Riley,White,F,None,false,false,2,1,,37,36,Early 2,Early 1,0,Mr. Rivera
+113,1,Parker,Thompson,M,None,false,false,1,1,,38,37,Early 2,Early 1,0,Ms. Chen
+114,1,Morgan,Garcia,F,None,false,false,1,1,,39,38,Early 2,Early 1,0,Ms. Gomez
+115,1,Taylor,Johnson,M,None,false,false,2,1,114,40,39,Early 2,Early 1,0,Mr. Alvarez
+116,1,Cameron,Lopez,F,None,false,false,1,2,,41,40,Mid 2,Mid 1,0,
+117,1,Hayden,Martinez,M,Referral,false,false,2,2,,42,41,Mid 2,Mid 1,2,Ms. Chen
+118,1,Rowan,Thomas,F,IEP,true,false,3,2,,43,42,Mid 2,Mid 1,0,Ms. Gomez
+119,1,Quinn,Harris,M,None,false,false,1,1,,44,43,Mid 2,Mid 1,0,Mr. Alvarez
+120,1,Alex,Moore,F,None,false,false,1,1,,45,44,Mid 2,Late 1,0,Mr. Rivera
+121,1,Casey,Patel,M,None,false,false,2,2,,46,45,Early 1,Late 1,0,
+122,1,Jamie,Nguyen,F,None,false,false,1,1,,47,46,Early 1,Late 1,0,Ms. Gomez
+123,1,Reese,Brown,M,None,false,false,1,1,,48,47,Early 1,Late 1,0,Mr. Alvarez
+124,1,Skyler,Wilson,F,Referral,false,false,2,3,,49,48,Early 1,Early 2,1,Mr. Rivera
+125,1,Drew,Jackson,M,None,false,false,1,1,,50,49,Early 1,Early 2,0,Ms. Chen
+126,1,Kendall,Martin,F,None,false,false,1,2,,51,50,Mid 1,Early 2,0,
+127,1,Logan,Clark,M,None,false,false,2,1,126;124,52,51,Mid 1,Early 2,0,Mr. Alvarez
+128,1,Sawyer,Kim,F,None,false,false,1,1,,53,52,Mid 1,Mid 2,0,Mr. Rivera
+129,1,Emerson,Smith,M,IEP,false,false,3,3,,54,53,Mid 1,Mid 2,1,Ms. Chen
+130,1,Avery,Davis,F,None,false,false,2,1,,55,54,Mid 1,Mid 2,0,Ms. Gomez
+131,1,Jordan,Anderson,M,Referral,false,false,2,2,,56,55,Late 1,Mid 2,4,
+132,1,Riley,White,F,None,false,false,1,1,,57,56,Late 1,Early 1,0,Mr. Rivera
+133,1,Parker,Thompson,M,None,false,false,2,1,,58,57,Late 1,Early 1,0,Ms. Chen
+134,1,Morgan,Garcia,F,None,false,false,1,1,133,59,58,Late 1,Early 1,0,Ms. Gomez
+135,1,Taylor,Johnson,M,None,false,false,1,1,,60,59,Late 1,Early 1,0,Mr. Alvarez
+136,1,Cameron,Lopez,F,None,false,false,2,2,,61,60,Early 2,Mid 1,0,
+137,1,Hayden,Martinez,M,None,false,false,1,1,,62,61,Early 2,Mid 1,0,Ms. Chen
+138,1,Rowan,Thomas,F,Referral,false,false,2,3,,63,62,Early 2,Mid 1,3,Ms. Gomez
+139,1,Quinn,Harris,M,None,false,false,2,1,,64,63,Early 2,Mid 1,0,Mr. Alvarez
+140,1,Alex,Moore,F,IEP,true,true,3,2,,65,64,Early 2,Late 1,0,Mr. Rivera
+141,1,Casey,Patel,M,None,false,false,1,2,,66,65,Mid 2,Late 1,0,
+142,1,Jamie,Nguyen,F,None,false,false,2,1,,67,66,Mid 2,Late 1,0,Ms. Gomez
+143,1,Reese,Brown,M,None,false,false,1,1,,68,67,Mid 2,Late 1,0,Mr. Alvarez
+144,1,Skyler,Wilson,F,None,false,false,1,1,,69,68,Mid 2,Early 2,0,Mr. Rivera
+145,1,Drew,Jackson,M,Referral,false,false,2,2,,70,69,Mid 2,Early 2,2,Ms. Chen
+146,1,Kendall,Martin,F,None,false,false,1,2,,71,70,Early 1,Early 2,0,
+147,1,Logan,Clark,M,None,false,false,1,1,,72,71,Early 1,Early 2,0,Mr. Alvarez
+148,1,Sawyer,Kim,F,None,false,false,2,1,,73,72,Early 1,Mid 2,0,Mr. Rivera
+149,1,Emerson,Smith,M,None,false,false,1,1,,74,73,Early 1,Mid 2,0,Ms. Chen
+150,1,Avery,Davis,F,None,false,false,1,1,,75,74,Early 1,Mid 2,0,Ms. Gomez
+151,1,Jordan,Anderson,M,IEP,true,false,3,3,,76,75,Mid 1,Mid 2,1,
+152,1,Riley,White,F,Referral,false,false,2,3,,77,76,Mid 1,Early 1,1,Mr. Rivera
+153,1,Parker,Thompson,M,None,false,false,1,1,152,78,77,Mid 1,Early 1,0,Ms. Chen
+154,1,Morgan,Garcia,F,None,false,false,2,1,,79,78,Mid 1,Early 1,0,Ms. Gomez
+155,1,Taylor,Johnson,M,None,false,false,1,1,,80,79,Mid 1,Early 1,0,Mr. Alvarez
+156,1,Cameron,Lopez,F,None,false,false,1,2,,81,80,Late 1,Mid 1,0,
+157,1,Hayden,Martinez,M,None,false,false,2,1,,82,81,Late 1,Mid 1,0,Ms. Chen
+158,1,Rowan,Thomas,F,None,false,false,1,1,157;155,83,82,Late 1,Mid 1,0,Ms. Gomez
+159,1,Quinn,Harris,M,Referral,false,false,2,2,,84,83,Late 1,Mid 1,4,Mr. Alvarez
+160,1,Alex,Moore,F,None,false,false,2,1,,85,84,Late 1,Late 1,0,Mr. Rivera
+161,1,Casey,Patel,M,None,false,false,1,2,,86,85,Early 2,Late 1,0,
+162,1,Jamie,Nguyen,F,IEP,false,false,3,2,,87,86,Early 2,Late 1,0,Ms. Gomez
+163,1,Reese,Brown,M,None,false,false,2,1,,88,87,Early 2,Late 1,0,Mr. Alvarez
+164,1,Skyler,Wilson,F,None,false,false,1,1,,89,88,Early 2,Early 2,0,Mr. Rivera
+165,1,Drew,Jackson,M,None,false,false,1,1,,90,89,Early 2,Early 2,0,Ms. Chen
+166,1,Kendall,Martin,F,Referral,false,false,2,3,,91,90,Mid 2,Early 2,3,
+167,1,Logan,Clark,M,None,false,false,1,1,,92,91,Mid 2,Early 2,0,Mr. Alvarez
+168,1,Sawyer,Kim,F,None,false,false,1,1,,93,92,Mid 2,Mid 2,0,Mr. Rivera
+169,1,Emerson,Smith,M,None,false,false,2,1,,94,93,Mid 2,Mid 2,0,Ms. Chen
+170,1,Avery,Davis,F,None,false,false,1,1,,95,94,Mid 2,Mid 2,0,Ms. Gomez
+171,1,Jordan,Anderson,M,None,false,false,1,2,,96,95,Early 1,Mid 2,0,
+172,1,Riley,White,F,None,false,false,2,1,171,97,96,Early 1,Early 1,0,Mr. Rivera
+173,1,Parker,Thompson,M,IEP,true,false,3,3,,98,97,Early 1,Early 1,1,Ms. Chen
+174,1,Morgan,Garcia,F,None,false,false,1,1,,99,98,Early 1,Early 1,0,Ms. Gomez
+175,1,Taylor,Johnson,M,None,false,false,2,1,,99,99,Early 1,Early 1,0,Mr. Alvarez
+176,1,Cameron,Lopez,F,None,false,false,1,2,,99,99,Mid 1,Mid 1,0,
+177,1,Hayden,Martinez,M,None,false,false,1,1,,99,99,Mid 1,Mid 1,0,Ms. Chen
+178,1,Rowan,Thomas,F,None,false,false,2,1,,99,99,Mid 1,Mid 1,0,Ms. Gomez
+179,1,Quinn,Harris,M,None,false,false,1,1,,99,99,Mid 1,Mid 1,0,Mr. Alvarez
+180,1,Alex,Moore,F,Referral,false,false,2,3,,99,99,Mid 1,Late 1,1,Mr. Rivera
+181,1,Casey,Patel,M,None,false,false,2,2,,99,99,Late 1,Late 1,0,
+182,1,Jamie,Nguyen,F,None,false,false,1,1,,99,99,Late 1,Late 1,0,Ms. Gomez
+183,1,Reese,Brown,M,None,false,false,1,1,,99,99,Late 1,Late 1,0,Mr. Alvarez
+184,1,Skyler,Wilson,F,IEP,true,true,3,2,,99,99,Late 1,Early 2,0,Mr. Rivera
+185,1,Drew,Jackson,M,None,false,false,1,1,,99,99,Late 1,Early 2,0,Ms. Chen
+186,1,Kendall,Martin,F,None,false,false,1,2,,99,99,Early 2,Early 2,0,
+187,1,Logan,Clark,M,Referral,false,false,2,2,,99,99,Early 2,Early 2,4,Mr. Alvarez
+188,1,Sawyer,Kim,F,None,false,false,1,1,,99,99,Early 2,Mid 2,0,Mr. Rivera
+189,1,Emerson,Smith,M,None,false,false,1,1,188;186,99,99,Early 2,Mid 2,0,Ms. Chen
+190,1,Avery,Davis,F,None,false,false,2,1,,99,99,Early 2,Mid 2,0,Ms. Gomez
+191,2,Jamie,Thomas,F,IEP,false,true,3,2,,24,24,Early 2,Mid 2,0,
+192,2,Reese,Harris,M,None,false,false,2,1,,25,25,Early 2,Mid 2,0,Mr. Price
+193,2,Skyler,Moore,F,None,false,false,1,1,,26,26,Early 2,Mid 2,0,Ms. Duncan
+194,2,Drew,Patel,M,None,false,false,1,1,,27,27,Early 2,Mid 2,0,Mr. Shah
+195,2,Kendall,Nguyen,F,None,false,false,2,1,,28,28,Early 2,Late 2,0,Ms. Torres
+196,2,Logan,Brown,M,None,false,false,1,2,,29,29,Mid 2,Late 2,0,
+197,2,Sawyer,Wilson,F,None,false,false,1,1,,30,30,Mid 2,Late 2,0,Ms. Duncan
+198,2,Emerson,Jackson,M,Referral,false,false,2,2,,31,31,Mid 2,Late 2,4,Mr. Shah
+199,2,Avery,Martin,F,None,false,false,1,1,,32,32,Mid 2,Early 3,0,Ms. Torres
+200,2,Jordan,Clark,M,None,false,false,1,1,,33,33,Mid 2,Early 3,0,Mr. Price
+201,2,Riley,Kim,F,None,false,false,2,2,,34,34,Late 2,Early 3,0,
+202,2,Parker,Smith,M,IEP,true,false,3,3,,35,35,Late 2,Early 3,1,Mr. Shah
+203,2,Morgan,Davis,F,None,false,false,1,1,,36,36,Late 2,Mid 3,0,Ms. Torres
+204,2,Taylor,Anderson,M,None,false,false,2,1,,37,37,Late 2,Mid 3,0,Mr. Price
+205,2,Cameron,White,F,Referral,false,false,2,3,,38,38,Late 2,Mid 3,3,Ms. Duncan
+206,2,Hayden,Thompson,M,None,false,false,1,2,,39,39,Early 3,Mid 3,0,
+207,2,Rowan,Garcia,F,None,false,false,2,1,,40,40,Early 3,Early 2,0,Ms. Torres
+208,2,Quinn,Johnson,M,None,false,false,1,1,,41,41,Early 3,Early 2,0,Mr. Price
+209,2,Alex,Lopez,F,None,false,false,1,1,,42,42,Early 3,Early 2,0,Ms. Duncan
+210,2,Casey,Martinez,M,None,false,false,2,1,209,43,43,Early 3,Early 2,0,Mr. Shah
+211,2,Jamie,Thomas,F,None,false,false,1,2,,44,44,Mid 3,Mid 2,0,
+212,2,Reese,Harris,M,Referral,false,false,2,2,,45,45,Mid 3,Mid 2,2,Mr. Price
+213,2,Skyler,Moore,F,IEP,true,false,3,2,,46,46,Mid 3,Mid 2,0,Ms. Duncan
+214,2,Drew,Patel,M,None,false,false,1,1,,47,47,Mid 3,Mid 2,0,Mr. Shah
+215,2,Kendall,Nguyen,F,None,false,false,1,1,,48,48,Mid 3,Late 2,0,Ms. Torres
+216,2,Logan,Brown,M,None,false,false,2,2,,49,49,Early 2,Late 2,0,
+217,2,Sawyer,Wilson,F,None,false,false,1,1,,50,50,Early 2,Late 2,0,Ms. Duncan
+218,2,Emerson,Jackson,M,None,false,false,1,1,,51,51,Early 2,Late 2,0,Mr. Shah
+219,2,Avery,Martin,F,Referral,false,false,2,3,,52,52,Early 2,Early 3,1,Ms. Torres
+220,2,Jordan,Clark,M,None,false,false,1,1,,53,53,Early 2,Early 3,0,Mr. Price
+221,2,Riley,Kim,F,None,false,false,1,2,,54,54,Mid 2,Early 3,0,
+222,2,Parker,Smith,M,None,false,false,2,1,221;219,55,55,Mid 2,Early 3,0,Mr. Shah
+223,2,Morgan,Davis,F,None,false,false,1,1,,56,56,Mid 2,Mid 3,0,Ms. Torres
+224,2,Taylor,Anderson,M,IEP,false,false,3,3,,57,57,Mid 2,Mid 3,1,Mr. Price
+225,2,Cameron,White,F,None,false,false,2,1,,58,58,Mid 2,Mid 3,0,Ms. Duncan
+226,2,Hayden,Thompson,M,Referral,false,false,2,2,,59,59,Late 2,Mid 3,4,
+227,2,Rowan,Garcia,F,None,false,false,1,1,,60,60,Late 2,Early 2,0,Ms. Torres
+228,2,Quinn,Johnson,M,None,false,false,2,1,,61,61,Late 2,Early 2,0,Mr. Price
+229,2,Alex,Lopez,F,None,false,false,1,1,228,62,62,Late 2,Early 2,0,Ms. Duncan
+230,2,Casey,Martinez,M,None,false,false,1,1,,63,63,Late 2,Early 2,0,Mr. Shah
+231,2,Jamie,Thomas,F,None,false,false,2,2,,64,64,Early 3,Mid 2,0,
+232,2,Reese,Harris,M,None,false,false,1,1,,65,65,Early 3,Mid 2,0,Mr. Price
+233,2,Skyler,Moore,F,Referral,false,false,2,3,,66,66,Early 3,Mid 2,3,Ms. Duncan
+234,2,Drew,Patel,M,None,false,false,2,1,,67,67,Early 3,Mid 2,0,Mr. Shah
+235,2,Kendall,Nguyen,F,IEP,true,true,3,2,,68,68,Early 3,Late 2,0,Ms. Torres
+236,2,Logan,Brown,M,None,false,false,1,2,,69,69,Mid 3,Late 2,0,
+237,2,Sawyer,Wilson,F,None,false,false,2,1,,70,70,Mid 3,Late 2,0,Ms. Duncan
+238,2,Emerson,Jackson,M,None,false,false,1,1,,71,71,Mid 3,Late 2,0,Mr. Shah
+239,2,Avery,Martin,F,None,false,false,1,1,,72,72,Mid 3,Early 3,0,Ms. Torres
+240,2,Jordan,Clark,M,Referral,false,false,2,2,,73,73,Mid 3,Early 3,2,Mr. Price
+241,2,Riley,Kim,F,None,false,false,1,2,,74,74,Early 2,Early 3,0,
+242,2,Parker,Smith,M,None,false,false,1,1,,75,75,Early 2,Early 3,0,Mr. Shah
+243,2,Morgan,Davis,F,None,false,false,2,1,,76,76,Early 2,Mid 3,0,Ms. Torres
+244,2,Taylor,Anderson,M,None,false,false,1,1,,77,77,Early 2,Mid 3,0,Mr. Price
+245,2,Cameron,White,F,None,false,false,1,1,,78,78,Early 2,Mid 3,0,Ms. Duncan
+246,2,Hayden,Thompson,M,IEP,true,false,3,3,,79,79,Mid 2,Mid 3,1,
+247,2,Rowan,Garcia,F,Referral,false,false,2,3,,80,80,Mid 2,Early 2,1,Ms. Torres
+248,2,Quinn,Johnson,M,None,false,false,1,1,247,81,81,Mid 2,Early 2,0,Mr. Price
+249,2,Alex,Lopez,F,None,false,false,2,1,,82,82,Mid 2,Early 2,0,Ms. Duncan
+250,2,Casey,Martinez,M,None,false,false,1,1,,83,83,Mid 2,Early 2,0,Mr. Shah
+251,2,Jamie,Thomas,F,None,false,false,1,2,,84,84,Late 2,Mid 2,0,
+252,2,Reese,Harris,M,None,false,false,2,1,,85,85,Late 2,Mid 2,0,Mr. Price
+253,2,Skyler,Moore,F,None,false,false,1,1,252;250,86,86,Late 2,Mid 2,0,Ms. Duncan
+254,2,Drew,Patel,M,Referral,false,false,2,2,,87,87,Late 2,Mid 2,4,Mr. Shah
+255,2,Kendall,Nguyen,F,None,false,false,2,1,,88,88,Late 2,Late 2,0,Ms. Torres
+256,2,Logan,Brown,M,None,false,false,1,2,,89,89,Early 3,Late 2,0,
+257,2,Sawyer,Wilson,F,IEP,false,false,3,2,,90,90,Early 3,Late 2,0,Ms. Duncan
+258,2,Emerson,Jackson,M,None,false,false,2,1,,91,91,Early 3,Late 2,0,Mr. Shah
+259,2,Avery,Martin,F,None,false,false,1,1,,92,92,Early 3,Early 3,0,Ms. Torres
+260,2,Jordan,Clark,M,None,false,false,1,1,,93,93,Early 3,Early 3,0,Mr. Price
+261,2,Riley,Kim,F,Referral,false,false,2,3,,94,94,Mid 3,Early 3,3,
+262,2,Parker,Smith,M,None,false,false,1,1,,95,95,Mid 3,Early 3,0,Mr. Shah
+263,2,Morgan,Davis,F,None,false,false,1,1,,96,96,Mid 3,Mid 3,0,Ms. Torres
+264,2,Taylor,Anderson,M,None,false,false,2,1,,97,97,Mid 3,Mid 3,0,Mr. Price
+265,2,Cameron,White,F,None,false,false,1,1,,98,98,Mid 3,Mid 3,0,Ms. Duncan
+266,2,Hayden,Thompson,M,None,false,false,1,2,,99,99,Early 2,Mid 3,0,
+267,2,Rowan,Garcia,F,None,false,false,2,1,266,99,99,Early 2,Early 2,0,Ms. Torres
+268,2,Quinn,Johnson,M,IEP,true,false,3,3,,99,99,Early 2,Early 2,1,Mr. Price
+269,2,Alex,Lopez,F,None,false,false,1,1,,99,99,Early 2,Early 2,0,Ms. Duncan
+270,2,Casey,Martinez,M,None,false,false,2,1,,99,99,Early 2,Early 2,0,Mr. Shah
+271,2,Jamie,Thomas,F,None,false,false,1,2,,99,99,Mid 2,Mid 2,0,
+272,2,Reese,Harris,M,None,false,false,1,1,,99,99,Mid 2,Mid 2,0,Mr. Price
+273,2,Skyler,Moore,F,None,false,false,2,1,,99,99,Mid 2,Mid 2,0,Ms. Duncan
+274,2,Drew,Patel,M,None,false,false,1,1,,99,99,Mid 2,Mid 2,0,Mr. Shah
+275,2,Kendall,Nguyen,F,Referral,false,false,2,3,,99,99,Mid 2,Late 2,1,Ms. Torres
+276,2,Logan,Brown,M,None,false,false,2,2,,99,99,Late 2,Late 2,0,
+277,2,Sawyer,Wilson,F,None,false,false,1,1,,99,99,Late 2,Late 2,0,Ms. Duncan
+278,2,Emerson,Jackson,M,None,false,false,1,1,,99,99,Late 2,Late 2,0,Mr. Shah
+279,2,Avery,Martin,F,IEP,true,true,3,2,,99,99,Late 2,Early 3,0,Ms. Torres
+280,2,Jordan,Clark,M,None,false,false,1,1,,99,99,Late 2,Early 3,0,Mr. Price
+281,2,Riley,Kim,F,None,false,false,1,2,,99,99,Early 3,Early 3,0,
+282,2,Parker,Smith,M,Referral,false,false,2,2,,99,99,Early 3,Early 3,4,Mr. Shah
+283,2,Morgan,Davis,F,None,false,false,1,1,,99,99,Early 3,Mid 3,0,Ms. Torres
+284,2,Taylor,Anderson,M,None,false,false,1,1,283;281,99,99,Early 3,Mid 3,0,Mr. Price
+285,2,Cameron,White,F,None,false,false,2,1,,99,99,Early 3,Mid 3,0,Ms. Duncan
+286,3,Sawyer,Moore,F,IEP,false,true,3,2,,27,28,Early 3,Mid 3,0,
+287,3,Emerson,Patel,M,None,false,false,2,1,,28,29,Early 3,Mid 3,0,Ms. Ellis
+288,3,Avery,Nguyen,F,None,false,false,1,1,,29,30,Early 3,Mid 3,0,Mr. Grant
+289,3,Jordan,Brown,M,None,false,false,1,1,,30,31,Early 3,Mid 3,0,Ms. Webb
+290,3,Riley,Wilson,F,None,false,false,2,1,,31,32,Early 3,Late 3,0,Mr. Okafor
+291,3,Parker,Jackson,M,None,false,false,1,2,,32,33,Mid 3,Late 3,0,
+292,3,Morgan,Martin,F,None,false,false,1,1,,33,34,Mid 3,Late 3,0,Mr. Grant
+293,3,Taylor,Clark,M,Referral,false,false,2,2,,34,35,Mid 3,Late 3,4,Ms. Webb
+294,3,Cameron,Kim,F,None,false,false,1,1,,35,36,Mid 3,Early 4,0,Mr. Okafor
+295,3,Hayden,Smith,M,None,false,false,1,1,,36,37,Mid 3,Early 4,0,Ms. Ellis
+296,3,Rowan,Davis,F,None,false,false,2,2,,37,38,Late 3,Early 4,0,
+297,3,Quinn,Anderson,M,IEP,true,false,3,3,,38,39,Late 3,Early 4,1,Ms. Webb
+298,3,Alex,White,F,None,false,false,1,1,,39,40,Late 3,Mid 4,0,Mr. Okafor
+299,3,Casey,Thompson,M,None,false,false,2,1,,40,41,Late 3,Mid 4,0,Ms. Ellis
+300,3,Jamie,Garcia,F,Referral,false,false,2,3,,41,42,Late 3,Mid 4,3,Mr. Grant
+301,3,Reese,Johnson,M,None,false,false,1,2,,42,43,Early 4,Mid 4,0,
+302,3,Skyler,Lopez,F,None,false,false,2,1,,43,44,Early 4,Early 3,0,Mr. Okafor
+303,3,Drew,Martinez,M,None,false,false,1,1,,44,45,Early 4,Early 3,0,Ms. Ellis
+304,3,Kendall,Thomas,F,None,false,false,1,1,,45,46,Early 4,Early 3,0,Mr. Grant
+305,3,Logan,Harris,M,None,false,false,2,1,304,46,47,Early 4,Early 3,0,Ms. Webb
+306,3,Sawyer,Moore,F,None,false,false,1,2,,47,48,Mid 4,Mid 3,0,
+307,3,Emerson,Patel,M,Referral,false,false,2,2,,48,49,Mid 4,Mid 3,2,Ms. Ellis
+308,3,Avery,Nguyen,F,IEP,true,false,3,2,,49,50,Mid 4,Mid 3,0,Mr. Grant
+309,3,Jordan,Brown,M,None,false,false,1,1,,50,51,Mid 4,Mid 3,0,Ms. Webb
+310,3,Riley,Wilson,F,None,false,false,1,1,,51,52,Mid 4,Late 3,0,Mr. Okafor
+311,3,Parker,Jackson,M,None,false,false,2,2,,52,53,Early 3,Late 3,0,
+312,3,Morgan,Martin,F,None,false,false,1,1,,53,54,Early 3,Late 3,0,Mr. Grant
+313,3,Taylor,Clark,M,None,false,false,1,1,,54,55,Early 3,Late 3,0,Ms. Webb
+314,3,Cameron,Kim,F,Referral,false,false,2,3,,55,56,Early 3,Early 4,1,Mr. Okafor
+315,3,Hayden,Smith,M,None,false,false,1,1,,56,57,Early 3,Early 4,0,Ms. Ellis
+316,3,Rowan,Davis,F,None,false,false,1,2,,57,58,Mid 3,Early 4,0,
+317,3,Quinn,Anderson,M,None,false,false,2,1,316;314,58,59,Mid 3,Early 4,0,Ms. Webb
+318,3,Alex,White,F,None,false,false,1,1,,59,60,Mid 3,Mid 4,0,Mr. Okafor
+319,3,Casey,Thompson,M,IEP,false,false,3,3,,60,61,Mid 3,Mid 4,1,Ms. Ellis
+320,3,Jamie,Garcia,F,None,false,false,2,1,,61,62,Mid 3,Mid 4,0,Mr. Grant
+321,3,Reese,Johnson,M,Referral,false,false,2,2,,62,63,Late 3,Mid 4,4,
+322,3,Skyler,Lopez,F,None,false,false,1,1,,63,64,Late 3,Early 3,0,Mr. Okafor
+323,3,Drew,Martinez,M,None,false,false,2,1,,64,65,Late 3,Early 3,0,Ms. Ellis
+324,3,Kendall,Thomas,F,None,false,false,1,1,323,65,66,Late 3,Early 3,0,Mr. Grant
+325,3,Logan,Harris,M,None,false,false,1,1,,66,67,Late 3,Early 3,0,Ms. Webb
+326,3,Sawyer,Moore,F,None,false,false,2,2,,67,68,Early 4,Mid 3,0,
+327,3,Emerson,Patel,M,None,false,false,1,1,,68,69,Early 4,Mid 3,0,Ms. Ellis
+328,3,Avery,Nguyen,F,Referral,false,false,2,3,,69,70,Early 4,Mid 3,3,Mr. Grant
+329,3,Jordan,Brown,M,None,false,false,2,1,,70,71,Early 4,Mid 3,0,Ms. Webb
+330,3,Riley,Wilson,F,IEP,true,true,3,2,,71,72,Early 4,Late 3,0,Mr. Okafor
+331,3,Parker,Jackson,M,None,false,false,1,2,,72,73,Mid 4,Late 3,0,
+332,3,Morgan,Martin,F,None,false,false,2,1,,73,74,Mid 4,Late 3,0,Mr. Grant
+333,3,Taylor,Clark,M,None,false,false,1,1,,74,75,Mid 4,Late 3,0,Ms. Webb
+334,3,Cameron,Kim,F,None,false,false,1,1,,75,76,Mid 4,Early 4,0,Mr. Okafor
+335,3,Hayden,Smith,M,Referral,false,false,2,2,,76,77,Mid 4,Early 4,2,Ms. Ellis
+336,3,Rowan,Davis,F,None,false,false,1,2,,77,78,Early 3,Early 4,0,
+337,3,Quinn,Anderson,M,None,false,false,1,1,,78,79,Early 3,Early 4,0,Ms. Webb
+338,3,Alex,White,F,None,false,false,2,1,,79,80,Early 3,Mid 4,0,Mr. Okafor
+339,3,Casey,Thompson,M,None,false,false,1,1,,80,81,Early 3,Mid 4,0,Ms. Ellis
+340,3,Jamie,Garcia,F,None,false,false,1,1,,81,82,Early 3,Mid 4,0,Mr. Grant
+341,3,Reese,Johnson,M,IEP,true,false,3,3,,82,83,Mid 3,Mid 4,1,
+342,3,Skyler,Lopez,F,Referral,false,false,2,3,,83,84,Mid 3,Early 3,1,Mr. Okafor
+343,3,Drew,Martinez,M,None,false,false,1,1,342,84,85,Mid 3,Early 3,0,Ms. Ellis
+344,3,Kendall,Thomas,F,None,false,false,2,1,,85,86,Mid 3,Early 3,0,Mr. Grant
+345,3,Logan,Harris,M,None,false,false,1,1,,86,87,Mid 3,Early 3,0,Ms. Webb
+346,3,Sawyer,Moore,F,None,false,false,1,2,,87,88,Late 3,Mid 3,0,
+347,3,Emerson,Patel,M,None,false,false,2,1,,88,89,Late 3,Mid 3,0,Ms. Ellis
+348,3,Avery,Nguyen,F,None,false,false,1,1,347;345,89,90,Late 3,Mid 3,0,Mr. Grant
+349,3,Jordan,Brown,M,Referral,false,false,2,2,,90,91,Late 3,Mid 3,4,Ms. Webb
+350,3,Riley,Wilson,F,None,false,false,2,1,,91,92,Late 3,Late 3,0,Mr. Okafor
+351,3,Parker,Jackson,M,None,false,false,1,2,,92,93,Early 4,Late 3,0,
+352,3,Morgan,Martin,F,IEP,false,false,3,2,,93,94,Early 4,Late 3,0,Mr. Grant
+353,3,Taylor,Clark,M,None,false,false,2,1,,94,95,Early 4,Late 3,0,Ms. Webb
+354,3,Cameron,Kim,F,None,false,false,1,1,,95,96,Early 4,Early 4,0,Mr. Okafor
+355,3,Hayden,Smith,M,None,false,false,1,1,,96,97,Early 4,Early 4,0,Ms. Ellis
+356,3,Rowan,Davis,F,Referral,false,false,2,3,,97,98,Mid 4,Early 4,3,
+357,3,Quinn,Anderson,M,None,false,false,1,1,,98,99,Mid 4,Early 4,0,Ms. Webb
+358,3,Alex,White,F,None,false,false,1,1,,99,99,Mid 4,Mid 4,0,Mr. Okafor
+359,3,Casey,Thompson,M,None,false,false,2,1,,99,99,Mid 4,Mid 4,0,Ms. Ellis
+360,3,Jamie,Garcia,F,None,false,false,1,1,,99,99,Mid 4,Mid 4,0,Mr. Grant
+361,3,Reese,Johnson,M,None,false,false,1,2,,99,99,Early 3,Mid 4,0,
+362,3,Skyler,Lopez,F,None,false,false,2,1,361,99,99,Early 3,Early 3,0,Mr. Okafor
+363,3,Drew,Martinez,M,IEP,true,false,3,3,,99,99,Early 3,Early 3,1,Ms. Ellis
+364,3,Kendall,Thomas,F,None,false,false,1,1,,99,99,Early 3,Early 3,0,Mr. Grant
+365,3,Logan,Harris,M,None,false,false,2,1,,99,99,Early 3,Early 3,0,Ms. Webb
+366,3,Sawyer,Moore,F,None,false,false,1,2,,99,99,Mid 3,Mid 3,0,
+367,3,Emerson,Patel,M,None,false,false,1,1,,99,99,Mid 3,Mid 3,0,Ms. Ellis
+368,3,Avery,Nguyen,F,None,false,false,2,1,,99,99,Mid 3,Mid 3,0,Mr. Grant
+369,3,Jordan,Brown,M,None,false,false,1,1,,99,99,Mid 3,Mid 3,0,Ms. Webb
+370,3,Riley,Wilson,F,Referral,false,false,2,3,,99,99,Mid 3,Late 3,1,Mr. Okafor
+371,3,Parker,Jackson,M,None,false,false,2,2,,99,99,Late 3,Late 3,0,
+372,3,Morgan,Martin,F,None,false,false,1,1,,99,99,Late 3,Late 3,0,Mr. Grant
+373,3,Taylor,Clark,M,None,false,false,1,1,,99,99,Late 3,Late 3,0,Ms. Webb
+374,3,Cameron,Kim,F,IEP,true,true,3,2,,99,99,Late 3,Early 4,0,Mr. Okafor
+375,3,Hayden,Smith,M,None,false,false,1,1,,99,99,Late 3,Early 4,0,Ms. Ellis
+376,3,Rowan,Davis,F,None,false,false,1,2,,99,99,Early 4,Early 4,0,
+377,3,Quinn,Anderson,M,Referral,false,false,2,2,,99,99,Early 4,Early 4,4,Ms. Webb
+378,3,Alex,White,F,None,false,false,1,1,,99,99,Early 4,Mid 4,0,Mr. Okafor
+379,3,Casey,Thompson,M,None,false,false,1,1,378;376,99,99,Early 4,Mid 4,0,Ms. Ellis
+380,3,Jamie,Garcia,F,None,false,false,2,1,,99,99,Early 4,Mid 4,0,Mr. Grant
+381,4,Morgan,Nguyen,F,IEP,false,true,3,2,,30,32,Early 4,Mid 4,0,
+382,4,Taylor,Brown,M,None,false,false,2,1,,31,33,Early 4,Mid 4,0,Mr. Johnson
+383,4,Cameron,Wilson,F,None,false,false,1,1,,32,34,Early 4,Mid 4,0,Ms. Flores
+384,4,Hayden,Jackson,M,None,false,false,1,1,,33,35,Early 4,Mid 4,0,Mr. Bennett
+385,4,Rowan,Martin,F,None,false,false,2,1,,34,36,Early 4,Late 4,0,Ms. Kim
+386,4,Quinn,Clark,M,None,false,false,1,2,,35,37,Mid 4,Late 4,0,
+387,4,Alex,Kim,F,None,false,false,1,1,,36,38,Mid 4,Late 4,0,Ms. Flores
+388,4,Casey,Smith,M,Referral,false,false,2,2,,37,39,Mid 4,Late 4,4,Mr. Bennett
+389,4,Jamie,Davis,F,None,false,false,1,1,,38,40,Mid 4,Early 5,0,Ms. Kim
+390,4,Reese,Anderson,M,None,false,false,1,1,,39,41,Mid 4,Early 5,0,Mr. Johnson
+391,4,Skyler,White,F,None,false,false,2,2,,40,42,Late 4,Early 5,0,
+392,4,Drew,Thompson,M,IEP,true,false,3,3,,41,43,Late 4,Early 5,1,Mr. Bennett
+393,4,Kendall,Garcia,F,None,false,false,1,1,,42,44,Late 4,Mid 5,0,Ms. Kim
+394,4,Logan,Johnson,M,None,false,false,2,1,,43,45,Late 4,Mid 5,0,Mr. Johnson
+395,4,Sawyer,Lopez,F,Referral,false,false,2,3,,44,46,Late 4,Mid 5,3,Ms. Flores
+396,4,Emerson,Martinez,M,None,false,false,1,2,,45,47,Early 5,Mid 5,0,
+397,4,Avery,Thomas,F,None,false,false,2,1,,46,48,Early 5,Early 4,0,Ms. Kim
+398,4,Jordan,Harris,M,None,false,false,1,1,,47,49,Early 5,Early 4,0,Mr. Johnson
+399,4,Riley,Moore,F,None,false,false,1,1,,48,50,Early 5,Early 4,0,Ms. Flores
+400,4,Parker,Patel,M,None,false,false,2,1,399,49,51,Early 5,Early 4,0,Mr. Bennett
+401,4,Morgan,Nguyen,F,None,false,false,1,2,,50,52,Mid 5,Mid 4,0,
+402,4,Taylor,Brown,M,Referral,false,false,2,2,,51,53,Mid 5,Mid 4,2,Mr. Johnson
+403,4,Cameron,Wilson,F,IEP,true,false,3,2,,52,54,Mid 5,Mid 4,0,Ms. Flores
+404,4,Hayden,Jackson,M,None,false,false,1,1,,53,55,Mid 5,Mid 4,0,Mr. Bennett
+405,4,Rowan,Martin,F,None,false,false,1,1,,54,56,Mid 5,Late 4,0,Ms. Kim
+406,4,Quinn,Clark,M,None,false,false,2,2,,55,57,Early 4,Late 4,0,
+407,4,Alex,Kim,F,None,false,false,1,1,,56,58,Early 4,Late 4,0,Ms. Flores
+408,4,Casey,Smith,M,None,false,false,1,1,,57,59,Early 4,Late 4,0,Mr. Bennett
+409,4,Jamie,Davis,F,Referral,false,false,2,3,,58,60,Early 4,Early 5,1,Ms. Kim
+410,4,Reese,Anderson,M,None,false,false,1,1,,59,61,Early 4,Early 5,0,Mr. Johnson
+411,4,Skyler,White,F,None,false,false,1,2,,60,62,Mid 4,Early 5,0,
+412,4,Drew,Thompson,M,None,false,false,2,1,411;409,61,63,Mid 4,Early 5,0,Mr. Bennett
+413,4,Kendall,Garcia,F,None,false,false,1,1,,62,64,Mid 4,Mid 5,0,Ms. Kim
+414,4,Logan,Johnson,M,IEP,false,false,3,3,,63,65,Mid 4,Mid 5,1,Mr. Johnson
+415,4,Sawyer,Lopez,F,None,false,false,2,1,,64,66,Mid 4,Mid 5,0,Ms. Flores
+416,4,Emerson,Martinez,M,Referral,false,false,2,2,,65,67,Late 4,Mid 5,4,
+417,4,Avery,Thomas,F,None,false,false,1,1,,66,68,Late 4,Early 4,0,Ms. Kim
+418,4,Jordan,Harris,M,None,false,false,2,1,,67,69,Late 4,Early 4,0,Mr. Johnson
+419,4,Riley,Moore,F,None,false,false,1,1,418,68,70,Late 4,Early 4,0,Ms. Flores
+420,4,Parker,Patel,M,None,false,false,1,1,,69,71,Late 4,Early 4,0,Mr. Bennett
+421,4,Morgan,Nguyen,F,None,false,false,2,2,,70,72,Early 5,Mid 4,0,
+422,4,Taylor,Brown,M,None,false,false,1,1,,71,73,Early 5,Mid 4,0,Mr. Johnson
+423,4,Cameron,Wilson,F,Referral,false,false,2,3,,72,74,Early 5,Mid 4,3,Ms. Flores
+424,4,Hayden,Jackson,M,None,false,false,2,1,,73,75,Early 5,Mid 4,0,Mr. Bennett
+425,4,Rowan,Martin,F,IEP,true,true,3,2,,74,76,Early 5,Late 4,0,Ms. Kim
+426,4,Quinn,Clark,M,None,false,false,1,2,,75,77,Mid 5,Late 4,0,
+427,4,Alex,Kim,F,None,false,false,2,1,,76,78,Mid 5,Late 4,0,Ms. Flores
+428,4,Casey,Smith,M,None,false,false,1,1,,77,79,Mid 5,Late 4,0,Mr. Bennett
+429,4,Jamie,Davis,F,None,false,false,1,1,,78,80,Mid 5,Early 5,0,Ms. Kim
+430,4,Reese,Anderson,M,Referral,false,false,2,2,,79,81,Mid 5,Early 5,2,Mr. Johnson
+431,4,Skyler,White,F,None,false,false,1,2,,80,82,Early 4,Early 5,0,
+432,4,Drew,Thompson,M,None,false,false,1,1,,81,83,Early 4,Early 5,0,Mr. Bennett
+433,4,Kendall,Garcia,F,None,false,false,2,1,,82,84,Early 4,Mid 5,0,Ms. Kim
+434,4,Logan,Johnson,M,None,false,false,1,1,,83,85,Early 4,Mid 5,0,Mr. Johnson
+435,4,Sawyer,Lopez,F,None,false,false,1,1,,84,86,Early 4,Mid 5,0,Ms. Flores
+436,4,Emerson,Martinez,M,IEP,true,false,3,3,,85,87,Mid 4,Mid 5,1,
+437,4,Avery,Thomas,F,Referral,false,false,2,3,,86,88,Mid 4,Early 4,1,Ms. Kim
+438,4,Jordan,Harris,M,None,false,false,1,1,437,87,89,Mid 4,Early 4,0,Mr. Johnson
+439,4,Riley,Moore,F,None,false,false,2,1,,88,90,Mid 4,Early 4,0,Ms. Flores
+440,4,Parker,Patel,M,None,false,false,1,1,,89,91,Mid 4,Early 4,0,Mr. Bennett
+441,4,Morgan,Nguyen,F,None,false,false,1,2,,90,92,Late 4,Mid 4,0,
+442,4,Taylor,Brown,M,None,false,false,2,1,,91,93,Late 4,Mid 4,0,Mr. Johnson
+443,4,Cameron,Wilson,F,None,false,false,1,1,442;440,92,94,Late 4,Mid 4,0,Ms. Flores
+444,4,Hayden,Jackson,M,Referral,false,false,2,2,,93,95,Late 4,Mid 4,4,Mr. Bennett
+445,4,Rowan,Martin,F,None,false,false,2,1,,94,96,Late 4,Late 4,0,Ms. Kim
+446,4,Quinn,Clark,M,None,false,false,1,2,,95,97,Early 5,Late 4,0,
+447,4,Alex,Kim,F,IEP,false,false,3,2,,96,98,Early 5,Late 4,0,Ms. Flores
+448,4,Casey,Smith,M,None,false,false,2,1,,97,99,Early 5,Late 4,0,Mr. Bennett
+449,4,Jamie,Davis,F,None,false,false,1,1,,98,99,Early 5,Early 5,0,Ms. Kim
+450,4,Reese,Anderson,M,None,false,false,1,1,,99,99,Early 5,Early 5,0,Mr. Johnson
+451,4,Skyler,White,F,Referral,false,false,2,3,,99,99,Mid 5,Early 5,3,
+452,4,Drew,Thompson,M,None,false,false,1,1,,99,99,Mid 5,Early 5,0,Mr. Bennett
+453,4,Kendall,Garcia,F,None,false,false,1,1,,99,99,Mid 5,Mid 5,0,Ms. Kim
+454,4,Logan,Johnson,M,None,false,false,2,1,,99,99,Mid 5,Mid 5,0,Mr. Johnson
+455,4,Sawyer,Lopez,F,None,false,false,1,1,,99,99,Mid 5,Mid 5,0,Ms. Flores
+456,4,Emerson,Martinez,M,None,false,false,1,2,,99,99,Early 4,Mid 5,0,
+457,4,Avery,Thomas,F,None,false,false,2,1,456,99,99,Early 4,Early 4,0,Ms. Kim
+458,4,Jordan,Harris,M,IEP,true,false,3,3,,99,99,Early 4,Early 4,1,Mr. Johnson
+459,4,Riley,Moore,F,None,false,false,1,1,,99,99,Early 4,Early 4,0,Ms. Flores
+460,4,Parker,Patel,M,None,false,false,2,1,,99,99,Early 4,Early 4,0,Mr. Bennett
+461,4,Morgan,Nguyen,F,None,false,false,1,2,,99,99,Mid 4,Mid 4,0,
+462,4,Taylor,Brown,M,None,false,false,1,1,,99,99,Mid 4,Mid 4,0,Mr. Johnson
+463,4,Cameron,Wilson,F,None,false,false,2,1,,99,99,Mid 4,Mid 4,0,Ms. Flores
+464,4,Hayden,Jackson,M,None,false,false,1,1,,99,99,Mid 4,Mid 4,0,Mr. Bennett
+465,4,Rowan,Martin,F,Referral,false,false,2,3,,99,99,Mid 4,Late 4,1,Ms. Kim
+466,4,Quinn,Clark,M,None,false,false,2,2,,99,99,Late 4,Late 4,0,
+467,4,Alex,Kim,F,None,false,false,1,1,,99,99,Late 4,Late 4,0,Ms. Flores
+468,4,Casey,Smith,M,None,false,false,1,1,,99,99,Late 4,Late 4,0,Mr. Bennett
+469,4,Jamie,Davis,F,IEP,true,true,3,2,,99,99,Late 4,Early 5,0,Ms. Kim
+470,4,Reese,Anderson,M,None,false,false,1,1,,99,99,Late 4,Early 5,0,Mr. Johnson
+471,4,Skyler,White,F,None,false,false,1,2,,99,99,Early 5,Early 5,0,
+472,4,Drew,Thompson,M,Referral,false,false,2,2,,99,99,Early 5,Early 5,4,Mr. Bennett
+473,4,Kendall,Garcia,F,None,false,false,1,1,,99,99,Early 5,Mid 5,0,Ms. Kim
+474,4,Logan,Johnson,M,None,false,false,1,1,473;471,99,99,Early 5,Mid 5,0,Mr. Johnson
+475,4,Sawyer,Lopez,F,None,false,false,2,1,,99,99,Early 5,Mid 5,0,Ms. Flores
+476,5,Alex,Wilson,F,IEP,false,true,3,2,,33,36,Early 5,Mid 5,0,
+477,5,Casey,Jackson,M,None,false,false,2,1,,34,37,Early 5,Mid 5,0,Ms. Carter
+478,5,Jamie,Martin,F,None,false,false,1,1,,35,38,Early 5,Mid 5,0,Mr. Diaz
+479,5,Reese,Clark,M,None,false,false,1,1,,36,39,Early 5,Mid 5,0,Ms. Simmons
+480,5,Skyler,Kim,F,None,false,false,2,1,,37,40,Early 5,Late 5,0,Mr. Walsh
+481,5,Drew,Smith,M,None,false,false,1,2,,38,41,Mid 5,Late 5,0,
+482,5,Kendall,Davis,F,None,false,false,1,1,,39,42,Mid 5,Late 5,0,Mr. Diaz
+483,5,Logan,Anderson,M,Referral,false,false,2,2,,40,43,Mid 5,Late 5,4,Ms. Simmons
+484,5,Sawyer,White,F,None,false,false,1,1,,41,44,Mid 5,Early 6,0,Mr. Walsh
+485,5,Emerson,Thompson,M,None,false,false,1,1,,42,45,Mid 5,Early 6,0,Ms. Carter
+486,5,Avery,Garcia,F,None,false,false,2,2,,43,46,Late 5,Early 6,0,
+487,5,Jordan,Johnson,M,IEP,true,false,3,3,,44,47,Late 5,Early 6,1,Ms. Simmons
+488,5,Riley,Lopez,F,None,false,false,1,1,,45,48,Late 5,Mid 6,0,Mr. Walsh
+489,5,Parker,Martinez,M,None,false,false,2,1,,46,49,Late 5,Mid 6,0,Ms. Carter
+490,5,Morgan,Thomas,F,Referral,false,false,2,3,,47,50,Late 5,Mid 6,3,Mr. Diaz
+491,5,Taylor,Harris,M,None,false,false,1,2,,48,51,Early 6,Mid 6,0,
+492,5,Cameron,Moore,F,None,false,false,2,1,,49,52,Early 6,Early 5,0,Mr. Walsh
+493,5,Hayden,Patel,M,None,false,false,1,1,,50,53,Early 6,Early 5,0,Ms. Carter
+494,5,Rowan,Nguyen,F,None,false,false,1,1,,51,54,Early 6,Early 5,0,Mr. Diaz
+495,5,Quinn,Brown,M,None,false,false,2,1,494,52,55,Early 6,Early 5,0,Ms. Simmons
+496,5,Alex,Wilson,F,None,false,false,1,2,,53,56,Mid 6,Mid 5,0,
+497,5,Casey,Jackson,M,Referral,false,false,2,2,,54,57,Mid 6,Mid 5,2,Ms. Carter
+498,5,Jamie,Martin,F,IEP,true,false,3,2,,55,58,Mid 6,Mid 5,0,Mr. Diaz
+499,5,Reese,Clark,M,None,false,false,1,1,,56,59,Mid 6,Mid 5,0,Ms. Simmons
+500,5,Skyler,Kim,F,None,false,false,1,1,,57,60,Mid 6,Late 5,0,Mr. Walsh
+501,5,Drew,Smith,M,None,false,false,2,2,,58,61,Early 5,Late 5,0,
+502,5,Kendall,Davis,F,None,false,false,1,1,,59,62,Early 5,Late 5,0,Mr. Diaz
+503,5,Logan,Anderson,M,None,false,false,1,1,,60,63,Early 5,Late 5,0,Ms. Simmons
+504,5,Sawyer,White,F,Referral,false,false,2,3,,61,64,Early 5,Early 6,1,Mr. Walsh
+505,5,Emerson,Thompson,M,None,false,false,1,1,,62,65,Early 5,Early 6,0,Ms. Carter
+506,5,Avery,Garcia,F,None,false,false,1,2,,63,66,Mid 5,Early 6,0,
+507,5,Jordan,Johnson,M,None,false,false,2,1,506;504,64,67,Mid 5,Early 6,0,Ms. Simmons
+508,5,Riley,Lopez,F,None,false,false,1,1,,65,68,Mid 5,Mid 6,0,Mr. Walsh
+509,5,Parker,Martinez,M,IEP,false,false,3,3,,66,69,Mid 5,Mid 6,1,Ms. Carter
+510,5,Morgan,Thomas,F,None,false,false,2,1,,67,70,Mid 5,Mid 6,0,Mr. Diaz
+511,5,Taylor,Harris,M,Referral,false,false,2,2,,68,71,Late 5,Mid 6,4,
+512,5,Cameron,Moore,F,None,false,false,1,1,,69,72,Late 5,Early 5,0,Mr. Walsh
+513,5,Hayden,Patel,M,None,false,false,2,1,,70,73,Late 5,Early 5,0,Ms. Carter
+514,5,Rowan,Nguyen,F,None,false,false,1,1,513,71,74,Late 5,Early 5,0,Mr. Diaz
+515,5,Quinn,Brown,M,None,false,false,1,1,,72,75,Late 5,Early 5,0,Ms. Simmons
+516,5,Alex,Wilson,F,None,false,false,2,2,,73,76,Early 6,Mid 5,0,
+517,5,Casey,Jackson,M,None,false,false,1,1,,74,77,Early 6,Mid 5,0,Ms. Carter
+518,5,Jamie,Martin,F,Referral,false,false,2,3,,75,78,Early 6,Mid 5,3,Mr. Diaz
+519,5,Reese,Clark,M,None,false,false,2,1,,76,79,Early 6,Mid 5,0,Ms. Simmons
+520,5,Skyler,Kim,F,IEP,true,true,3,2,,77,80,Early 6,Late 5,0,Mr. Walsh
+521,5,Drew,Smith,M,None,false,false,1,2,,78,81,Mid 6,Late 5,0,
+522,5,Kendall,Davis,F,None,false,false,2,1,,79,82,Mid 6,Late 5,0,Mr. Diaz
+523,5,Logan,Anderson,M,None,false,false,1,1,,80,83,Mid 6,Late 5,0,Ms. Simmons
+524,5,Sawyer,White,F,None,false,false,1,1,,81,84,Mid 6,Early 6,0,Mr. Walsh
+525,5,Emerson,Thompson,M,Referral,false,false,2,2,,82,85,Mid 6,Early 6,2,Ms. Carter
+526,5,Avery,Garcia,F,None,false,false,1,2,,83,86,Early 5,Early 6,0,
+527,5,Jordan,Johnson,M,None,false,false,1,1,,84,87,Early 5,Early 6,0,Ms. Simmons
+528,5,Riley,Lopez,F,None,false,false,2,1,,85,88,Early 5,Mid 6,0,Mr. Walsh
+529,5,Parker,Martinez,M,None,false,false,1,1,,86,89,Early 5,Mid 6,0,Ms. Carter
+530,5,Morgan,Thomas,F,None,false,false,1,1,,87,90,Early 5,Mid 6,0,Mr. Diaz
+531,5,Taylor,Harris,M,IEP,true,false,3,3,,88,91,Mid 5,Mid 6,1,
+532,5,Cameron,Moore,F,Referral,false,false,2,3,,89,92,Mid 5,Early 5,1,Mr. Walsh
+533,5,Hayden,Patel,M,None,false,false,1,1,532,90,93,Mid 5,Early 5,0,Ms. Carter
+534,5,Rowan,Nguyen,F,None,false,false,2,1,,91,94,Mid 5,Early 5,0,Mr. Diaz
+535,5,Quinn,Brown,M,None,false,false,1,1,,92,95,Mid 5,Early 5,0,Ms. Simmons
+536,5,Alex,Wilson,F,None,false,false,1,2,,93,96,Late 5,Mid 5,0,
+537,5,Casey,Jackson,M,None,false,false,2,1,,94,97,Late 5,Mid 5,0,Ms. Carter
+538,5,Jamie,Martin,F,None,false,false,1,1,537;535,95,98,Late 5,Mid 5,0,Mr. Diaz
+539,5,Reese,Clark,M,Referral,false,false,2,2,,96,99,Late 5,Mid 5,4,Ms. Simmons
+540,5,Skyler,Kim,F,None,false,false,2,1,,97,99,Late 5,Late 5,0,Mr. Walsh
+541,5,Drew,Smith,M,None,false,false,1,2,,98,99,Early 6,Late 5,0,
+542,5,Kendall,Davis,F,IEP,false,false,3,2,,99,99,Early 6,Late 5,0,Mr. Diaz
+543,5,Logan,Anderson,M,None,false,false,2,1,,99,99,Early 6,Late 5,0,Ms. Simmons
+544,5,Sawyer,White,F,None,false,false,1,1,,99,99,Early 6,Early 6,0,Mr. Walsh
+545,5,Emerson,Thompson,M,None,false,false,1,1,,99,99,Early 6,Early 6,0,Ms. Carter
+546,5,Avery,Garcia,F,Referral,false,false,2,3,,99,99,Mid 6,Early 6,3,
+547,5,Jordan,Johnson,M,None,false,false,1,1,,99,99,Mid 6,Early 6,0,Ms. Simmons
+548,5,Riley,Lopez,F,None,false,false,1,1,,99,99,Mid 6,Mid 6,0,Mr. Walsh
+549,5,Parker,Martinez,M,None,false,false,2,1,,99,99,Mid 6,Mid 6,0,Ms. Carter
+550,5,Morgan,Thomas,F,None,false,false,1,1,,99,99,Mid 6,Mid 6,0,Mr. Diaz
+551,5,Taylor,Harris,M,None,false,false,1,2,,99,99,Early 5,Mid 6,0,
+552,5,Cameron,Moore,F,None,false,false,2,1,551,99,99,Early 5,Early 5,0,Mr. Walsh
+553,5,Hayden,Patel,M,IEP,true,false,3,3,,99,99,Early 5,Early 5,1,Ms. Carter
+554,5,Rowan,Nguyen,F,None,false,false,1,1,,99,99,Early 5,Early 5,0,Mr. Diaz
+555,5,Quinn,Brown,M,None,false,false,2,1,,99,99,Early 5,Early 5,0,Ms. Simmons
+556,5,Alex,Wilson,F,None,false,false,1,2,,99,99,Mid 5,Mid 5,0,
+557,5,Casey,Jackson,M,None,false,false,1,1,,99,99,Mid 5,Mid 5,0,Ms. Carter
+558,5,Jamie,Martin,F,None,false,false,2,1,,99,99,Mid 5,Mid 5,0,Mr. Diaz
+559,5,Reese,Clark,M,None,false,false,1,1,,99,99,Mid 5,Mid 5,0,Ms. Simmons
+560,5,Skyler,Kim,F,Referral,false,false,2,3,,99,99,Mid 5,Late 5,1,Mr. Walsh
+561,5,Drew,Smith,M,None,false,false,2,2,,99,99,Late 5,Late 5,0,
+562,5,Kendall,Davis,F,None,false,false,1,1,,99,99,Late 5,Late 5,0,Mr. Diaz
+563,5,Logan,Anderson,M,None,false,false,1,1,,99,99,Late 5,Late 5,0,Ms. Simmons
+564,5,Sawyer,White,F,IEP,true,true,3,2,,99,99,Late 5,Early 6,0,Mr. Walsh
+565,5,Emerson,Thompson,M,None,false,false,1,1,,99,99,Late 5,Early 6,0,Ms. Carter
+566,5,Avery,Garcia,F,None,false,false,1,2,,99,99,Early 6,Early 6,0,
+567,5,Jordan,Johnson,M,Referral,false,false,2,2,,99,99,Early 6,Early 6,4,Ms. Simmons
+568,5,Riley,Lopez,F,None,false,false,1,1,,99,99,Early 6,Mid 6,0,Mr. Walsh
+569,5,Parker,Martinez,M,None,false,false,1,1,568;566,99,99,Early 6,Mid 6,0,Ms. Carter
+570,5,Morgan,Thomas,F,None,false,false,2,1,,99,99,Early 6,Mid 6,0,Mr. Diaz
