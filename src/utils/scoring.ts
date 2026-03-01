@@ -133,6 +133,7 @@ export function computeRoomStats(classroom: Classroom): RoomStats {
 // ─────────────────────────────────────────────
 export interface ScoreWeights {
   support: number // 0–100
+  behavior: number // 0–100
   reading: number // 0–100
   math: number    // 0–100
 }
@@ -150,6 +151,14 @@ export function scoreStudentForRoom(
   const studentSupport = getStudentSupportLoad(student)
   const supportPenalty = Math.abs(stats.supportLoad - studentSupport) * (weights.support / 100) * 5
 
+  // Behavior balance: penalise deviation from room behavior intensity
+  const roomBehaviorAvg =
+    classroom.students.length > 0
+      ? classroom.students.reduce((sum, s) => sum + (s.behaviorTier + (s.referrals ?? 0)), 0) / classroom.students.length
+      : 0
+  const studentBehavior = student.behaviorTier + (student.referrals ?? 0)
+  const behaviorPenalty = Math.abs(roomBehaviorAvg - studentBehavior) * (weights.behavior / 100) * 4
+
   // Reading balance: penalise deviation of room reading avg from student reading score
   const studentReading = getStudentReadingScore(student)
   const readingPenalty = Math.abs(stats.readingAvg - studentReading) * (weights.reading / 100) * 3
@@ -158,5 +167,5 @@ export function scoreStudentForRoom(
   const studentMath = getStudentMathScore(student)
   const mathPenalty = Math.abs(stats.mathAvg - studentMath) * (weights.math / 100) * 3
 
-  return loadScore + supportPenalty + readingPenalty + mathPenalty
+  return loadScore + supportPenalty + behaviorPenalty + readingPenalty + mathPenalty
 }

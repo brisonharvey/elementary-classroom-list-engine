@@ -16,6 +16,7 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
   const [isOver, setIsOver] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(classroom.teacherName)
+  const [sortAlphabetical, setSortAlphabetical] = useState(false)
 
   const stats = computeRoomStats(classroom)
   const isFull = stats.size >= classroom.maxSize
@@ -37,7 +38,6 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
       return
     }
 
-    // Warn about constraint violations (manual moves are allowed but warned)
     const student = state.allStudents.find((s) => s.id === drag.studentId)
       ?? state.classrooms.flatMap((c) => c.students).find((s) => s.id === drag.studentId)
 
@@ -87,11 +87,18 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     }
   }
 
-  // IEP count per-room indicator
   const iepCount = classroom.students.filter((s) => s.specialEd.status === "IEP").length
   const referralCount = classroom.students.filter((s) => s.specialEd.status === "Referral").length
   const maleCount = classroom.students.filter((s) => s.gender === "M").length
   const femaleCount = classroom.students.filter((s) => s.gender === "F").length
+
+  const displayedStudents = sortAlphabetical
+    ? [...classroom.students].sort((a, b) => {
+        const byLast = a.lastName.localeCompare(b.lastName)
+        if (byLast !== 0) return byLast
+        return a.firstName.localeCompare(b.firstName)
+      })
+    : classroom.students
 
   return (
     <div
@@ -100,11 +107,9 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      {/* ── Header ── */}
       <div className="classroom-header">
         <div className="classroom-id">{classroom.id}</div>
 
-        {/* Teacher name */}
         {editingName ? (
           <div className="name-edit">
             <input
@@ -129,7 +134,6 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
           </div>
         )}
 
-        {/* Capacity bar */}
         <div className="capacity-row">
           <div className="capacity-bar">
             <div
@@ -154,7 +158,6 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
           </span>
         </div>
 
-        {/* Co-teach toggles */}
         <div className="coteach-row">
           <button
             className={`coteach-btn ${classroom.coTeach.reading ? "active" : ""}`}
@@ -172,7 +175,14 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
           </button>
         </div>
 
-        {/* Quick stats */}
+        <button
+          className={`btn btn-ghost btn-sm sort-btn ${sortAlphabetical ? "active" : ""}`}
+          onClick={() => setSortAlphabetical((v) => !v)}
+          title="Sort this classroom alphabetically by last name"
+        >
+          {sortAlphabetical ? "Sorted A→Z" : "Sort A→Z"}
+        </button>
+
         <div className="room-quick-stats">
           {iepCount > 0 && <span className="qs-badge qs-iep">{iepCount} IEP</span>}
           {referralCount > 0 && <span className="qs-badge qs-ref">{referralCount} Ref</span>}
@@ -180,12 +190,11 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
         </div>
       </div>
 
-      {/* ── Student list ── */}
       <div className="student-list">
         {classroom.students.length === 0 ? (
           <div className="empty-placeholder">Drop students here</div>
         ) : (
-          classroom.students.map((s) => (
+          displayedStudents.map((s) => (
             <StudentCard key={s.id} student={s} classroomId={classroom.id} />
           ))
         )}
