@@ -38,14 +38,13 @@ export const SummaryPanel = memo(function SummaryPanel() {
   const range = (arr: number[]) => (arr.length < 2 ? 0 : Math.max(...arr) - Math.min(...arr))
   const readingImbalance = range(readingAvgs) > 0.75
   const mathImbalance = range(mathAvgs) > 0.75
-  const supportImbalance = range(supportAvgs) > 2
+  const supportImbalance = range(supportAvgs) > 4
 
   const genderWarnings = gradeClassrooms
-    .filter((c) => c.students.length >= 4)
     .filter((c) => {
-      const total = c.students.length
       const m = c.students.filter((s) => s.gender === "M").length
-      return m / total > 0.65 || m / total < 0.35
+      const f = c.students.filter((s) => s.gender === "F").length
+      return Math.abs(m - f) > 4
     })
     .map((c) => c.id)
 
