@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create vite@latest . -- --template react-ts --force)",
+      "Bash(npm install)",
+      "Bash(dir /s /b src)",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse ''C:\\\\Users\\\\briso\\\\OneDrive\\\\Development\\\\claude-classroom-engine\\\\src'' | Select-Object FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''C:\\\\Users\\\\briso\\\\OneDrive\\\\Development\\\\claude-classroom-engine'' -Recurse | Select-Object -ExpandProperty FullName\")",
+      "Bash(powershell.exe -NoProfile -Command \"Get-ChildItem -Path ''C:\\\\Users\\\\briso\\\\OneDrive\\\\Development\\\\claude-classroom-engine'' -Recurse -File | Where-Object { $_.FullName -notmatch ''node_modules'' } | Select-Object -ExpandProperty FullName\")",
+      "Bash(dir \"C:\\\\Users\\\\briso\\\\OneDrive\\\\Development\\\\claude-classroom-engine\" /B)",
+      "Bash(npm run build)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\briso\\\\OneDrive\\\\Development\\\\claude-classroom-engine\")",
+      "Bash(findstr /v node_modules)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm install --prefix \"C:/Users/briso/OneDrive/Development/claude-classroom-engine\")",
+      "Bash(node -e \"require\\(''child_process''\\).execSync\\(''npm install'', {cwd: ''C:\\\\\\\\Users\\\\\\\\briso\\\\\\\\OneDrive\\\\\\\\Development\\\\\\\\claude-classroom-engine'', stdio: ''inherit''}\\)\")",
+      "Bash(test -d \"C:/Users/briso/OneDrive/Development/claude-classroom-engine/node_modules\")",
+      "Bash(node -e \"const fs = require\\(''fs''\\); const path = ''C:/Users/briso/OneDrive/Development/claude-classroom-engine''; console.log\\(''Dir exists:'', fs.existsSync\\(path\\)\\); console.log\\(''Contents:'', fs.readdirSync\\(path\\).join\\('', ''\\)\\); const nm = path + ''/node_modules''; console.log\\(''node_modules exists:'', fs.existsSync\\(nm\\)\\);\")"
+    ]
+  }
+}
