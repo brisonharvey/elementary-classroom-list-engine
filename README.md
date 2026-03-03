@@ -4,7 +4,7 @@ A React + TypeScript web app for building balanced elementary classroom rosters 
 
 ## What this app does
 
-- Imports student data from CSV.
+- Imports student data from CSV with a guided two-step upload and header matching.
 - Organizes students by grade and classroom.
 - Uses weighted placement criteria to balance lists.
 - Supports manual drag-and-drop adjustments across classrooms.
@@ -56,7 +56,9 @@ A sample CSV is included at:
 
 - `public/sample-students.csv`
 
-Upload your CSV from the app header to start generating placements.
+Upload your CSV from the app header. The import now opens a mapping step so you can match varied source headers (for example `Student Number` → `Student ID`) before loading students.
+
+The sample includes extra optional import fields such as `ell`, `section504`, `homeroom`, and `notes`.
 
 ## Project structure (high level)
 

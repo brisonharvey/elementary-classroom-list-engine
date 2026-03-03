@@ -27,6 +27,10 @@ export interface Student {
   locked?: boolean
   /** Teacher name pre-assigned at import time. Populated from the CSV `teacher` column. */
   preassignedTeacher?: string
+  ell?: boolean
+  section504?: boolean
+  homeroom?: string
+  notes?: string
 }
 
 export interface Classroom {

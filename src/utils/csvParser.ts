@@ -1,5 +1,56 @@
 import { Grade, Student } from "../types"
 
+export const CSV_FIELD_OPTIONS = [
+  { key: "id", label: "Student ID", required: true },
+  { key: "grade", label: "Grade", required: true },
+  { key: "firstName", label: "First name", required: true },
+  { key: "lastName", label: "Last name", required: true },
+  { key: "gender", label: "Gender", required: false },
+  { key: "status", label: "Special education status", required: false },
+  { key: "requiresCoTeachReading", label: "Requires co-teach reading", required: false },
+  { key: "requiresCoTeachMath", label: "Requires co-teach math", required: false },
+  { key: "academicTier", label: "Academic tier", required: false },
+  { key: "behaviorTier", label: "Behavior tier", required: false },
+  { key: "noContactWith", label: "No-contact IDs", required: false },
+  { key: "mapReading", label: "MAP reading", required: false },
+  { key: "mapMath", label: "MAP math", required: false },
+  { key: "ireadyReading", label: "i-Ready reading", required: false },
+  { key: "ireadyMath", label: "i-Ready math", required: false },
+  { key: "referrals", label: "Referrals", required: false },
+  { key: "teacher", label: "Assigned teacher", required: false },
+  { key: "ell", label: "ELL", required: false },
+  { key: "section504", label: "504 plan", required: false },
+  { key: "homeroom", label: "Homeroom", required: false },
+  { key: "notes", label: "Notes", required: false },
+] as const
+
+export type CsvFieldKey = (typeof CSV_FIELD_OPTIONS)[number]["key"]
+export type CsvFieldMapping = Partial<Record<CsvFieldKey, string>>
+
+const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
+  id: ["id", "studentid", "studentnumber", "sisid", "localid"],
+  grade: ["grade", "gradelevel", "studentgrade"],
+  firstName: ["firstname", "first", "givenname", "studentfirstname"],
+  lastName: ["lastname", "last", "surname", "familyname", "studentlastname"],
+  gender: ["gender", "sex"],
+  status: ["status", "spedstatus", "specialedstatus", "specialeducationstatus"],
+  requiresCoTeachReading: ["requirescoteachreading", "coteachreading", "readingcoteach"],
+  requiresCoTeachMath: ["requirescoteachmath", "coteachmath", "mathcoteach"],
+  academicTier: ["academictier", "academicsupporttier", "tier"],
+  behaviorTier: ["behaviortier", "behaviourtier", "behaviorsupporttier"],
+  noContactWith: ["nocontactwith", "separatefrom", "donotpairwith"],
+  mapReading: ["mapreading", "readingmap", "mapreadingscore"],
+  mapMath: ["mapmath", "mathmap", "mapmathscore"],
+  ireadyReading: ["ireadyreading", "ireadingreading", "ireadyreadinglevel"],
+  ireadyMath: ["ireadymath", "ireadymathlevel"],
+  referrals: ["referrals", "referralcount", "disciplinereferrals"],
+  teacher: ["teacher", "assignedteacher", "homeroomteacher"],
+  ell: ["ell", "el", "englishlearner", "esl"],
+  section504: ["504", "section504", "plan504"],
+  homeroom: ["homeroom", "homeroomid", "room"],
+  notes: ["notes", "comments", "placementnotes"],
+}
+
 function parseBool(val: string): boolean {
   const v = val.trim().toLowerCase()
   return v === "true" || v === "1" || v === "yes"
@@ -82,71 +133,98 @@ export interface ParseResult {
   skipped: number
 }
 
-export function parseCSV(text: string): ParseResult {
-  const lines = text.trim().split(/\r?\n/)
+export interface CSVPreview {
+  headers: string[]
+  rows: string[][]
+}
+
+function normalizeHeader(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, "")
+}
+
+export function parseCSVPreview(text: string): CSVPreview {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean)
   if (lines.length < 2) {
+    return { headers: [], rows: [] }
+  }
+
+  const headers = parseCSVLine(lines[0]).map((h) => h.trim())
+  const rows = lines.slice(1).map(parseCSVLine)
+  return { headers, rows }
+}
+
+export function suggestFieldMapping(headers: string[]): CsvFieldMapping {
+  const normalized = headers.map(normalizeHeader)
+  const mapping: CsvFieldMapping = {}
+
+  for (const field of CSV_FIELD_OPTIONS) {
+    const aliases = FIELD_ALIASES[field.key]
+    const index = normalized.findIndex((h) => aliases.includes(h))
+    if (index >= 0) mapping[field.key] = headers[index]
+  }
+
+  return mapping
+}
+
+export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): ParseResult {
+  const { headers, rows } = parseCSVPreview(text)
+  if (headers.length === 0 || rows.length === 0) {
     return { students: [], errors: ["CSV must have a header row and at least one data row."], skipped: 0 }
   }
 
-  const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, ""))
+  const headerLookup = new Map(headers.map((header, index) => [normalizeHeader(header), index]))
   const errors: string[] = []
   const students: Student[] = []
   let skipped = 0
 
-  const get = (values: string[], col: string): string => {
-    const idx = header.indexOf(col)
-    return idx >= 0 ? (values[idx] ?? "").trim() : ""
+  const get = (values: string[], field: CsvFieldKey): string => {
+    const mapped = mapping[field]
+    if (!mapped) return ""
+    const idx = headerLookup.get(normalizeHeader(mapped))
+    return idx === undefined ? "" : (values[idx] ?? "").trim()
   }
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (!line) continue
-
-    const values = parseCSVLine(line)
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const values = rows[rowIndex]
     const idStr = get(values, "id")
     const id = parseInt(idStr, 10)
 
     if (isNaN(id)) {
-      errors.push(`Row ${i + 1}: Invalid or missing ID "${idStr}" — skipped.`)
+      errors.push(`Row ${rowIndex + 2}: Invalid or missing ID "${idStr}" — skipped.`)
       skipped++
       continue
     }
 
-    try {
-      students.push({
-        id,
-        grade: parseGrade(get(values, "grade")),
-        firstName: get(values, "firstname") || `Student`,
-        lastName: get(values, "lastname") || `${id}`,
-        gender: get(values, "gender").toUpperCase() === "F" ? "F" : "M",
-        specialEd: {
-          status: parseStatus(get(values, "status")),
-          requiresCoTeachReading: parseBool(get(values, "requirescoteachreading")),
-          requiresCoTeachMath: parseBool(get(values, "requirescoteachmath")),
-        },
-        intervention: {
-          academicTier: parseTier(get(values, "academictier")),
-        },
-        behaviorTier: parseTier(get(values, "behaviortier")),
-        referrals: parseOptionalInt(get(values, "referrals")) ?? 0,
-        mapReading: parseOptionalFloat(get(values, "mapreading")),
-        mapMath: parseOptionalFloat(get(values, "mapmath")),
-        ireadyReading: parseOptionalString(get(values, "ireadyreading")),
-        ireadyMath: parseOptionalString(get(values, "ireadymath")),
-        noContactWith: parseNoContact(get(values, "nocontactwith")),
-        locked: false,
-        // Accept "teacher" or "assignedteacher" column
-        preassignedTeacher: parseOptionalString(
-          get(values, "teacher") || get(values, "assignedteacher")
-        ),
-      })
-    } catch (e) {
-      errors.push(`Row ${i + 1}: Unexpected error — skipped.`)
-      skipped++
-    }
+    students.push({
+      id,
+      grade: parseGrade(get(values, "grade")),
+      firstName: get(values, "firstName") || "Student",
+      lastName: get(values, "lastName") || `${id}`,
+      gender: get(values, "gender").toUpperCase() === "F" ? "F" : "M",
+      specialEd: {
+        status: parseStatus(get(values, "status")),
+        requiresCoTeachReading: parseBool(get(values, "requiresCoTeachReading")),
+        requiresCoTeachMath: parseBool(get(values, "requiresCoTeachMath")),
+      },
+      intervention: {
+        academicTier: parseTier(get(values, "academicTier")),
+      },
+      behaviorTier: parseTier(get(values, "behaviorTier")),
+      referrals: parseOptionalInt(get(values, "referrals")) ?? 0,
+      mapReading: parseOptionalFloat(get(values, "mapReading")),
+      mapMath: parseOptionalFloat(get(values, "mapMath")),
+      ireadyReading: parseOptionalString(get(values, "ireadyReading")),
+      ireadyMath: parseOptionalString(get(values, "ireadyMath")),
+      noContactWith: parseNoContact(get(values, "noContactWith")),
+      preassignedTeacher: parseOptionalString(get(values, "teacher")),
+      ell: parseBool(get(values, "ell")),
+      section504: parseBool(get(values, "section504")),
+      homeroom: parseOptionalString(get(values, "homeroom")),
+      notes: parseOptionalString(get(values, "notes")),
+      locked: false,
+    })
   }
 
-  // Validate no-contact IDs reference real students
   const idSet = new Set(students.map((s) => s.id))
   for (const student of students) {
     const invalid = (student.noContactWith ?? []).filter((nc) => !idSet.has(nc))
@@ -160,23 +238,29 @@ export function parseCSV(text: string): ParseResult {
   return { students, errors, skipped }
 }
 
+export function parseCSV(text: string): ParseResult {
+  const preview = parseCSVPreview(text)
+  const mapping = suggestFieldMapping(preview.headers)
+  return parseCSVWithMapping(text, mapping)
+}
+
 /** Generate a sample CSV string for download/reference */
 export function generateSampleCSV(): string {
   const header =
-    "id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher"
+    "id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes"
   const rows = [
     // teacher column: pre-assigns student to a named teacher (classroom auto-mapped)
     // noContactWith: semicolon-separated IDs — supports multiple: e.g. "2;3"
-    "1,K,Alice,Smith,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson",
-    "2,K,Bob,Jones,M,None,false,false,1,1,3,82,78,Late 1,Mid 1,0,Ms. Johnson",
-    "3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,35,40,Mid K,Early K,3,",
-    "4,K,David,Wilson,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,",
-    "5,K,Emma,Taylor,F,None,false,false,1,1,,90,88,Late 1,Late 1,0,Ms. Patel",
-    "6,1,Frank,Davis,M,None,false,false,2,2,,55,60,Mid 1,Mid 1,1,",
-    "7,1,Grace,Miller,F,IEP,true,false,3,2,,20,30,Early 1,Mid 1,0,Mr. Rivera",
-    "8,1,Henry,Moore,M,None,false,false,1,1,9,78,80,Late 2,Late 2,0,",
-    "9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,42,38,Mid 1,Early 1,2,",
-    "10,1,Jack,Martin,M,None,false,false,1,3,,65,70,Mid 2,Late 2,4,Mr. Rivera",
+    "1,K,Alice,Smith,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row",
+    "2,K,Bob,Jones,M,None,false,false,1,1,3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,",
+    "3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions",
+    "4,K,David,Wilson,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,,false,true,K-102,",
+    "5,K,Emma,Taylor,F,None,false,false,1,1,,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,",
+    "6,1,Frank,Davis,M,None,false,false,2,2,,55,60,Mid 1,Mid 1,1,,false,false,1-201,",
+    "7,1,Grace,Miller,F,IEP,true,false,3,2,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,1-202,Speech services",
+    "8,1,Henry,Moore,M,None,false,false,1,1,9,78,80,Late 2,Late 2,0,,false,false,1-201,",
+    "9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,42,38,Mid 1,Early 1,2,,true,false,1-202,",
+    "10,1,Jack,Martin,M,None,false,false,1,3,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,1-203,Watch peer pairings",
   ]
   return [header, ...rows].join("\n")
 }
