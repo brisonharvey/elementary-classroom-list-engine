@@ -184,6 +184,11 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
     return idx === undefined ? "" : (values[idx] ?? "").trim()
   }
 
+  const getByHeader = (values: string[], headerName: string): string => {
+    const idx = headerLookup.get(normalizeHeader(headerName))
+    return idx === undefined ? "" : (values[idx] ?? "").trim()
+  }
+
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     const values = rows[rowIndex]
     const idStr = get(values, "id")
@@ -216,7 +221,10 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
       ireadyReading: parseOptionalString(get(values, "ireadyReading")),
       ireadyMath: parseOptionalString(get(values, "ireadyMath")),
       noContactWith: parseNoContact(get(values, "noContactWith")),
-      preassignedTeacher: parseOptionalString(get(values, "teacher")),
+      preassignedTeacher:
+        parseOptionalString(get(values, "teacher")) ||
+        parseOptionalString(getByHeader(values, "teacher")) ||
+        parseOptionalString(getByHeader(values, "assignedteacher")),
       ell: parseBool(get(values, "ell")),
       section504: parseBool(get(values, "section504")),
       homeroom: parseOptionalString(get(values, "homeroom")),
