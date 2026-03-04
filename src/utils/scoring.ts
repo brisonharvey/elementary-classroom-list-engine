@@ -191,5 +191,22 @@ export function scoreStudentForRoom(
     }
   }
 
+  const assignedRoomByStudentId = context.assignedRoomByStudentId
+  const preferredPeerIds = student.preferredWith ?? []
+  let preferredTogetherAdjustment = 0
+
+  if (assignedRoomByStudentId && preferredPeerIds.length > 0) {
+    for (const peerId of preferredPeerIds) {
+      const assignedRoomId = assignedRoomByStudentId.get(peerId)
+      if (!assignedRoomId) continue
+
+      if (assignedRoomId === classroom.id) {
+        preferredTogetherAdjustment -= SAME_ROOM_SUGGESTION_BONUS
+      } else {
+        preferredTogetherAdjustment += SPLIT_ROOM_SUGGESTION_PENALTY
+      }
+    }
+  }
+
   return loadScore + supportPenalty + behaviorPenalty + readingPenalty + mathPenalty + preferredTogetherAdjustment
 }
