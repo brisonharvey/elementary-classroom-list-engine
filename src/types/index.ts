@@ -37,6 +37,7 @@ export interface Student {
 export interface Classroom {
   id: string
   grade: Grade
+  label: string
   teacherName: string
   maxSize: number
   coTeach: {
@@ -54,10 +55,35 @@ export interface Weights {
 
 export interface Snapshot {
   id: string
+  grade: Grade
   name: string
-  timestamp: number
-  classrooms: Classroom[]
+  note?: string
+  createdAt: number
+  payload: {
+    classrooms: Classroom[]
+    settings: GradeSettings
+  }
 }
+
+export interface RelationshipRule {
+  id: string
+  type: "NO_CONTACT" | "DO_NOT_SEPARATE"
+  studentIds: [number, number]
+  note?: string
+  createdAt: number
+  grade: Grade
+}
+
+export interface GradeSettings {
+  maxIEPPerRoom: number
+  maxReferralsPerRoom: number
+  ellConcentrationSoftCap: number
+  /** Tolerance for M/F count spread across rooms measured in students. */
+  genderBalanceTolerance: number
+  classSizeVarianceLimit: number
+}
+
+export type GradeSettingsMap = Record<Grade, GradeSettings>
 
 export interface AppState {
   allStudents: Student[]
@@ -65,6 +91,9 @@ export interface AppState {
   activeGrade: Grade
   weights: Weights
   snapshots: Snapshot[]
+  relationshipRules: RelationshipRule[]
+  gradeSettings: GradeSettingsMap
+  unresolvedReasons: Record<number, string[]>
   placementWarnings: string[]
 }
 

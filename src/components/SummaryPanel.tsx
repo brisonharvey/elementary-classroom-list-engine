@@ -9,7 +9,7 @@ function fmt(n: number): string {
 
 export const SummaryPanel = memo(function SummaryPanel() {
   const { state } = useApp()
-  const { classrooms, activeGrade, allStudents } = state
+  const { classrooms, activeGrade, allStudents, gradeSettings } = state
 
   const gradeClassrooms = useMemo(
     () => getClassroomsForGrade(classrooms, activeGrade),
@@ -40,11 +40,13 @@ export const SummaryPanel = memo(function SummaryPanel() {
   const mathImbalance = range(mathAvgs) > 0.75
   const supportImbalance = range(supportAvgs) > 4
 
+  const settings = gradeSettings[activeGrade]
+
   const genderWarnings = gradeClassrooms
     .filter((c) => {
       const m = c.students.filter((s) => s.gender === "M").length
       const f = c.students.filter((s) => s.gender === "F").length
-      return Math.abs(m - f) > 4
+      return Math.abs(m - f) > settings.genderBalanceTolerance
     })
     .map((c) => c.id)
 
@@ -64,7 +66,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
         <div className="warnings-row">
           {genderWarnings.length > 0 && (
             <div className="warning-chip">
-              ⚠ Gender imbalance: {genderWarnings.join(", ")}
+              ⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarnings.join(", ")}
             </div>
           )}
           {readingImbalance && (
@@ -124,8 +126,8 @@ export const SummaryPanel = memo(function SummaryPanel() {
               const genderWarn = genderWarnings.includes(c.id)
 
               return (
-                <tr key={c.id} className={genderWarn ? "row-warn" : ""}>
-                  <td className="cell-id">{c.id}</td>
+                <tr key={c.label} className={genderWarn ? "row-warn" : ""}>
+                  <td className="cell-id">{c.label}</td>
                   <td className="cell-teacher">{c.teacherName || "—"}</td>
                   <td>
                     <span

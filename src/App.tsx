@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useApp } from "./store/AppContext"
 import { DragProvider } from "./store/DragContext"
 import { CSVUploader } from "./components/CSVUploader"
@@ -9,16 +9,15 @@ import { UnassignedPanel } from "./components/UnassignedPanel"
 import { ClassroomColumn } from "./components/ClassroomColumn"
 import { SummaryPanel } from "./components/SummaryPanel"
 import { SnapshotManager } from "./components/SnapshotManager"
+import { RelationshipManager } from "./components/RelationshipManager"
+import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 
 function PlacementWorkspace() {
   const { state } = useApp()
   const { classrooms, activeGrade } = state
 
-  const gradeClassrooms = useMemo(
-    () => getClassroomsForGrade(classrooms, activeGrade),
-    [classrooms, activeGrade]
-  )
+  const gradeClassrooms = useMemo(() => getClassroomsForGrade(classrooms, activeGrade), [classrooms, activeGrade])
 
   return (
     <DragProvider>
@@ -33,12 +32,13 @@ function PlacementWorkspace() {
 }
 
 export default function App() {
-  const { state } = useApp()
+  const { state, dispatch } = useApp()
   const hasStudents = state.allStudents.length > 0
+  const [showRules, setShowRules] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   return (
     <div className="app">
-      {/* ── App Header ── */}
       <header className="app-header">
         <div className="header-left">
           <h1 className="app-title">Classroom Placement Engine</h1>
@@ -49,32 +49,43 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Grade selector + active grade indicator ── */}
       <div className="toolbar">
         <div className="toolbar-left">
-          <div className="active-grade-indicator">
-            Grade <strong>{state.activeGrade}</strong>
-          </div>
+          <div className="active-grade-indicator">Grade <strong>{state.activeGrade}</strong></div>
           <GradeSelector />
+          <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: "ADD_CLASSROOM", payload: { grade: state.activeGrade } })}>Add Classroom</button>
+          <button
+            className="btn btn-warning btn-sm"
+            onClick={() => {
+              const gradeRooms = state.classrooms.filter((c) => c.grade === state.activeGrade)
+              const room = gradeRooms[gradeRooms.length - 1]
+              if (!room) return
+              const moveToUnassigned = room.students.length > 0 && window.confirm("Room has students. Move them to Unassigned and delete?")
+              if (room.students.length === 0 || moveToUnassigned) {
+                dispatch({ type: "DELETE_CLASSROOM", payload: { classroomId: room.id, moveToUnassigned: true } })
+              }
+            }}
+          >Delete Classroom</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowRules((v) => !v)}>Relationship Rules</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings((v) => !v)}>Settings</button>
         </div>
       </div>
 
-      {/* ── Controls + Sliders ── */}
       <div className="controls-row">
         <ControlBar />
         <WeightSliders />
       </div>
 
-      {/* ── Main placement workspace ── */}
       <PlacementWorkspace />
 
-      {/* ── Summary + Snapshots ── */}
       {hasStudents && (
         <div className="bottom-panels">
           <SummaryPanel />
           <SnapshotManager />
         </div>
       )}
+      {showRules && <RelationshipManager />}
+      {showSettings && <GradeSettingsPanel />}
     </div>
   )
 }
