@@ -31,8 +31,7 @@ export interface Student {
   preassignedTeacher?: string
   ell?: boolean
   section504?: boolean
-  homeroom?: string
-  notes?: string
+  teacherNotes?: string
 }
 
 export interface Classroom {
@@ -48,10 +47,9 @@ export interface Classroom {
 }
 
 export interface Weights {
-  support: number
-  behavior: number
-  reading: number
-  math: number
+  academic: number
+  behavioral: number
+  demographic: number
 }
 
 export interface Snapshot {
@@ -80,4 +78,6 @@ export interface RoomStats {
   referralCount: number
   maleCount: number
   femaleCount: number
+  ellCount: number
+  section504Count: number
 }
