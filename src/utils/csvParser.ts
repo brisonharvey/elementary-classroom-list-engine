@@ -119,14 +119,6 @@ function parseIdList(val: string): ParsedIdList {
   return { ids, invalidTokens }
 }
 
-function parseNoContact(val: string): number[] {
-  return parseIdList(val)
-}
-
-function parsePreferredWith(val: string): number[] {
-  return parseIdList(val)
-}
-
 function parseStatus(val: string): "None" | "IEP" | "Referral" {
   const v = val.trim()
   if (v === "IEP") return "IEP"

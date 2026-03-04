@@ -153,6 +153,30 @@ export interface PlacementSoftContext {
 const SAME_ROOM_SUGGESTION_BONUS = 1.75
 const SPLIT_ROOM_SUGGESTION_PENALTY = 1.25
 
+function getPreferredTogetherAdjustment(
+  student: Student,
+  classroomId: string,
+  context: PlacementSoftContext
+): number {
+  const assignedRoomByStudentId = context.assignedRoomByStudentId
+  const preferredPeerIds = student.preferredWith ?? []
+  if (!assignedRoomByStudentId || preferredPeerIds.length === 0) return 0
+
+  let adjustment = 0
+  for (const peerId of preferredPeerIds) {
+    const assignedRoomId = assignedRoomByStudentId.get(peerId)
+    if (!assignedRoomId) continue
+
+    if (assignedRoomId === classroomId) {
+      adjustment -= SAME_ROOM_SUGGESTION_BONUS
+    } else {
+      adjustment += SPLIT_ROOM_SUGGESTION_PENALTY
+    }
+  }
+
+  return adjustment
+}
+
 export function scoreStudentForRoom(
   student: Student,
   classroom: Classroom,
@@ -207,6 +231,8 @@ export function scoreStudentForRoom(
       }
     }
   }
+
+  const preferredTogetherAdjustment = getPreferredTogetherAdjustment(student, classroom.id, context)
 
   return loadScore + supportPenalty + behaviorPenalty + readingPenalty + mathPenalty + preferredTogetherAdjustment
 }
