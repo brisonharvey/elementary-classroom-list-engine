@@ -32,10 +32,7 @@ export function createClassroom(grade: Grade, index: number): Classroom {
     label: getRoomLabelFromIndex(index),
     teacherName: "",
     maxSize: 28,
-    coTeach: {
-      reading: index === 0,
-      math: false,
-    },
+    coTeachCoverage: index === 0 ? ["reading"] : [],
     students: [],
   }
 }

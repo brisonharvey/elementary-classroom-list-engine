@@ -1,4 +1,5 @@
-import { Classroom, GradeSettings, RelationshipRule, Student } from "../types"
+import { Classroom, CoTeachCategory, GradeSettings, RelationshipRule, Student } from "../types"
+import { CO_TEACH_LABELS, getStudentRequiredCoTeachCategories } from "./coTeach"
 
 export interface ConstraintResult {
   valid: boolean
@@ -15,6 +16,15 @@ function isPairMatch(rule: RelationshipRule, studentA: number, studentB: number)
   return (a === studentA && b === studentB) || (a === studentB && b === studentA)
 }
 
+function getMissingCoverage(student: Student, classroom: Classroom): CoTeachCategory[] {
+  const required = getStudentRequiredCoTeachCategories(student)
+  return required.filter((category) => !classroom.coTeachCoverage.includes(category)).map((category) => category)
+}
+
+function formatMissingCoverageWithMinutes(student: Student, missing: CoTeachCategory[]): string {
+  return missing.map((category) => `${CO_TEACH_LABELS[category]} (${student.coTeachMinutes[category] ?? 0} min)`).join(", ")
+}
+
 export function checkHardConstraints(
   student: Student,
   classroom: Classroom,
@@ -27,12 +37,9 @@ export function checkHardConstraints(
     return { valid: false, reason: `Classroom at max capacity (${classroom.maxSize})` }
   }
 
-  if (student.specialEd.requiresCoTeachReading && !classroom.coTeach.reading) {
-    return { valid: false, reason: "Student requires reading co-teach" }
-  }
-
-  if (student.specialEd.requiresCoTeachMath && !classroom.coTeach.math) {
-    return { valid: false, reason: "Student requires math co-teach" }
+  const missingCoverage = getMissingCoverage(student, classroom)
+  if (missingCoverage.length > 0) {
+    return { valid: false, reason: `Missing co-teach coverage: ${formatMissingCoverageWithMinutes(student, missingCoverage)}` }
   }
 
   const iepInRoom = classroom.students.filter((s) => s.specialEd.status === "IEP").length
@@ -77,11 +84,10 @@ export function getManualMoveWarnings(
   if (classroom.students.length >= classroom.maxSize) {
     warnings.push(`Classroom is over max capacity (${classroom.maxSize})`)
   }
-  if (student.specialEd.requiresCoTeachReading && !classroom.coTeach.reading) {
-    warnings.push("Student requires reading co-teach not provided here")
-  }
-  if (student.specialEd.requiresCoTeachMath && !classroom.coTeach.math) {
-    warnings.push("Student requires math co-teach not provided here")
+
+  const missingCoverage = getMissingCoverage(student, classroom)
+  if (missingCoverage.length > 0) {
+    warnings.push(`Missing co-teach coverage: ${formatMissingCoverageWithMinutes(student, missingCoverage)}`)
   }
 
   const iepInRoom = classroom.students.filter((s) => s.specialEd.status === "IEP").length

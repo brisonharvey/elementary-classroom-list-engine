@@ -1,16 +1,16 @@
 import { Classroom, Grade } from "../types"
+import { getStudentCoTeachTotal } from "./coTeach"
 
 /** Build CSV string of final placements */
 export function buildPlacementCSV(classrooms: Classroom[], grade?: Grade): string {
-  const header = "Teacher,ClassroomID,StudentID,FirstName,LastName,Grade,Gender,IEP,CoTeachReading,CoTeachMath,AcademicTier,BehaviorTier"
+  const header = "Teacher,ClassroomID,StudentID,FirstName,LastName,Grade,Gender,IEP,TotalCoTeachMinutes,AcademicTier,BehaviorTier"
   const filtered = grade ? classrooms.filter((c) => c.grade === grade) : classrooms
 
   const rows = filtered.flatMap((c) =>
     c.students.map((s) => {
       const teacher = c.teacherName ? `"${c.teacherName}"` : c.id
       const iep = s.specialEd.status
-      const coR = s.specialEd.requiresCoTeachReading ? "Yes" : "No"
-      const coM = s.specialEd.requiresCoTeachMath ? "Yes" : "No"
+      const totalCoTeach = getStudentCoTeachTotal(s)
       return [
         teacher,
         c.id,
@@ -20,8 +20,7 @@ export function buildPlacementCSV(classrooms: Classroom[], grade?: Grade): strin
         s.grade,
         s.gender,
         iep,
-        coR,
-        coM,
+        totalCoTeach,
         s.intervention.academicTier,
         s.behaviorTier,
       ].join(",")

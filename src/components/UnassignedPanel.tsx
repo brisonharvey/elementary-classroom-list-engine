@@ -1,3 +1,4 @@
+import { getStudentCoTeachTotal } from "../utils/coTeach"
 import React, { memo, useState } from "react"
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
@@ -15,7 +16,7 @@ export const UnassignedPanel = memo(function UnassignedPanel() {
   const filtered = unassigned.filter((s) => {
     if (filter === "IEP") return s.specialEd.status === "IEP"
     if (filter === "Referral") return s.specialEd.status === "Referral"
-    if (filter === "coteach") return s.specialEd.requiresCoTeachReading || s.specialEd.requiresCoTeachMath
+    if (filter === "coteach") return getStudentCoTeachTotal(s) > 0
     return true
   })
 
@@ -62,7 +63,7 @@ export const UnassignedPanel = memo(function UnassignedPanel() {
           <option value="all">All ({unassigned.length})</option>
           <option value="IEP">IEP ({unassigned.filter((s) => s.specialEd.status === "IEP").length})</option>
           <option value="Referral">Referral ({unassigned.filter((s) => s.specialEd.status === "Referral").length})</option>
-          <option value="coteach">CoTeach Needed ({unassigned.filter((s) => s.specialEd.requiresCoTeachReading || s.specialEd.requiresCoTeachMath).length})</option>
+          <option value="coteach">CoTeach Needed ({unassigned.filter((s) => getStudentCoTeachTotal(s) > 0).length})</option>
         </select>
       </div>
 
