@@ -138,11 +138,19 @@ export interface ScoreWeights {
   math: number    // 0–100
 }
 
+export interface PlacementSoftContext {
+  assignedRoomByStudentId?: Map<number, string>
+}
+
+const SAME_ROOM_SUGGESTION_BONUS = 1.75
+const SPLIT_ROOM_SUGGESTION_PENALTY = 1.25
+
 export function scoreStudentForRoom(
   student: Student,
   classroom: Classroom,
   stats: RoomStats,
-  weights: ScoreWeights
+  weights: ScoreWeights,
+  context: PlacementSoftContext = {}
 ): number {
   // Base load score (0–10): favours emptier classrooms
   const loadScore = (stats.size / classroom.maxSize) * 10
@@ -167,5 +175,22 @@ export function scoreStudentForRoom(
   const studentMath = getStudentMathScore(student)
   const mathPenalty = Math.abs(stats.mathAvg - studentMath) * (weights.math / 100) * 3
 
-  return loadScore + supportPenalty + behaviorPenalty + readingPenalty + mathPenalty
+  const assignedRoomByStudentId = context.assignedRoomByStudentId
+  const preferredPeerIds = student.preferredWith ?? []
+  let preferredTogetherAdjustment = 0
+
+  if (assignedRoomByStudentId && preferredPeerIds.length > 0) {
+    for (const peerId of preferredPeerIds) {
+      const assignedRoomId = assignedRoomByStudentId.get(peerId)
+      if (!assignedRoomId) continue
+
+      if (assignedRoomId === classroom.id) {
+        preferredTogetherAdjustment -= SAME_ROOM_SUGGESTION_BONUS
+      } else {
+        preferredTogetherAdjustment += SPLIT_ROOM_SUGGESTION_PENALTY
+      }
+    }
+  }
+
+  return loadScore + supportPenalty + behaviorPenalty + readingPenalty + mathPenalty + preferredTogetherAdjustment
 }
