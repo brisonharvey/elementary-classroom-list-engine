@@ -17,7 +17,17 @@
       "Bash(npm install --prefix \"C:/Users/briso/OneDrive/Development/claude-classroom-engine\")",
       "Bash(node -e \"require\\(''child_process''\\).execSync\\(''npm install'', {cwd: ''C:\\\\\\\\Users\\\\\\\\briso\\\\\\\\OneDrive\\\\\\\\Development\\\\\\\\claude-classroom-engine'', stdio: ''inherit''}\\)\")",
       "Bash(test -d \"C:/Users/briso/OneDrive/Development/claude-classroom-engine/node_modules\")",
-      "Bash(node -e \"const fs = require\\(''fs''\\); const path = ''C:/Users/briso/OneDrive/Development/claude-classroom-engine''; console.log\\(''Dir exists:'', fs.existsSync\\(path\\)\\); console.log\\(''Contents:'', fs.readdirSync\\(path\\).join\\('', ''\\)\\); const nm = path + ''/node_modules''; console.log\\(''node_modules exists:'', fs.existsSync\\(nm\\)\\);\")"
+      "Bash(node -e \"const fs = require\\(''fs''\\); const path = ''C:/Users/briso/OneDrive/Development/claude-classroom-engine''; console.log\\(''Dir exists:'', fs.existsSync\\(path\\)\\); console.log\\(''Contents:'', fs.readdirSync\\(path\\).join\\('', ''\\)\\); const nm = path + ''/node_modules''; console.log\\(''node_modules exists:'', fs.existsSync\\(nm\\)\\);\")",
+      "Bash(python3 -c \":*)",
+      "Bash(python -c \":*)",
+      "Bash(node -e \":*)",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\briso\\\\Downloads\\\\wellington_master_roster.csv'' -TotalCount 4 | ForEach-Object { Write-Output $_}\")",
+      "Bash(powershell -Command \":*)",
+      "Bash(powershell -NoProfile -NonInteractive -Command \"& { $c = Import-Csv ''C:\\\\Users\\\\briso\\\\Downloads\\\\wellington_master_roster.csv''; $h = $c[0].PSObject.Properties.Name; $h | Out-String }\")",
+      "Bash(cmd /c \"type C:\\\\Users\\\\briso\\\\Downloads\\\\wellington_master_roster.csv\")",
+      "Bash(iconv -f utf-16 -t utf-8 \"C:/Users/briso/Downloads/wellington_master_roster.csv\")",
+      "Bash(iconv -f utf-8 -t utf-8 \"C:/Users/briso/Downloads/wellington_master_roster.csv\")",
+      "Bash(xxd \"C:/Users/briso/Downloads/wellington_master_roster.csv\")"
     ]
   }
 }

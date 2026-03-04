@@ -28,36 +28,56 @@ export type CsvFieldKey = (typeof CSV_FIELD_OPTIONS)[number]["key"]
 export type CsvFieldMapping = Partial<Record<CsvFieldKey, string>>
 
 const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
-  id: ["id", "studentid", "studentnumber", "sisid", "localid"],
-  grade: ["grade", "gradelevel", "studentgrade"],
-  firstName: ["firstname", "first", "givenname", "studentfirstname"],
-  lastName: ["lastname", "last", "surname", "familyname", "studentlastname"],
-  gender: ["gender", "sex"],
-  status: ["status", "spedstatus", "specialedstatus", "specialeducationstatus"],
+  // "student.studentnumber" (Infinite Campus) before generic "studentnumber"
+  id: ["id", "studentid", "student.studentnumber", "studentnumber", "sisid", "localid", "student.personid", "personid"],
+  grade: ["grade", "gradelevel", "studentgrade", "grd"],
+  // "student.firstname" before generic "firstname" so SIS exports match first
+  firstName: ["student.firstname", "firstname", "first", "givenname", "studentfirstname"],
+  lastName: ["student.lastname", "lastname", "last", "surname", "familyname", "studentlastname"],
+  gender: ["gender", "sex", "f/m"],
+  // "sped" = normalized "Sp Ed"; "specialeducation" = iReady column
+  status: ["status", "spedstatus", "specialedstatus", "specialeducationstatus", "sped", "specialeducation"],
   requiresCoTeachReading: ["requirescoteachreading", "coteachreading", "readingcoteach"],
   requiresCoTeachMath: ["requirescoteachmath", "coteachmath", "mathcoteach"],
-  academicTier: ["academictier", "academicsupporttier", "tier"],
-  behaviorTier: ["behaviortier", "behaviourtier", "behaviorsupporttier"],
+  // "activeintervention|acad" = normalized "Active Intervention | Acad" (Infinite Campus)
+  academicTier: ["academictier", "academicsupporttier", "tiersupport", "activeintervention|acad"],
+  // "activeintervention|seb" = normalized "Active Intervention | SEB"
+  behaviorTier: ["behaviortier", "behaviourtier", "behaviorsupporttier", "activeintervention|seb"],
   noContactWith: ["nocontactwith", "separatefrom", "donotpairwith"],
-  mapReading: ["mapreading", "readingmap", "mapreadingscore"],
-  mapMath: ["mapmath", "mathmap", "mapmathscore"],
-  ireadyReading: ["ireadyreading", "ireadingreading", "ireadyreadinglevel"],
-  ireadyMath: ["ireadymath", "ireadymathlevel"],
-  referrals: ["referrals", "referralcount", "disciplinereferrals"],
-  teacher: ["teacher", "assignedteacher", "homeroomteacher"],
-  ell: ["ell", "el", "englishlearner", "esl"],
-  section504: ["504", "section504", "plan504"],
+  // Winter MAP preferred over Fall MAP (most recent data)
+  mapReading: ["mapreading", "readingmap", "mapreadingscore", "mapwinterreading|rit", "mapfallreading|rit"],
+  mapMath: ["mapmath", "mathmap", "mapmathscore", "mapwintermath|rit", "mapfallmath|rit"],
+  // iReady ELA winter placement; math has diagnostic suffix
+  ireadyReading: ["ireadyreading", "ireadingreading", "ireadyreadinglevel", "winter(november16-march1)|overallplacement"],
+  ireadyMath: ["ireadymath", "ireadymathlevel", "winter(november16-march1)|overallplacement(diagnostic_results_math_confidential(1).csv)"],
+  // "disc.referrals" = normalized "Disc. Referrals" (Infinite Campus behavior)
+  referrals: ["referrals", "referralcount", "disciplinereferrals", "disc.referrals"],
+  // "schedulingteam" = Infinite Campus teacher last name group; "classteacher(s)" = iReady
+  teacher: ["teacher", "assignedteacher", "homeroomteacher", "schedulingteam", "classteacher(s)"],
+  // "el" = Infinite Campus EL column; "englishlanguagelearner" = iReady column
+  ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
+  // "program504" = normalized "Program 504" (Infinite Campus)
+  section504: ["section504", "plan504", "program504", "504"],
   homeroom: ["homeroom", "homeroomid", "room"],
   notes: ["notes", "comments", "placementnotes"],
 }
 
 function parseBool(val: string): boolean {
   const v = val.trim().toLowerCase()
-  return v === "true" || v === "1" || v === "yes"
+  return v === "true" || v === "1" || v === "yes" || v === "y"
+}
+
+/** Parse ELL status — handles "EL"/"ELL" (Infinite Campus) as well as boolean strings */
+function parseELL(val: string): boolean {
+  const v = val.trim().toLowerCase()
+  return v === "el" || v === "ell" || v === "true" || v === "1" || v === "yes" || v === "y"
 }
 
 function parseTier(val: string): 1 | 2 | 3 {
-  const n = parseInt(val.trim(), 10)
+  const v = val.trim()
+  // "Yes"/"Y" = active intervention → tier 2 (Infinite Campus boolean intervention columns)
+  if (v.toLowerCase() === "yes" || v.toLowerCase() === "y") return 2
+  const n = parseInt(v, 10)
   if (n === 2) return 2
   if (n === 3) return 3
   return 1
@@ -75,12 +95,29 @@ function parseStatus(val: string): "None" | "IEP" | "Referral" {
   const v = val.trim()
   if (v === "IEP") return "IEP"
   if (v === "Referral") return "Referral"
+  // "Y"/"Yes" = student has special education services (Infinite Campus "Sp Ed" column)
+  if (v.toLowerCase() === "y" || v.toLowerCase() === "yes") return "IEP"
   return "None"
 }
 
 function parseGrade(val: string): Grade {
   const v = val.trim()
+  // Plain grade letters/numbers
   if (v === "K" || v === "1" || v === "2" || v === "3" || v === "4" || v === "5") return v
+  // Two-digit school codes: "00"→K, "01"→1, "02"→2 (Infinite Campus export)
+  if (/^\d{2}$/.test(v)) {
+    const n = parseInt(v, 10)
+    if (n === 0) return "K"
+    if (n >= 1 && n <= 5) return String(n) as Grade
+  }
+  // "0" as a standalone
+  if (v === "0") return "K"
+  // "KG" or "Kindergarten" prefix
+  const upper = v.toUpperCase()
+  if (upper === "KG" || upper.startsWith("KIND")) return "K"
+  // Ordinal suffixes: "1st", "2nd", "02nd", "3rd", "4th", "5th"
+  const ord = v.match(/^0?([1-5])(?:st|nd|rd|th)/i)
+  if (ord) return ord[1] as Grade
   return "K"
 }
 
@@ -166,6 +203,21 @@ export function suggestFieldMapping(headers: string[]): CsvFieldMapping {
   return mapping
 }
 
+/** Returns a map of csvHeader → sample value (first non-empty value across first few rows) */
+export function buildSampleValues(headers: string[], rows: string[][]): Record<string, string> {
+  const samples: Record<string, string> = {}
+  headers.forEach((header, idx) => {
+    for (const row of rows) {
+      const val = (row[idx] ?? "").trim()
+      if (val) {
+        samples[header] = val.length > 24 ? val.slice(0, 22) + "…" : val
+        break
+      }
+    }
+  })
+  return samples
+}
+
 export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): ParseResult {
   const { headers, rows } = parseCSVPreview(text)
   if (headers.length === 0 || rows.length === 0) {
@@ -225,7 +277,7 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
         parseOptionalString(get(values, "teacher")) ||
         parseOptionalString(getByHeader(values, "teacher")) ||
         parseOptionalString(getByHeader(values, "assignedteacher")),
-      ell: parseBool(get(values, "ell")),
+      ell: parseELL(get(values, "ell")),
       section504: parseBool(get(values, "section504")),
       homeroom: parseOptionalString(get(values, "homeroom")),
       notes: parseOptionalString(get(values, "notes")),

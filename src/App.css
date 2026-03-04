@@ -240,30 +240,76 @@ html, body, #root {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
-  min-width: 430px;
-  box-shadow: var(--shadow);
+  min-width: 560px;
+  box-shadow: var(--shadow-md);
 }
 
 .mapping-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 12px;
   font-weight: 700;
   color: var(--text);
+  flex-wrap: wrap;
+}
+
+.mapping-stats {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.mapping-stats-auto {
+  color: #166534;
 }
 
 .mapping-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
-  max-height: 220px;
+  gap: 6px 12px;
+  max-height: 260px;
   overflow: auto;
 }
 
 .mapping-row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.mapping-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.mapping-label-text {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mapping-required {
+  color: var(--danger);
+}
+
+.mapping-auto-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  background: var(--success-light);
+  color: #166534;
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .mapping-row select {
@@ -274,12 +320,37 @@ html, body, #root {
   color: var(--text);
   padding: 4px 6px;
   font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+
+.mapping-row select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.mapping-select-matched {
+  border-color: #86efac !important;
+  background: #f0fdf4 !important;
+}
+
+.mapping-sample {
+  font-size: 10px;
+  color: var(--text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", Consolas, monospace;
+  padding-left: 2px;
 }
 
 .mapping-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  padding-top: 2px;
+  border-top: 1px solid var(--border);
 }
 
 /* ══════════════════════════════════════════

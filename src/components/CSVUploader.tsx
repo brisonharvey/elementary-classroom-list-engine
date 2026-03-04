@@ -4,6 +4,7 @@ import {
   CSV_FIELD_OPTIONS,
   CsvFieldKey,
   CsvFieldMapping,
+  buildSampleValues,
   generateSampleCSV,
   parseCSVPreview,
   parseCSVWithMapping,
@@ -23,10 +24,21 @@ export function CSVUploader() {
   const [step, setStep] = useState<UploadStep>("upload")
   const [csvText, setCsvText] = useState("")
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
+  const [csvRows, setCsvRows] = useState<string[][]>([])
   const [mapping, setMapping] = useState<CsvFieldMapping>({})
+  const [autoMatched, setAutoMatched] = useState<Set<CsvFieldKey>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
 
   const mappedHeaderSet = useMemo(() => new Set(Object.values(mapping).filter(Boolean)), [mapping])
+
+  // Sample values derived from first few CSV rows (one per header column)
+  const sampleValues = useMemo(() => buildSampleValues(csvHeaders, csvRows), [csvHeaders, csvRows])
+
+  const matchedCount = useMemo(() => Object.values(mapping).filter(Boolean).length, [mapping])
+  const autoMatchCount = useMemo(
+    () => [...autoMatched].filter((k) => mapping[k] != null).length,
+    [autoMatched, mapping]
+  )
 
   const processMappedCSV = useCallback(() => {
     const { students, errors, skipped } = parseCSVWithMapping(csvText, mapping)
@@ -63,9 +75,12 @@ export function CSVUploader() {
         return
       }
 
+      const suggested = suggestFieldMapping(preview.headers)
       setCsvText(text)
       setCsvHeaders(preview.headers)
-      setMapping(suggestFieldMapping(preview.headers))
+      setCsvRows(preview.rows.slice(0, 5))
+      setMapping(suggested)
+      setAutoMatched(new Set(Object.keys(suggested) as CsvFieldKey[]))
       setStep("mapping")
       setStatus({ type: "idle", message: "" })
     }
@@ -125,36 +140,61 @@ export function CSVUploader() {
 
       {step === "mapping" && (
         <div className="mapping-panel">
-          <div className="mapping-header">Step 2: Match CSV headers to import fields</div>
+          <div className="mapping-header">
+            <span>Step 2: Match CSV columns to import fields</span>
+            <span className="mapping-stats">
+              {csvHeaders.length} columns detected &middot; {matchedCount}/{CSV_FIELD_OPTIONS.length} fields mapped
+              {autoMatchCount > 0 && (
+                <span className="mapping-stats-auto"> ({autoMatchCount} auto-matched)</span>
+              )}
+            </span>
+          </div>
           <div className="mapping-grid">
-            {CSV_FIELD_OPTIONS.map((field) => (
-              <label key={field.key} className="mapping-row">
-                <span>
-                  {field.label}
-                  {field.required ? " *" : ""}
-                </span>
-                <select
-                  value={mapping[field.key] ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    setMapping((prev) => ({
-                      ...prev,
-                      [field.key]: value || undefined,
-                    }))
-                  }}
-                >
-                  <option value="">Not mapped</option>
-                  {csvHeaders.map((header) => {
-                    const inUse = mappedHeaderSet.has(header) && mapping[field.key as CsvFieldKey] !== header
-                    return (
-                      <option key={`${field.key}-${header}`} value={header} disabled={inUse}>
-                        {header}
-                      </option>
-                    )
-                  })}
-                </select>
-              </label>
-            ))}
+            {CSV_FIELD_OPTIONS.map((field) => {
+              const isAutoMatched = autoMatched.has(field.key)
+              const currentCol = mapping[field.key]
+              const sample = currentCol ? sampleValues[currentCol] : undefined
+
+              return (
+                <label key={field.key} className="mapping-row">
+                  <div className="mapping-label-row">
+                    <span className="mapping-label-text">
+                      {field.label}
+                      {field.required && <span className="mapping-required"> *</span>}
+                    </span>
+                    {isAutoMatched && currentCol && (
+                      <span className="mapping-auto-badge">&#10003; auto</span>
+                    )}
+                  </div>
+                  <select
+                    value={currentCol ?? ""}
+                    className={currentCol ? "mapping-select-matched" : ""}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setMapping((prev) => ({
+                        ...prev,
+                        [field.key]: value || undefined,
+                      }))
+                    }}
+                  >
+                    <option value="">— not mapped —</option>
+                    {csvHeaders.map((header) => {
+                      const inUse = mappedHeaderSet.has(header) && currentCol !== header
+                      return (
+                        <option key={`${field.key}-${header}`} value={header} disabled={inUse}>
+                          {header}
+                        </option>
+                      )
+                    })}
+                  </select>
+                  {sample && (
+                    <span className="mapping-sample" title={sampleValues[currentCol!]}>
+                      e.g. {sample}
+                    </span>
+                  )}
+                </label>
+              )
+            })}
           </div>
           <div className="mapping-actions">
             <button className="btn btn-ghost btn-sm" onClick={() => setStep("upload")}>
