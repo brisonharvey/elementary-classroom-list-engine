@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Student } from "../types"
+import { CO_TEACH_LABELS, getStudentCoTeachTotal, getStudentRequiredCoTeachCategories } from "../utils/coTeach"
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
 
@@ -75,6 +76,8 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
   }
 
   const relatedRuleCount = state.relationshipRules.filter((r) => r.grade === student.grade && r.studentIds.includes(student.id)).length
+  const coTeachCategories = getStudentRequiredCoTeachCategories(student)
+  const totalCoTeachMinutes = getStudentCoTeachTotal(student)
 
   // ── No-contact name lookup ────────────────────────────────────
   const noContactNames = (student.noContactWith ?? []).map((id) => {
@@ -115,12 +118,10 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
               </span>
             )}
 
-            {/* Co-teach indicators */}
-            {specialEd.requiresCoTeachReading && (
-              <span className="badge badge-coteach" title="Requires Reading Co-teach">CTR</span>
-            )}
-            {specialEd.requiresCoTeachMath && (
-              <span className="badge badge-coteach" title="Requires Math Co-teach">CTM</span>
+            {totalCoTeachMinutes > 0 && (
+              <span className="badge badge-coteach" title={`Co-teach required: ${totalCoTeachMinutes} minutes total`}>
+                CT:{totalCoTeachMinutes}
+              </span>
             )}
 
             {/* Academic tier */}
@@ -209,17 +210,10 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                   {specialEd.status === "None" ? "General Ed" : specialEd.status}
                 </span>
               </div>
-              {(specialEd.requiresCoTeachReading || specialEd.requiresCoTeachMath) && (
+              {coTeachCategories.length > 0 && (
                 <div className="tt-row">
                   <span className="tt-label">Co-teach</span>
-                  <span>
-                    {[
-                      specialEd.requiresCoTeachReading && "Reading",
-                      specialEd.requiresCoTeachMath && "Math",
-                    ]
-                      .filter(Boolean)
-                      .join(" + ")}
-                  </span>
+                  <span>{coTeachCategories.map((category) => `${CO_TEACH_LABELS[category]} (${student.coTeachMinutes[category]}m)`).join(", ")}</span>
                 </div>
               )}
               <div className="tt-row">

@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react"
 import { useApp } from "../store/AppContext"
 import { getClassroomsForGrade } from "../utils/classroomInit"
+import { CO_TEACH_LABELS } from "../utils/coTeach"
 import { computeRoomStats, getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "../utils/scoring"
 
 function fmt(n: number): string {
@@ -11,29 +12,17 @@ export const SummaryPanel = memo(function SummaryPanel() {
   const { state } = useApp()
   const { classrooms, activeGrade, allStudents, gradeSettings } = state
 
-  const gradeClassrooms = useMemo(
-    () => getClassroomsForGrade(classrooms, activeGrade),
-    [classrooms, activeGrade]
-  )
+  const gradeClassrooms = useMemo(() => getClassroomsForGrade(classrooms, activeGrade), [classrooms, activeGrade])
 
   const totalStudents = allStudents.filter((s) => s.grade === activeGrade).length
   const totalIEP = allStudents.filter((s) => s.grade === activeGrade && s.specialEd.status === "IEP").length
-  const totalReferral = allStudents.filter(
-    (s) => s.grade === activeGrade && s.specialEd.status === "Referral"
-  ).length
+  const totalReferral = allStudents.filter((s) => s.grade === activeGrade && s.specialEd.status === "Referral").length
 
   const roomStats = useMemo(() => gradeClassrooms.map((c) => computeRoomStats(c)), [gradeClassrooms])
 
-  // Imbalance warnings
-  const readingAvgs = gradeClassrooms
-    .filter((c) => c.students.length > 0)
-    .map((c) => getRoomReadingAvg(c))
-  const mathAvgs = gradeClassrooms
-    .filter((c) => c.students.length > 0)
-    .map((c) => getRoomMathAvg(c))
-  const supportAvgs = gradeClassrooms
-    .filter((c) => c.students.length > 0)
-    .map((c) => getRoomSupportLoad(c))
+  const readingAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomReadingAvg(c))
+  const mathAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomMathAvg(c))
+  const supportAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomSupportLoad(c))
 
   const range = (arr: number[]) => (arr.length < 2 ? 0 : Math.max(...arr) - Math.min(...arr))
   const readingImbalance = range(readingAvgs) > 0.75
@@ -61,31 +50,19 @@ export const SummaryPanel = memo(function SummaryPanel() {
         </div>
       </div>
 
-      {/* Warnings */}
       {(readingImbalance || mathImbalance || supportImbalance || genderWarnings.length > 0) && (
         <div className="warnings-row">
-          {genderWarnings.length > 0 && (
-            <div className="warning-chip">
-              ⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarnings.join(", ")}
-            </div>
-          )}
-          {readingImbalance && (
-            <div className="warning-chip">⚠ Reading level spread across classrooms</div>
-          )}
-          {mathImbalance && (
-            <div className="warning-chip">⚠ Math level spread across classrooms</div>
-          )}
-          {supportImbalance && (
-            <div className="warning-chip">⚠ Support load imbalanced across classrooms</div>
-          )}
+          {genderWarnings.length > 0 && <div className="warning-chip">⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarnings.join(", ")}</div>}
+          {readingImbalance && <div className="warning-chip">⚠ Reading level spread across classrooms</div>}
+          {mathImbalance && <div className="warning-chip">⚠ Math level spread across classrooms</div>}
+          {supportImbalance && <div className="warning-chip">⚠ Support load imbalanced across classrooms</div>}
         </div>
       )}
 
-      {/* Per-classroom stats table */}
       <div className="support-load-help">
         <strong>How Support Load is calculated:</strong> average of each student&apos;s
-        <code> academic tier + behavior tier + special education status bonus + referral count</code>,
-        where IEP adds +2 and Referral status adds +1.
+        <code> academic tier + behavior tier + special education status bonus + referral count + normalized co-teach load</code>.
+        Co-teach minutes are summed across categories, normalized (minutes/60, clamped 0–2), and added to support load for balancing.
       </div>
 
       <div className="summary-table-wrap">
@@ -101,7 +78,9 @@ export const SummaryPanel = memo(function SummaryPanel() {
               <th>Avg MAP Read</th>
               <th>Avg MAP Math</th>
               <th>Support Load</th>
-              <th>CoTeach</th>
+              <th>Total Co-teach Min</th>
+              <th>Avg Co-teach Min</th>
+              <th>Coverage</th>
             </tr>
           </thead>
           <tbody>
@@ -110,53 +89,35 @@ export const SummaryPanel = memo(function SummaryPanel() {
               const supportLoad = getRoomSupportLoad(c)
               const mapReadAvg =
                 c.students.length > 0 && c.students.some((s) => s.mapReading !== undefined)
-                  ? c.students
-                      .filter((s) => s.mapReading !== undefined)
-                      .reduce((sum, s) => sum + s.mapReading!, 0) /
+                  ? c.students.filter((s) => s.mapReading !== undefined).reduce((sum, s) => sum + s.mapReading!, 0) /
                     c.students.filter((s) => s.mapReading !== undefined).length
                   : null
               const mapMathAvg =
                 c.students.length > 0 && c.students.some((s) => s.mapMath !== undefined)
-                  ? c.students
-                      .filter((s) => s.mapMath !== undefined)
-                      .reduce((sum, s) => sum + s.mapMath!, 0) /
+                  ? c.students.filter((s) => s.mapMath !== undefined).reduce((sum, s) => sum + s.mapMath!, 0) /
                     c.students.filter((s) => s.mapMath !== undefined).length
                   : null
 
               const genderWarn = genderWarnings.includes(c.id)
+              const coTeachBreakdown = Object.entries(stats.coTeachMinutesByCategory)
+                .filter(([, minutes]) => minutes > 0)
+                .map(([category, minutes]) => `${CO_TEACH_LABELS[category as keyof typeof CO_TEACH_LABELS]}: ${minutes}`)
+                .join("\n")
 
               return (
                 <tr key={c.label} className={genderWarn ? "row-warn" : ""}>
                   <td className="cell-id">{c.label}</td>
                   <td className="cell-teacher">{c.teacherName || "—"}</td>
-                  <td>
-                    <span
-                      style={{
-                        color:
-                          stats.size >= c.maxSize
-                            ? "#ef4444"
-                            : stats.size / c.maxSize > 0.85
-                            ? "#f59e0b"
-                            : "inherit",
-                        fontWeight: stats.size >= c.maxSize ? "bold" : "normal",
-                      }}
-                    >
-                      {stats.size}/{c.maxSize}
-                    </span>
-                  </td>
+                  <td><span style={{ color: stats.size >= c.maxSize ? "#ef4444" : stats.size / c.maxSize > 0.85 ? "#f59e0b" : "inherit", fontWeight: stats.size >= c.maxSize ? "bold" : "normal" }}>{stats.size}/{c.maxSize}</span></td>
                   <td>{stats.iepCount > 0 ? <span className="qs-badge qs-iep">{stats.iepCount}</span> : "—"}</td>
                   <td>{stats.referralCount > 0 ? <span className="qs-badge qs-ref">{stats.referralCount}</span> : "—"}</td>
-                  <td className={genderWarn ? "cell-warn" : ""}>
-                    {stats.maleCount}M / {stats.femaleCount}F
-                  </td>
+                  <td className={genderWarn ? "cell-warn" : ""}>{stats.maleCount}M / {stats.femaleCount}F</td>
                   <td>{mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</td>
                   <td>{mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</td>
                   <td>{fmt(supportLoad)}</td>
-                  <td>
-                    {c.coTeach.reading && <span className="coteach-chip">Read</span>}
-                    {c.coTeach.math && <span className="coteach-chip">Math</span>}
-                    {!c.coTeach.reading && !c.coTeach.math && "—"}
-                  </td>
+                  <td title={coTeachBreakdown || "No co-teach minutes"}>{stats.totalCoTeachMinutes}</td>
+                  <td>{fmt(stats.avgCoTeachMinutes)}</td>
+                  <td>{c.coTeachCoverage.length ? c.coTeachCoverage.map((category) => <span key={category} className="coteach-chip">{CO_TEACH_LABELS[category]}</span>) : "—"}</td>
                 </tr>
               )
             })}

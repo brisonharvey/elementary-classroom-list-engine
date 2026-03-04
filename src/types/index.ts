@@ -1,5 +1,14 @@
 export type Grade = "K" | "1" | "2" | "3" | "4" | "5"
 
+export type CoTeachCategory =
+  | "reading"
+  | "writing"
+  | "scienceSocialStudies"
+  | "math"
+  | "behavior"
+  | "social"
+  | "vocational"
+
 export const GRADES: Grade[] = ["K", "1", "2", "3", "4", "5"]
 export const LETTERS = ["A", "B", "C", "D"] as const
 
@@ -11,9 +20,10 @@ export interface Student {
   gender: "M" | "F"
   specialEd: {
     status: "None" | "IEP" | "Referral"
-    requiresCoTeachReading: boolean
-    requiresCoTeachMath: boolean
+    requiresCoTeachReading?: boolean
+    requiresCoTeachMath?: boolean
   }
+  coTeachMinutes: Partial<Record<CoTeachCategory, number>>
   intervention: {
     academicTier: 1 | 2 | 3
   }
@@ -40,10 +50,7 @@ export interface Classroom {
   label: string
   teacherName: string
   maxSize: number
-  coTeach: {
-    reading: boolean
-    math: boolean
-  }
+  coTeachCoverage: CoTeachCategory[]
   students: Student[]
 }
 
@@ -109,4 +116,7 @@ export interface RoomStats {
   femaleCount: number
   ellCount: number
   section504Count: number
+  totalCoTeachMinutes: number
+  avgCoTeachMinutes: number
+  coTeachMinutesByCategory: Record<CoTeachCategory, number>
 }

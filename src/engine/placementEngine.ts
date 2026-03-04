@@ -1,12 +1,7 @@
 import { Classroom, Grade, GradeSettings, RelationshipRule, RoomStats, Student, Weights } from "../types"
 import { checkHardConstraints } from "../utils/constraints"
-import {
-  computeRoomStats,
-  getStudentMathScore,
-  getStudentReadingScore,
-  getStudentSupportLoad,
-  scoreStudentForRoom,
-} from "../utils/scoring"
+import { CO_TEACH_CATEGORIES, CO_TEACH_LABELS, getStudentCoTeachTotal } from "../utils/coTeach"
+import { computeRoomStats, getStudentSupportLoad, scoreStudentForRoom } from "../utils/scoring"
 
 function deepCloneClassrooms(classrooms: Classroom[]): Classroom[] {
   return classrooms.map((c) => ({ ...c, students: c.students.map((s) => ({ ...s })) }))
@@ -19,9 +14,12 @@ export function getUnassignedStudents(allStudents: Student[], classrooms: Classr
 
 function prioritySort(students: Student[]): Student[] {
   return [...students].sort((a, b) => {
-    const aCoT = (a.specialEd.requiresCoTeachReading ? 2 : 0) + (a.specialEd.requiresCoTeachMath ? 2 : 0)
-    const bCoT = (b.specialEd.requiresCoTeachReading ? 2 : 0) + (b.specialEd.requiresCoTeachMath ? 2 : 0)
-    if (bCoT !== aCoT) return bCoT - aCoT
+    const aCoTeach = getStudentCoTeachTotal(a)
+    const bCoTeach = getStudentCoTeachTotal(b)
+    const aHas = aCoTeach > 0 ? 1 : 0
+    const bHas = bCoTeach > 0 ? 1 : 0
+    if (bHas !== aHas) return bHas - aHas
+    if (bCoTeach !== aCoTeach) return bCoTeach - aCoTeach
 
     const statusRank = (s: Student) => (s.specialEd.status === "IEP" ? 2 : s.specialEd.status === "Referral" ? 1 : 0)
     if (statusRank(b) !== statusRank(a)) return statusRank(b) - statusRank(a)
@@ -39,12 +37,19 @@ export interface PlacementResult {
 
 function formatConstraintCategory(reason: string): string {
   if (reason.startsWith("Classroom at max capacity")) return "At max capacity"
-  if (reason.includes("reading co-teach")) return "Missing reading co-teach"
-  if (reason.includes("math co-teach")) return "Missing math co-teach"
+  if (reason.includes("Missing co-teach coverage")) return "Missing co-teach coverage"
   if (reason.startsWith("No-contact")) return "No-contact conflicts"
   if (reason.includes("IEP cap")) return "IEP cap reached"
   if (reason.includes("referral cap")) return "Referral cap reached"
   return "Other hard constraints"
+}
+
+function getMissingGradeCoverageWarning(gradeRooms: Classroom[], gradeStudents: Student[], activeGrade: Grade): string | null {
+  const needed = CO_TEACH_CATEGORIES.filter((category) => gradeStudents.some((s) => (s.coTeachMinutes[category] ?? 0) > 0))
+  const covered = new Set(gradeRooms.flatMap((room) => room.coTeachCoverage))
+  const missing = needed.filter((category) => !covered.has(category))
+  if (missing.length === 0) return null
+  return `No classrooms in Grade ${activeGrade} provide co-teach coverage for: ${missing.map((c) => CO_TEACH_LABELS[c]).join(", ")}`
 }
 
 export function runPlacement(
@@ -65,6 +70,8 @@ export function runPlacement(
 
   const lockedIds = new Set(gradeRooms.flatMap((r) => r.students.map((s) => s.id)))
   const gradeStudents = allStudents.filter((s) => s.grade === activeGrade)
+  const coverageWarning = getMissingGradeCoverageWarning(gradeRooms, gradeStudents, activeGrade)
+  if (coverageWarning) warnings.push(coverageWarning)
   const unplaced = gradeStudents.filter((s) => !lockedIds.has(s.id))
   const sorted = prioritySort(unplaced)
 
@@ -110,20 +117,7 @@ export function runPlacement(
     if (bestRoom) {
       bestRoom.students.push(student)
       assignedRoomByStudentId.set(student.id, bestRoom.id)
-      const stats = roomStatsMap.get(bestRoom.id)!
-      roomStatsMap.set(bestRoom.id, {
-        ...stats,
-        size: stats.size + 1,
-        supportLoad: (stats.supportLoad * stats.size + getStudentSupportLoad(student)) / (stats.size + 1),
-        readingAvg: (stats.readingAvg * stats.size + getStudentReadingScore(student)) / (stats.size + 1),
-        mathAvg: (stats.mathAvg * stats.size + getStudentMathScore(student)) / (stats.size + 1),
-        iepCount: stats.iepCount + (student.specialEd.status === "IEP" ? 1 : 0),
-        referralCount: stats.referralCount + (student.specialEd.status === "Referral" ? 1 : 0),
-        maleCount: stats.maleCount + (student.gender === "M" ? 1 : 0),
-        femaleCount: stats.femaleCount + (student.gender === "F" ? 1 : 0),
-        ellCount: stats.ellCount + (student.ell ? 1 : 0),
-        section504Count: stats.section504Count + (student.section504 ? 1 : 0),
-      })
+      roomStatsMap.set(bestRoom.id, computeRoomStats({ ...bestRoom, students: [...bestRoom.students] }))
     } else {
       unresolved.push(student)
       unresolvedReasons.set(student.id, reasons)

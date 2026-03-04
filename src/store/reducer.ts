@@ -15,6 +15,7 @@ import {
   initializeClassrooms,
 } from "../utils/classroomInit"
 import { runPlacement } from "../engine/placementEngine"
+import { normalizeCoTeachMinutes } from "../utils/coTeach"
 
 export type Action =
   | { type: "LOAD_STUDENTS"; payload: Student[] }
@@ -95,7 +96,7 @@ export function reducer(state: AppState, action: Action): AppState {
         teacherToClassroomId.set(`${grade}:${teacherName}`, available.id)
       }
 
-      const allStudents = rawStudents.map((s) => (s.preassignedTeacher ? { ...s, locked: true } : s))
+      const allStudents = rawStudents.map((s) => ({ ...s, coTeachMinutes: normalizeCoTeachMinutes(s.coTeachMinutes), locked: s.preassignedTeacher ? true : s.locked }))
 
       for (const student of allStudents) {
         if (!student.preassignedTeacher) continue

@@ -1,4 +1,5 @@
-import { Grade, Student } from "../types"
+import { CoTeachCategory, Grade, Student } from "../types"
+import { MAX_COTEACH_MINUTES, normalizeCoTeachMinutes } from "./coTeach"
 
 export const CSV_FIELD_OPTIONS = [
   { key: "id", label: "Student ID", required: true },
@@ -7,8 +8,15 @@ export const CSV_FIELD_OPTIONS = [
   { key: "lastName", label: "Last name", required: true },
   { key: "gender", label: "Gender", required: false },
   { key: "status", label: "Special education status", required: false },
-  { key: "requiresCoTeachReading", label: "Requires co-teach reading", required: false },
-  { key: "requiresCoTeachMath", label: "Requires co-teach math", required: false },
+  { key: "coTeachReadingMinutes", label: "CoTeach Reading Minutes", required: false },
+  { key: "coTeachWritingMinutes", label: "CoTeach Writing Minutes", required: false },
+  { key: "coTeachScienceSocialStudiesMinutes", label: "CoTeach Science/Social Studies Minutes", required: false },
+  { key: "coTeachMathMinutes", label: "CoTeach Math Minutes", required: false },
+  { key: "coTeachBehaviorMinutes", label: "CoTeach Behavior Minutes", required: false },
+  { key: "coTeachSocialMinutes", label: "CoTeach Social Minutes", required: false },
+  { key: "coTeachVocationalMinutes", label: "CoTeach Vocational Minutes", required: false },
+  { key: "requiresCoTeachReading", label: "(Legacy) Requires co-teach reading", required: false },
+  { key: "requiresCoTeachMath", label: "(Legacy) Requires co-teach math", required: false },
   { key: "academicTier", label: "Academic tier", required: false },
   { key: "behaviorTier", label: "Behavior tier", required: false },
   { key: "noContactWith", label: "No-contact IDs", required: false },
@@ -28,36 +36,32 @@ export type CsvFieldKey = (typeof CSV_FIELD_OPTIONS)[number]["key"]
 export type CsvFieldMapping = Partial<Record<CsvFieldKey, string>>
 
 const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
-  // "student.studentnumber" (Infinite Campus) before generic "studentnumber"
   id: ["id", "studentid", "student.studentnumber", "studentnumber", "sisid", "localid", "student.personid", "personid"],
   grade: ["grade", "gradelevel", "studentgrade", "grd"],
-  // "student.firstname" before generic "firstname" so SIS exports match first
   firstName: ["student.firstname", "firstname", "first", "givenname", "studentfirstname"],
   lastName: ["student.lastname", "lastname", "last", "surname", "familyname", "studentlastname"],
   gender: ["gender", "sex", "f/m"],
-  // "sped" = normalized "Sp Ed"; "specialeducation" = iReady column
   status: ["status", "spedstatus", "specialedstatus", "specialeducationstatus", "sped", "specialeducation"],
+  coTeachReadingMinutes: ["coteachreadingminutes", "serviceminutesreading", "readingcoteachminutes"],
+  coTeachWritingMinutes: ["coteachwritingminutes", "writingcoteachminutes"],
+  coTeachScienceSocialStudiesMinutes: ["coteachscience/socialstudiesminutes", "coteachsciencesocialstudiesminutes", "sciencesocialstudiescoteachminutes"],
+  coTeachMathMinutes: ["coteachmathminutes", "serviceminutesmath", "mathcoteachminutes"],
+  coTeachBehaviorMinutes: ["coteachbehaviorminutes", "behaviorcoteachminutes"],
+  coTeachSocialMinutes: ["coteachsocialminutes", "socialcoteachminutes"],
+  coTeachVocationalMinutes: ["coteachvocationalminutes", "vocationalcoteachminutes"],
   requiresCoTeachReading: ["requirescoteachreading", "coteachreading", "readingcoteach"],
   requiresCoTeachMath: ["requirescoteachmath", "coteachmath", "mathcoteach"],
-  // "activeintervention|acad" = normalized "Active Intervention | Acad" (Infinite Campus)
   academicTier: ["academictier", "academicsupporttier", "tiersupport", "activeintervention|acad"],
-  // "activeintervention|seb" = normalized "Active Intervention | SEB"
   behaviorTier: ["behaviortier", "behaviourtier", "behaviorsupporttier", "activeintervention|seb"],
   noContactWith: ["nocontactwith", "separatefrom", "donotpairwith"],
   preferredWith: ["preferredwith", "preferwith", "sameclasswith", "sameroomwith", "keepwith", "withstudents"],
-  // Winter MAP preferred over Fall MAP (most recent data)
   mapReading: ["mapreading", "readingmap", "mapreadingscore", "mapwinterreading|rit", "mapfallreading|rit"],
   mapMath: ["mapmath", "mathmap", "mapmathscore", "mapwintermath|rit", "mapfallmath|rit"],
-  // iReady ELA winter placement; math has diagnostic suffix
   ireadyReading: ["ireadyreading", "ireadingreading", "ireadyreadinglevel", "winter(november16-march1)|overallplacement"],
   ireadyMath: ["ireadymath", "ireadymathlevel", "winter(november16-march1)|overallplacement(diagnostic_results_math_confidential(1).csv)"],
-  // "disc.referrals" = normalized "Disc. Referrals" (Infinite Campus behavior)
   referrals: ["referrals", "referralcount", "disciplinereferrals", "disc.referrals"],
-  // "schedulingteam" = Infinite Campus teacher last name group; "classteacher(s)" = iReady
   teacher: ["teacher", "assignedteacher", "homeroomteacher", "schedulingteam", "classteacher(s)"],
-  // "el" = Infinite Campus EL column; "englishlanguagelearner" = iReady column
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
-  // "program504" = normalized "Program 504" (Infinite Campus)
   section504: ["section504", "plan504", "program504", "504"],
   teacherNotes: ["teachernotes", "notes", "comments", "placementnotes"],
 }
@@ -67,7 +71,6 @@ function parseBool(val: string): boolean {
   return v === "true" || v === "1" || v === "yes" || v === "y"
 }
 
-/** Parse ELL status — handles "EL"/"ELL" (Infinite Campus) as well as boolean strings */
 function parseELL(val: string): boolean {
   const v = val.trim().toLowerCase()
   return v === "el" || v === "ell" || v === "true" || v === "1" || v === "yes" || v === "y"
@@ -75,7 +78,6 @@ function parseELL(val: string): boolean {
 
 function parseTier(val: string): 1 | 2 | 3 {
   const v = val.trim()
-  // "Yes"/"Y" = active intervention → tier 2 (Infinite Campus boolean intervention columns)
   if (v.toLowerCase() === "yes" || v.toLowerCase() === "y") return 2
   const n = parseInt(v, 10)
   if (n === 2) return 2
@@ -123,27 +125,21 @@ function parseStatus(val: string): "None" | "IEP" | "Referral" {
   const v = val.trim()
   if (v === "IEP") return "IEP"
   if (v === "Referral") return "Referral"
-  // "Y"/"Yes" = student has special education services (Infinite Campus "Sp Ed" column)
   if (v.toLowerCase() === "y" || v.toLowerCase() === "yes") return "IEP"
   return "None"
 }
 
 function parseGrade(val: string): Grade {
   const v = val.trim()
-  // Plain grade letters/numbers
   if (v === "K" || v === "1" || v === "2" || v === "3" || v === "4" || v === "5") return v
-  // Two-digit school codes: "00"→K, "01"→1, "02"→2 (Infinite Campus export)
   if (/^\d{2}$/.test(v)) {
     const n = parseInt(v, 10)
     if (n === 0) return "K"
     if (n >= 1 && n <= 5) return String(n) as Grade
   }
-  // "0" as a standalone
   if (v === "0") return "K"
-  // "KG" or "Kindergarten" prefix
   const upper = v.toUpperCase()
   if (upper === "KG" || upper.startsWith("KIND")) return "K"
-  // Ordinal suffixes: "1st", "2nd", "02nd", "3rd", "4th", "5th"
   const ord = v.match(/^0?([1-5])(?:st|nd|rd|th)/i)
   if (ord) return ord[1] as Grade
   return "K"
@@ -166,7 +162,6 @@ function parseOptionalString(val: string): string | undefined {
   return v || undefined
 }
 
-/** Handle quoted CSV fields (RFC 4180) */
 function parseCSVLine(line: string): string[] {
   const result: string[] = []
   let current = ""
@@ -231,7 +226,6 @@ export function suggestFieldMapping(headers: string[]): CsvFieldMapping {
   return mapping
 }
 
-/** Returns a map of csvHeader → sample value (first non-empty value across first few rows) */
 export function buildSampleValues(headers: string[], rows: string[][]): Record<string, string> {
   const samples: Record<string, string> = {}
   headers.forEach((header, idx) => {
@@ -244,6 +238,50 @@ export function buildSampleValues(headers: string[], rows: string[][]): Record<s
     }
   })
   return samples
+}
+
+function parseCoTeachMinutes(raw: string, rowIndex: number, label: string, errors: string[]): number {
+  if (!raw || !raw.trim()) return 0
+  const parsed = Number(raw.trim())
+  if (!Number.isFinite(parsed)) {
+    errors.push(`Row ${rowIndex + 2}: ${label} value "${raw}" is not numeric; defaulted to 0.`)
+    return 0
+  }
+  if (parsed < 0) return 0
+  if (parsed > MAX_COTEACH_MINUTES) {
+    errors.push(`Row ${rowIndex + 2}: ${label} exceeded ${MAX_COTEACH_MINUTES}; clamped.`)
+    return MAX_COTEACH_MINUTES
+  }
+  return parsed
+}
+
+function buildCoTeachMinutes(values: string[], rowIndex: number, get: (values: string[], field: CsvFieldKey) => string, errors: string[]) {
+  const coTeachMinutes: Partial<Record<CoTeachCategory, number>> = {
+    reading: parseCoTeachMinutes(get(values, "coTeachReadingMinutes"), rowIndex, "CoTeach Reading Minutes", errors),
+    writing: parseCoTeachMinutes(get(values, "coTeachWritingMinutes"), rowIndex, "CoTeach Writing Minutes", errors),
+    scienceSocialStudies: parseCoTeachMinutes(
+      get(values, "coTeachScienceSocialStudiesMinutes"),
+      rowIndex,
+      "CoTeach Science/Social Studies Minutes",
+      errors
+    ),
+    math: parseCoTeachMinutes(get(values, "coTeachMathMinutes"), rowIndex, "CoTeach Math Minutes", errors),
+    behavior: parseCoTeachMinutes(get(values, "coTeachBehaviorMinutes"), rowIndex, "CoTeach Behavior Minutes", errors),
+    social: parseCoTeachMinutes(get(values, "coTeachSocialMinutes"), rowIndex, "CoTeach Social Minutes", errors),
+    vocational: parseCoTeachMinutes(get(values, "coTeachVocationalMinutes"), rowIndex, "CoTeach Vocational Minutes", errors),
+  }
+
+  if ((coTeachMinutes.reading ?? 0) === 0 && parseBool(get(values, "requiresCoTeachReading"))) {
+    coTeachMinutes.reading = 30
+    errors.push(`Row ${rowIndex + 2}: legacy requiresCoTeachReading converted to 30 reading minutes.`)
+  }
+
+  if ((coTeachMinutes.math ?? 0) === 0 && parseBool(get(values, "requiresCoTeachMath"))) {
+    coTeachMinutes.math = 30
+    errors.push(`Row ${rowIndex + 2}: legacy requiresCoTeachMath converted to 30 math minutes.`)
+  }
+
+  return normalizeCoTeachMinutes(coTeachMinutes)
 }
 
 export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): ParseResult {
@@ -305,9 +343,8 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
       gender: get(values, "gender").toUpperCase() === "F" ? "F" : "M",
       specialEd: {
         status: parseStatus(get(values, "status")),
-        requiresCoTeachReading: parseBool(get(values, "requiresCoTeachReading")),
-        requiresCoTeachMath: parseBool(get(values, "requiresCoTeachMath")),
       },
+      coTeachMinutes: buildCoTeachMinutes(values, rowIndex, get, errors),
       intervention: {
         academicTier: parseTier(get(values, "academicTier")),
       },
@@ -334,6 +371,7 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
   const idSet = new Set(studentsById.keys())
 
   for (const student of students) {
+    student.coTeachMinutes = normalizeCoTeachMinutes(student.coTeachMinutes)
     const invalidNoContact = (student.noContactWith ?? []).filter((nc) => !idSet.has(nc))
     if (invalidNoContact.length > 0) {
       errors.push(
@@ -375,23 +413,15 @@ export function parseCSV(text: string): ParseResult {
   return parseCSVWithMapping(text, mapping)
 }
 
-/** Generate a sample CSV string for download/reference */
 export function generateSampleCSV(): string {
   const header =
-    "id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,preferredWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes"
+    "id,grade,firstName,lastName,gender,status,coTeachReadingMinutes,coTeachWritingMinutes,coTeachScienceSocialStudiesMinutes,coTeachMathMinutes,coTeachBehaviorMinutes,coTeachSocialMinutes,coTeachVocationalMinutes,academicTier,behaviorTier,noContactWith,preferredWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes"
   const rows = [
-    // teacher column: pre-assigns student to a named teacher (classroom auto-mapped)
-    // noContactWith: semicolon-separated IDs — supports multiple: e.g. "2;3"
-    "1,K,Alice,Smith,F,IEP,true,false,3,2,,2;3,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row",
-    "2,K,Bob,Jones,M,None,false,false,1,1,3,1;3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,",
-    "3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions",
-    "4,K,David,Wilson,M,IEP,true,true,3,3,,5;6,12,15,Early K,Early K,1,,false,true,K-102,",
-    "5,K,Emma,Taylor,F,None,false,false,1,1,,4,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,",
-    "6,1,Frank,Davis,M,None,false,false,2,2,,,55,60,Mid 1,Mid 1,1,,false,false,1-201,",
-    "7,1,Grace,Miller,F,IEP,true,false,3,2,,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,1-202,Speech services",
-    "8,1,Henry,Moore,M,None,false,false,1,1,9,,78,80,Late 2,Late 2,0,,false,false,1-201,",
-    "9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,,42,38,Mid 1,Early 1,2,,true,false,1-202,",
-    "10,1,Jack,Martin,M,None,false,false,1,3,,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,1-203,Watch peer pairings",
+    "1,K,Alice,Smith,F,IEP,30,15,0,45,20,0,0,3,2,,2;3,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row",
+    "2,K,Bob,Jones,M,None,0,0,0,0,0,0,0,1,1,3,1;3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,",
+    "3,K,Carol,Brown,F,Referral,0,20,15,0,0,30,0,2,3,1;2,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions",
+    "4,K,David,Wilson,M,IEP,30,0,0,30,0,0,0,3,3,,5;6,12,15,Early K,Early K,1,,false,true,K-102,",
+    "5,K,Emma,Taylor,F,None,0,0,0,0,0,0,0,1,1,,4,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,",
   ]
   return [header, ...rows].join("\n")
 }

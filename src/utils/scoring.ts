@@ -1,4 +1,5 @@
-import { Classroom, Grade, GradeSettings, RelationshipRule, RoomStats, Student } from "../types"
+import { Classroom, CoTeachCategory, Grade, GradeSettings, RelationshipRule, RoomStats, Student } from "../types"
+import { CO_TEACH_CATEGORIES, getStudentCoTeachTotal } from "./coTeach"
 
 export function getMapBand(score: number | undefined): number {
   if (score === undefined || score === null) return 2.5
@@ -68,6 +69,10 @@ export function getStudentMathScore(student: Student): number {
   return parts.reduce((a, b) => a + b, 0) / parts.length
 }
 
+export function getStudentCoTeachLoadScore(student: Student): number {
+  return Math.max(0, Math.min(2, getStudentCoTeachTotal(student) / 60))
+}
+
 export function getStudentSupportLoad(student: Student): number {
   let load = 0
   load += student.intervention.academicTier
@@ -75,6 +80,7 @@ export function getStudentSupportLoad(student: Student): number {
   if (student.specialEd.status === "IEP") load += 2
   else if (student.specialEd.status === "Referral") load += 1
   load += student.referrals ?? 0
+  load += getStudentCoTeachLoadScore(student)
   return load
 }
 
@@ -106,7 +112,16 @@ export function getRoomMathAvg(classroom: Classroom): number {
   return total / classroom.students.length
 }
 
+function getRoomCoTeachByCategory(classroom: Classroom): Record<CoTeachCategory, number> {
+  return CO_TEACH_CATEGORIES.reduce((acc, category) => {
+    acc[category] = classroom.students.reduce((sum, s) => sum + (s.coTeachMinutes[category] ?? 0), 0)
+    return acc
+  }, {} as Record<CoTeachCategory, number>)
+}
+
 export function computeRoomStats(classroom: Classroom): RoomStats {
+  const coTeachMinutesByCategory = getRoomCoTeachByCategory(classroom)
+  const totalCoTeachMinutes = Object.values(coTeachMinutesByCategory).reduce((sum, val) => sum + val, 0)
   return {
     id: classroom.id,
     size: classroom.students.length,
@@ -119,6 +134,9 @@ export function computeRoomStats(classroom: Classroom): RoomStats {
     femaleCount: classroom.students.filter((s) => s.gender === "F").length,
     ellCount: classroom.students.filter((s) => s.ell).length,
     section504Count: classroom.students.filter((s) => s.section504).length,
+    totalCoTeachMinutes,
+    avgCoTeachMinutes: classroom.students.length ? totalCoTeachMinutes / classroom.students.length : 0,
+    coTeachMinutesByCategory,
   }
 }
 
