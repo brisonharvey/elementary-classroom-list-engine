@@ -231,6 +231,57 @@ html, body, #root {
   color: #b91c1c;
 }
 
+
+.mapping-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 430px;
+  box-shadow: var(--shadow);
+}
+
+.mapping-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.mapping-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.mapping-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mapping-row select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.mapping-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* ══════════════════════════════════════════
    GRADE SELECTOR
 ══════════════════════════════════════════ */
