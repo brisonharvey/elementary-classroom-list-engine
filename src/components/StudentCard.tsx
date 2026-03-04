@@ -269,6 +269,17 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </>
               )}
 
+
+              {student.teacherNotes && (
+                <>
+                  <hr className="tt-sep" />
+                  <div className="tt-row">
+                    <span className="tt-label">Teacher Notes</span>
+                    <span className="tt-no-contact">{student.teacherNotes}</span>
+                  </div>
+                </>
+              )}
+
               {/* No-contact */}
               {noContactNames.length > 0 && (
                 <>

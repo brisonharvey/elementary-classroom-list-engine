@@ -61,32 +61,25 @@ export function WeightSliders() {
   return (
     <div className="weight-sliders">
       <Slider
-        label="Support Balance"
-        description="On the next Auto-Sort, a higher value puts more focus on spreading support needs (IEPs, referrals, and tier levels) evenly across classes."
-        value={weights.support}
-        onChange={update("support")}
-        color="#8b5cf6"
-      />
-      <Slider
-        label="Behavior Balance"
-        description="On the next Auto-Sort, a higher value puts more focus on balancing behavior support needs and referral intensity between classes."
-        value={weights.behavior}
-        onChange={update("behavior")}
-        color="#f97316"
-      />
-      <Slider
-        label="Reading Balance"
-        description="On the next Auto-Sort, a higher value puts more focus on keeping reading levels (MAP and iReady) evenly mixed in each class."
-        value={weights.reading}
-        onChange={update("reading")}
+        label="Academic Needs"
+        description="Higher values prioritize balancing academic need levels (academic tier and assessment profile) evenly across classes."
+        value={weights.academic}
+        onChange={update("academic")}
         color="#3b82f6"
       />
       <Slider
-        label="Math Balance"
-        description="On the next Auto-Sort, a higher value puts more focus on keeping math levels (MAP and iReady) evenly mixed in each class."
-        value={weights.math}
-        onChange={update("math")}
-        color="#10b981"
+        label="Behavioral Needs"
+        description="Higher values prioritize balancing behavioral support intensity (behavior tier and referrals) between classes."
+        value={weights.behavioral}
+        onChange={update("behavioral")}
+        color="#f97316"
+      />
+      <Slider
+        label="Demographic Needs"
+        description="Higher values prioritize balancing student demographic groups (gender, ELL, 504, and special education status) across classes."
+        value={weights.demographic}
+        onChange={update("demographic")}
+        color="#8b5cf6"
       />
     </div>
   )
