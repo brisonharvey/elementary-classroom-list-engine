@@ -20,8 +20,7 @@ export const CSV_FIELD_OPTIONS = [
   { key: "teacher", label: "Assigned teacher", required: false },
   { key: "ell", label: "ELL", required: false },
   { key: "section504", label: "504 plan", required: false },
-  { key: "homeroom", label: "Homeroom", required: false },
-  { key: "notes", label: "Notes", required: false },
+  { key: "teacherNotes", label: "Teacher notes", required: false },
 ] as const
 
 export type CsvFieldKey = (typeof CSV_FIELD_OPTIONS)[number]["key"]
@@ -58,8 +57,7 @@ const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   // "program504" = normalized "Program 504" (Infinite Campus)
   section504: ["section504", "plan504", "program504", "504"],
-  homeroom: ["homeroom", "homeroomid", "room"],
-  notes: ["notes", "comments", "placementnotes"],
+  teacherNotes: ["teachernotes", "notes", "comments", "placementnotes"],
 }
 
 function parseBool(val: string): boolean {
@@ -279,8 +277,7 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
         parseOptionalString(getByHeader(values, "assignedteacher")),
       ell: parseELL(get(values, "ell")),
       section504: parseBool(get(values, "section504")),
-      homeroom: parseOptionalString(get(values, "homeroom")),
-      notes: parseOptionalString(get(values, "notes")),
+      teacherNotes: parseOptionalString(get(values, "teacherNotes")),
       locked: false,
     })
   }
@@ -307,20 +304,20 @@ export function parseCSV(text: string): ParseResult {
 /** Generate a sample CSV string for download/reference */
 export function generateSampleCSV(): string {
   const header =
-    "id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes"
+    "id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,teacherNotes"
   const rows = [
     // teacher column: pre-assigns student to a named teacher (classroom auto-mapped)
     // noContactWith: semicolon-separated IDs — supports multiple: e.g. "2;3"
-    "1,K,Alice,Smith,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row",
-    "2,K,Bob,Jones,M,None,false,false,1,1,3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,",
-    "3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions",
-    "4,K,David,Wilson,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,,false,true,K-102,",
-    "5,K,Emma,Taylor,F,None,false,false,1,1,,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,",
-    "6,1,Frank,Davis,M,None,false,false,2,2,,55,60,Mid 1,Mid 1,1,,false,false,1-201,",
-    "7,1,Grace,Miller,F,IEP,true,false,3,2,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,1-202,Speech services",
-    "8,1,Henry,Moore,M,None,false,false,1,1,9,78,80,Late 2,Late 2,0,,false,false,1-201,",
-    "9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,42,38,Mid 1,Early 1,2,,true,false,1-202,",
-    "10,1,Jack,Martin,M,None,false,false,1,3,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,1-203,Watch peer pairings",
+    "1,K,Alice,Smith,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson,true,false,Prefers front row",
+    "2,K,Bob,Jones,M,None,false,false,1,1,3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,",
+    "3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,35,40,Mid K,Early K,3,,true,true,Needs quiet transitions",
+    "4,K,David,Wilson,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,,false,true,",
+    "5,K,Emma,Taylor,F,None,false,false,1,1,,90,88,Late 1,Late 1,0,Ms. Patel,false,false,",
+    "6,1,Frank,Davis,M,None,false,false,2,2,,55,60,Mid 1,Mid 1,1,,false,false,",
+    "7,1,Grace,Miller,F,IEP,true,false,3,2,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,Speech services",
+    "8,1,Henry,Moore,M,None,false,false,1,1,9,78,80,Late 2,Late 2,0,,false,false,",
+    "9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,42,38,Mid 1,Early 1,2,,true,false,",
+    "10,1,Jack,Martin,M,None,false,false,1,3,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,Watch peer pairings",
   ]
   return [header, ...rows].join("\n")
 }
