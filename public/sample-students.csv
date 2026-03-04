@@ -1,11 +1,11 @@
-id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes
-1,K,Alice,Smith,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row
-2,K,Bob,Jones,M,None,false,false,1,1,3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,
-3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions
-4,K,David,Wilson,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,,false,true,K-102,
-5,K,Emma,Taylor,F,None,false,false,1,1,,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,
-6,1,Frank,Davis,M,None,false,false,2,2,,55,60,Mid 1,Mid 1,1,,false,false,1-201,
-7,1,Grace,Miller,F,IEP,true,false,3,2,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,1-202,Speech services
-8,1,Henry,Moore,M,None,false,false,1,1,9,78,80,Late 2,Late 2,0,,false,false,1-201,
-9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,42,38,Mid 1,Early 1,2,,true,false,1-202,
-10,1,Jack,Martin,M,None,false,false,1,3,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,1-203,Watch peer pairings
+id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,teacherNotes
+1,K,Alice,Smith,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson,true,false,Prefers front row
+2,K,Bob,Jones,M,None,false,false,1,1,3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,
+3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,35,40,Mid K,Early K,3,,true,true,Needs quiet transitions
+4,K,David,Wilson,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,,false,true,
+5,K,Emma,Taylor,F,None,false,false,1,1,,90,88,Late 1,Late 1,0,Ms. Patel,false,false,
+6,1,Frank,Davis,M,None,false,false,2,2,,55,60,Mid 1,Mid 1,1,,false,false,
+7,1,Grace,Miller,F,IEP,true,false,3,2,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,Speech services
+8,1,Henry,Moore,M,None,false,false,1,1,9,78,80,Late 2,Late 2,0,,false,false,
+9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,42,38,Mid 1,Early 1,2,,true,false,
+10,1,Jack,Martin,M,None,false,false,1,3,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,Watch peer pairings
