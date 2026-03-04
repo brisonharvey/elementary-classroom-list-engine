@@ -1,6 +1,10 @@
 import { useApp } from "../store/AppContext"
 
-export function GradeSettingsPanel() {
+interface GradeSettingsPanelProps {
+  onClose: () => void
+}
+
+export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
   const { state, dispatch } = useApp()
   const settings = state.gradeSettings[state.activeGrade]
 
@@ -9,8 +13,11 @@ export function GradeSettingsPanel() {
   }
 
   return (
-    <div className="summary-panel">
-      <div className="summary-header"><h3 className="summary-title">Grade {state.activeGrade} Settings</h3></div>
+    <div className="slide-panel-content">
+      <div className="slide-panel-header">
+        <h3 className="summary-title">Grade {state.activeGrade} Settings</h3>
+        <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close settings">✕</button>
+      </div>
       <div className="settings-grid">
         <label>Max IEP per room (HARD)<input type="number" value={settings.maxIEPPerRoom} onChange={(e) => set("maxIEPPerRoom", Number(e.target.value))} /></label>
         <label>Max referrals per room (HARD)<input type="number" value={settings.maxReferralsPerRoom} onChange={(e) => set("maxReferralsPerRoom", Number(e.target.value))} /></label>

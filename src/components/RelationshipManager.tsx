@@ -2,7 +2,11 @@ import { useMemo, useState } from "react"
 import { useApp } from "../store/AppContext"
 import { RelationshipRule } from "../types"
 
-export function RelationshipManager() {
+interface RelationshipManagerProps {
+  onClose: () => void
+}
+
+export function RelationshipManager({ onClose }: RelationshipManagerProps) {
   const { state, dispatch } = useApp()
   const [type, setType] = useState<RelationshipRule["type"]>("NO_CONTACT")
   const [studentA, setStudentA] = useState<number | "">("")
@@ -42,8 +46,11 @@ export function RelationshipManager() {
   }
 
   return (
-    <div className="summary-panel">
-      <div className="summary-header"><h3 className="summary-title">Relationship Rules</h3></div>
+    <div className="slide-panel-content">
+      <div className="slide-panel-header">
+        <h3 className="summary-title">No-contact Manager</h3>
+        <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close no-contact manager">✕</button>
+      </div>
       <div className="snapshot-save-row">
         <select value={type} onChange={(e) => setType(e.target.value as RelationshipRule["type"])} className="snapshot-input">
           <option value="NO_CONTACT">No Contact (HARD)</option>

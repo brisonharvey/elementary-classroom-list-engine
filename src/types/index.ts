@@ -41,6 +41,7 @@ export interface Student {
   preassignedTeacher?: string
   ell?: boolean
   section504?: boolean
+  raceEthnicity?: string
   teacherNotes?: string
 }
 
