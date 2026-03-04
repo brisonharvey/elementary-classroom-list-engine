@@ -26,7 +26,7 @@ export const initialState: AppState = {
   allStudents: [],
   classrooms: initializeClassrooms(),
   activeGrade: "K",
-  weights: { support: 50, behavior: 50, reading: 50, math: 50 },
+  weights: { academic: 50, behavioral: 50, demographic: 50 },
   snapshots: [],
   placementWarnings: [],
 }

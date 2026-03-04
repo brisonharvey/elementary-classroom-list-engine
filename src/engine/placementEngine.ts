@@ -131,6 +131,8 @@ export function runPlacement(
         referralCount: stats.referralCount + (student.specialEd.status === "Referral" ? 1 : 0),
         maleCount: stats.maleCount + (student.gender === "M" ? 1 : 0),
         femaleCount: stats.femaleCount + (student.gender === "F" ? 1 : 0),
+        ellCount: stats.ellCount + (student.ell ? 1 : 0),
+        section504Count: stats.section504Count + (student.section504 ? 1 : 0),
       })
     } else {
       unresolved.push(student)

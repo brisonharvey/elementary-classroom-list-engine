@@ -21,8 +21,7 @@ export const CSV_FIELD_OPTIONS = [
   { key: "teacher", label: "Assigned teacher", required: false },
   { key: "ell", label: "ELL", required: false },
   { key: "section504", label: "504 plan", required: false },
-  { key: "homeroom", label: "Homeroom", required: false },
-  { key: "notes", label: "Notes", required: false },
+  { key: "teacherNotes", label: "Teacher notes", required: false },
 ] as const
 
 export type CsvFieldKey = (typeof CSV_FIELD_OPTIONS)[number]["key"]
@@ -60,8 +59,7 @@ const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   // "program504" = normalized "Program 504" (Infinite Campus)
   section504: ["section504", "plan504", "program504", "504"],
-  homeroom: ["homeroom", "homeroomid", "room"],
-  notes: ["notes", "comments", "placementnotes"],
+  teacherNotes: ["teachernotes", "notes", "comments", "placementnotes"],
 }
 
 function parseBool(val: string): boolean {
@@ -290,8 +288,7 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
         parseOptionalString(getByHeader(values, "assignedteacher")),
       ell: parseELL(get(values, "ell")),
       section504: parseBool(get(values, "section504")),
-      homeroom: parseOptionalString(get(values, "homeroom")),
-      notes: parseOptionalString(get(values, "notes")),
+      teacherNotes: parseOptionalString(get(values, "teacherNotes")),
       locked: false,
     })
   }
