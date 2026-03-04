@@ -74,3 +74,16 @@ The sample includes extra optional import fields such as `ell`, `section504`, `h
 - `npm run build` — type-check and build
 - `npm run lint` — lint source files
 - `npm run preview` — preview production build
+
+## What changed (latest)
+
+- **Relationship rules manager (per grade):** Added a dedicated panel for creating/deleting `NO_CONTACT` (hard) and `DO_NOT_SEPARATE` (soft) student-pair rules with optional notes.
+- **Placement logic updates:**
+  - `NO_CONTACT` now blocks both auto-place and manual move validations.
+  - `DO_NOT_SEPARATE` now affects soft scoring so paired students are favored together.
+  - Existing preferred-with scoring is still active and combines with relationship scoring.
+- **Snapshots upgraded:** Multiple named snapshots per grade now support notes, duplicate/rename/edit note actions, and lightweight diff summaries.
+- **Dynamic classrooms (per grade):** Added add/delete classroom controls with stable room IDs and editable labels/teacher assignment compatibility.
+- **Room heatmaps:** Each room header now includes compact intensity tiles for reading, math, support, ELL, IEP cap pressure, and referral cap pressure.
+- **Per-grade settings panel:** Added per-grade hard/soft constraint settings for IEP cap, referral cap, ELL soft cap, gender tolerance (± students), and class-size variance limit with reset defaults.
+- **Service/support load balancing:** Support-load balancing remains in scoring/summaries and now appears in room heatmap pressure indicators.

@@ -1,4 +1,4 @@
-import { Classroom, Grade, RoomStats, Student } from "../types"
+import { Classroom, Grade, GradeSettings, RelationshipRule, RoomStats, Student } from "../types"
 
 export function getMapBand(score: number | undefined): number {
   if (score === undefined || score === null) return 2.5
@@ -148,6 +148,9 @@ function getDemographicPenalty(student: Student, stats: RoomStats): number {
 
 export interface PlacementSoftContext {
   assignedRoomByStudentId?: Map<number, string>
+  relationshipRules?: RelationshipRule[]
+  gradeSettings?: GradeSettings
+  gradeRooms?: Classroom[]
 }
 
 const SAME_ROOM_SUGGESTION_BONUS = 1.75
@@ -177,6 +180,53 @@ function getPreferredTogetherAdjustment(
   return adjustment
 }
 
+function getDoNotSeparateAdjustment(student: Student, classroomId: string, context: PlacementSoftContext): number {
+  const assigned = context.assignedRoomByStudentId
+  const rules = context.relationshipRules ?? []
+  if (!assigned) return 0
+
+  let adjustment = 0
+  for (const rule of rules) {
+    if (rule.type !== "DO_NOT_SEPARATE" || rule.grade !== student.grade) continue
+    if (!rule.studentIds.includes(student.id)) continue
+    const peerId = rule.studentIds[0] === student.id ? rule.studentIds[1] : rule.studentIds[0]
+    const peerRoom = assigned.get(peerId)
+    if (!peerRoom) continue
+    adjustment += peerRoom === classroomId ? -2.25 : 1.5
+  }
+  return adjustment
+}
+
+function getSettingsPenalty(student: Student, stats: RoomStats, context: PlacementSoftContext): number {
+  const settings = context.gradeSettings
+  const gradeRooms = context.gradeRooms
+  if (!settings || !gradeRooms) return 0
+
+  let penalty = 0
+  const newSize = stats.size + 1
+  const nextEllRatio = student.ell ? (stats.ellCount + 1) / newSize : stats.ellCount / newSize
+  if (nextEllRatio > settings.ellConcentrationSoftCap) {
+    penalty += (nextEllRatio - settings.ellConcentrationSoftCap) * 10
+  }
+
+  const nextMale = stats.maleCount + (student.gender === "M" ? 1 : 0)
+  const nextFemale = stats.femaleCount + (student.gender === "F" ? 1 : 0)
+  if (Math.abs(nextMale - nextFemale) > settings.genderBalanceTolerance) {
+    penalty += 2
+  }
+
+  const sizes = gradeRooms.map((room) => room.students.length)
+  const currentMin = Math.min(...sizes)
+  const currentMax = Math.max(...sizes)
+  const simulatedMax = Math.max(currentMax, newSize)
+  const variance = simulatedMax - currentMin
+  if (variance > settings.classSizeVarianceLimit) {
+    penalty += variance - settings.classSizeVarianceLimit
+  }
+
+  return penalty
+}
+
 export function scoreStudentForRoom(
   student: Student,
   classroom: Classroom,
@@ -198,6 +248,16 @@ export function scoreStudentForRoom(
   const behavioralPenalty = Math.abs(getStudentBehavioralNeed(student) - roomBehaviorAvg) * (weights.behavioral / 100) * 4
   const demographicPenalty = getDemographicPenalty(student, stats) * (weights.demographic / 100) * 3
   const preferredTogetherAdjustment = getPreferredTogetherAdjustment(student, classroom.id, context)
+  const doNotSeparateAdjustment = getDoNotSeparateAdjustment(student, classroom.id, context)
+  const settingsPenalty = getSettingsPenalty(student, stats, context) * (weights.demographic / 100)
 
-  return loadScore + academicPenalty + behavioralPenalty + demographicPenalty + preferredTogetherAdjustment
+  return (
+    loadScore +
+    academicPenalty +
+    behavioralPenalty +
+    demographicPenalty +
+    preferredTogetherAdjustment +
+    doNotSeparateAdjustment +
+    settingsPenalty
+  )
 }

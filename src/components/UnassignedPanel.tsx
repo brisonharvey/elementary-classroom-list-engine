@@ -75,7 +75,12 @@ export const UnassignedPanel = memo(function UnassignedPanel() {
           </div>
         ) : (
           filtered.map((s) => (
-            <StudentCard key={s.id} student={s} classroomId={null} />
+            <div key={s.id}>
+              <StudentCard student={s} classroomId={null} />
+              {(state.unresolvedReasons[s.id] ?? []).length > 0 && (
+                <div className="unresolved-reasons">Reason: {(state.unresolvedReasons[s.id] ?? []).join("; ")}</div>
+              )}
+            </div>
           ))
         )}
       </div>

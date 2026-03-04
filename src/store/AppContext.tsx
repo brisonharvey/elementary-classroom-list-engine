@@ -1,5 +1,6 @@
 import React, { createContext, Dispatch, useContext, useEffect, useReducer } from "react"
 import { AppState } from "../types"
+import { createDefaultGradeSettingsMap, getRoomLabelFromIndex } from "../utils/classroomInit"
 import { Action, initialState, reducer } from "./reducer"
 
 interface AppContextValue {
@@ -9,7 +10,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-const STORAGE_KEY = "classroom-placement-state-v1"
+const STORAGE_KEY = "classroom-placement-state-v2"
 
 function normalizeIdList(value: unknown): number[] {
   if (Array.isArray(value)) {
@@ -31,23 +32,27 @@ function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWit
 
 function loadPersistedState(): AppState {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem("classroom-placement-state-v1")
     if (!raw) return initialState
-    const parsed = JSON.parse(raw) as AppState
+    const parsed = JSON.parse(raw) as Partial<AppState>
     const allStudents = (parsed.allStudents ?? []).map((s) => normalizeStudentLists(s))
-    const classroomSource =
-      parsed.classrooms && parsed.classrooms.length > 0 ? parsed.classrooms : initialState.classrooms
-    const classrooms = classroomSource.map((classroom) => ({
+    const classroomSource = parsed.classrooms && parsed.classrooms.length > 0 ? parsed.classrooms : initialState.classrooms
+    const classrooms = classroomSource.map((classroom, index) => ({
       ...classroom,
+      label: classroom.label ?? getRoomLabelFromIndex(index % 4),
       students: (classroom.students ?? []).map((s) => normalizeStudentLists(s)),
     }))
 
+    const defaultSettings = createDefaultGradeSettingsMap()
     return {
       ...initialState,
       ...parsed,
       allStudents,
       classrooms,
-      weights: { ...initialState.weights, ...parsed.weights },
+      gradeSettings: { ...defaultSettings, ...(parsed.gradeSettings ?? {}) },
+      unresolvedReasons: parsed.unresolvedReasons ?? {},
+      relationshipRules: parsed.relationshipRules ?? [],
+      weights: { ...initialState.weights, ...(parsed.weights ?? {}) },
     }
   } catch {
     return initialState

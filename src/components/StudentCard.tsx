@@ -74,6 +74,8 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     dispatch({ type: "TOGGLE_LOCK", payload: student.id })
   }
 
+  const relatedRuleCount = state.relationshipRules.filter((r) => r.grade === student.grade && r.studentIds.includes(student.id)).length
+
   // ── No-contact name lookup ────────────────────────────────────
   const noContactNames = (student.noContactWith ?? []).map((id) => {
     const nc = state.allStudents.find((s) => s.id === id)
@@ -153,6 +155,8 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 📌 {student.preassignedTeacher}
               </span>
             )}
+
+            {relatedRuleCount > 0 && (<span className="badge badge-referrals" title={`${relatedRuleCount} relationship rule(s)`}>🔗{relatedRuleCount}</span>)}
 
             {/* MAP scores */}
             {student.mapReading !== undefined && (
