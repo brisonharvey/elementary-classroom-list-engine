@@ -86,6 +86,13 @@ export function runPlacement(
   const unresolved: Student[] = []
   const unresolvedReasons = new Map<number, Set<string>>()
   const roomStatsMap = new Map<string, RoomStats>(gradeRooms.map((r) => [r.id, computeRoomStats(r)]))
+  const assignedRoomByStudentId = new Map<number, string>()
+
+  for (const room of gradeRooms) {
+    for (const student of room.students) {
+      assignedRoomByStudentId.set(student.id, room.id)
+    }
+  }
 
   for (const student of sorted) {
     let bestRoom: Classroom | null = null
@@ -100,7 +107,7 @@ export function runPlacement(
         continue
       }
 
-      const score = scoreStudentForRoom(student, room, stats, weights)
+      const score = scoreStudentForRoom(student, room, stats, weights, { assignedRoomByStudentId })
       if (score < bestScore) {
         bestScore = score
         bestRoom = room
@@ -109,6 +116,7 @@ export function runPlacement(
 
     if (bestRoom) {
       bestRoom.students.push(student)
+      assignedRoomByStudentId.set(student.id, bestRoom.id)
       const stats = roomStatsMap.get(bestRoom.id)!
       roomStatsMap.set(bestRoom.id, {
         ...stats,
