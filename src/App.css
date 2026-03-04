@@ -82,7 +82,9 @@ html, body, #root {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   box-shadow: var(--shadow);
-  z-index: 10;
+  position: relative;
+  z-index: 40;
+  overflow: visible;
 }
 
 .header-left {
@@ -107,6 +109,7 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
 }
 
 /* ── Toolbar ── */
@@ -242,6 +245,10 @@ html, body, #root {
   background: var(--surface);
   min-width: 560px;
   box-shadow: var(--shadow-md);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
 }
 
 .mapping-header {
