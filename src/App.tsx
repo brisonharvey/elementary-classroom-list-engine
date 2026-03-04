@@ -13,6 +13,8 @@ import { RelationshipManager } from "./components/RelationshipManager"
 import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 
+type SlidePanel = "none" | "rules" | "settings"
+
 function PlacementWorkspace() {
   const { state } = useApp()
   const { classrooms, activeGrade } = state
@@ -34,8 +36,7 @@ function PlacementWorkspace() {
 export default function App() {
   const { state, dispatch } = useApp()
   const hasStudents = state.allStudents.length > 0
-  const [showRules, setShowRules] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
+  const [activePanel, setActivePanel] = useState<SlidePanel>("none")
 
   return (
     <div className="app">
@@ -66,8 +67,8 @@ export default function App() {
               }
             }}
           >Delete Classroom</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowRules((v) => !v)}>Relationship Rules</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings((v) => !v)}>Settings</button>
+          <button className={`btn btn-sm ${activePanel === "rules" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((v) => (v === "rules" ? "none" : "rules"))}>No-contact Manager</button>
+          <button className={`btn btn-sm ${activePanel === "settings" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((v) => (v === "settings" ? "none" : "settings"))}>Settings</button>
         </div>
       </div>
 
@@ -84,8 +85,12 @@ export default function App() {
           <SnapshotManager />
         </div>
       )}
-      {showRules && <RelationshipManager />}
-      {showSettings && <GradeSettingsPanel />}
+
+      {activePanel !== "none" && <div className="slide-panel-backdrop" onClick={() => setActivePanel("none")} />}
+      <aside className={`slide-panel ${activePanel !== "none" ? "open" : ""}`}>
+        {activePanel === "rules" && <RelationshipManager onClose={() => setActivePanel("none")} />}
+        {activePanel === "settings" && <GradeSettingsPanel onClose={() => setActivePanel("none")} />}
+      </aside>
     </div>
   )
 }

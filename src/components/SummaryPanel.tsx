@@ -17,6 +17,15 @@ export const SummaryPanel = memo(function SummaryPanel() {
   const totalStudents = allStudents.filter((s) => s.grade === activeGrade).length
   const totalIEP = allStudents.filter((s) => s.grade === activeGrade && s.specialEd.status === "IEP").length
   const totalReferral = allStudents.filter((s) => s.grade === activeGrade && s.specialEd.status === "Referral").length
+  const totalEL = allStudents.filter((s) => s.grade === activeGrade && s.ell).length
+  const total504 = allStudents.filter((s) => s.grade === activeGrade && s.section504).length
+  const raceCounts = allStudents
+    .filter((s) => s.grade === activeGrade)
+    .reduce<Record<string, number>>((acc, student) => {
+      const race = student.raceEthnicity?.trim() || "Unreported"
+      acc[race] = (acc[race] ?? 0) + 1
+      return acc
+    }, {})
 
   const roomStats = useMemo(() => gradeClassrooms.map((c) => computeRoomStats(c)), [gradeClassrooms])
 
@@ -47,6 +56,8 @@ export const SummaryPanel = memo(function SummaryPanel() {
           <span className="total-pill">{totalStudents} students</span>
           <span className="total-pill pill-iep">{totalIEP} IEP</span>
           <span className="total-pill pill-ref">{totalReferral} Referral</span>
+          <span className="total-pill">{totalEL} EL</span>
+          <span className="total-pill">{total504} 504</span>
         </div>
       </div>
 
@@ -58,6 +69,13 @@ export const SummaryPanel = memo(function SummaryPanel() {
           {supportImbalance && <div className="warning-chip">⚠ Support load imbalanced across classrooms</div>}
         </div>
       )}
+
+
+      <div className="race-totals">
+        {Object.entries(raceCounts).sort(([a], [b]) => a.localeCompare(b)).map(([race, count]) => (
+          <span key={race} className="total-pill">{race}: {count}</span>
+        ))}
+      </div>
 
       <div className="support-load-help">
         <strong>How Support Load is calculated:</strong> average of each student&apos;s

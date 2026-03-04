@@ -29,6 +29,7 @@ export const CSV_FIELD_OPTIONS = [
   { key: "teacher", label: "Assigned teacher", required: false },
   { key: "ell", label: "ELL", required: false },
   { key: "section504", label: "504 plan", required: false },
+  { key: "raceEthnicity", label: "Race/ethnicity", required: false },
   { key: "teacherNotes", label: "Teacher notes", required: false },
 ] as const
 
@@ -63,6 +64,7 @@ const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
   teacher: ["teacher", "assignedteacher", "homeroomteacher", "schedulingteam", "classteacher(s)"],
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   section504: ["section504", "plan504", "program504", "504"],
+  raceEthnicity: ["raceethnicity", "race/ethnicity", "ethnicity", "race", "studentrace", "studentethnicity"],
   teacherNotes: ["teachernotes", "notes", "comments", "placementnotes"],
 }
 
@@ -362,6 +364,7 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
         parseOptionalString(getByHeader(values, "assignedteacher")),
       ell: parseELL(get(values, "ell")),
       section504: parseBool(get(values, "section504")),
+      raceEthnicity: parseOptionalString(get(values, "raceEthnicity")),
       teacherNotes: parseOptionalString(get(values, "teacherNotes")),
       locked: false,
     })
@@ -415,13 +418,80 @@ export function parseCSV(text: string): ParseResult {
 
 export function generateSampleCSV(): string {
   const header =
-    "id,grade,firstName,lastName,gender,status,coTeachReadingMinutes,coTeachWritingMinutes,coTeachScienceSocialStudiesMinutes,coTeachMathMinutes,coTeachBehaviorMinutes,coTeachSocialMinutes,coTeachVocationalMinutes,academicTier,behaviorTier,noContactWith,preferredWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes"
-  const rows = [
-    "1,K,Alice,Smith,F,IEP,30,15,0,45,20,0,0,3,2,,2;3,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row",
-    "2,K,Bob,Jones,M,None,0,0,0,0,0,0,0,1,1,3,1;3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,",
-    "3,K,Carol,Brown,F,Referral,0,20,15,0,0,30,0,2,3,1;2,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions",
-    "4,K,David,Wilson,M,IEP,30,0,0,30,0,0,0,3,3,,5;6,12,15,Early K,Early K,1,,false,true,K-102,",
-    "5,K,Emma,Taylor,F,None,0,0,0,0,0,0,0,1,1,,4,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,",
-  ]
+    "id,grade,firstName,lastName,gender,status,coTeachReadingMinutes,coTeachWritingMinutes,coTeachScienceSocialStudiesMinutes,coTeachMathMinutes,coTeachBehaviorMinutes,coTeachSocialMinutes,coTeachVocationalMinutes,academicTier,behaviorTier,noContactWith,preferredWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,raceEthnicity,teacherNotes"
+
+  const grades: Grade[] = ["K", "1", "2", "3", "4", "5"]
+  const firstNames = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Avery", "Parker", "Quinn", "Skyler", "Harper", "Elliot"]
+  const lastNames = ["Anderson", "Brooks", "Carter", "Diaz", "Ellis", "Foster", "Garcia", "Hayes", "Ingram", "Jenkins", "Kim", "Lopez"]
+  const races = ["White", "Black", "Hispanic/Latino", "Asian", "Multiracial"]
+
+  const rows: string[] = []
+  let id = 1001
+
+  for (const grade of grades) {
+    for (let i = 0; i < 40; i++) {
+      const isSped = i < 4
+      const status = isSped ? (i % 2 === 0 ? "IEP" : "Referral") : "None"
+      const gender = i % 2 === 0 ? "F" : "M"
+      const teacher = `Ms. Grade${grade}${String.fromCharCode(65 + (i % 4))}`
+      const ell = i % 6 === 0 ? "true" : "false"
+      const section504 = i % 10 === 0 ? "true" : "false"
+      const race = races[i % races.length]
+
+      const readingMinutes = isSped ? 30 + (i % 2) * 15 : 0
+      const writingMinutes = isSped && i % 3 === 0 ? 15 : 0
+      const scienceMinutes = isSped && i % 4 === 0 ? 15 : 0
+      const mathMinutes = isSped ? 30 : 0
+      const behaviorMinutes = isSped && i % 3 === 1 ? 20 : 0
+      const socialMinutes = isSped && i % 4 === 2 ? 15 : 0
+      const vocationalMinutes = isSped && grade !== "K" && i % 5 === 0 ? 10 : 0
+
+      const academicTier = isSped ? 3 : i % 5 === 0 ? 2 : 1
+      const behaviorTier = isSped && i % 2 === 1 ? 3 : i % 7 === 0 ? 2 : 1
+      const noContact = i % 13 === 0 ? `${id + 1}` : ""
+      const preferredWith = i % 9 === 0 ? `${id + 2}` : ""
+      const mapReading = 155 + (i % 18) * 2 + (grade === "K" ? -20 : 0)
+      const mapMath = 158 + (i % 16) * 2 + (grade === "K" ? -18 : 0)
+      const ireadyReading = ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2"][i % 6]
+      const ireadyMath = ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2"][((i + 2) % 6)]
+      const referrals = isSped ? 1 + (i % 3) : i % 11 === 0 ? 1 : 0
+      const firstName = firstNames[i % firstNames.length]
+      const lastName = `${lastNames[(i + grades.indexOf(grade)) % lastNames.length]}${i + 1}`
+      const note = isSped ? "Requires co-teach support" : ""
+
+      rows.push([
+        id,
+        grade,
+        firstName,
+        lastName,
+        gender,
+        status,
+        readingMinutes,
+        writingMinutes,
+        scienceMinutes,
+        mathMinutes,
+        behaviorMinutes,
+        socialMinutes,
+        vocationalMinutes,
+        academicTier,
+        behaviorTier,
+        noContact,
+        preferredWith,
+        mapReading,
+        mapMath,
+        ireadyReading,
+        ireadyMath,
+        referrals,
+        teacher,
+        ell,
+        section504,
+        race,
+        note,
+      ].join(","))
+
+      id += 1
+    }
+  }
+
   return [header, ...rows].join("\n")
 }
