@@ -35,7 +35,9 @@ function loadPersistedState(): AppState {
     if (!raw) return initialState
     const parsed = JSON.parse(raw) as AppState
     const allStudents = (parsed.allStudents ?? []).map((s) => normalizeStudentLists(s))
-    const classrooms = (parsed.classrooms ?? []).map((classroom) => ({
+    const classroomSource =
+      parsed.classrooms && parsed.classrooms.length > 0 ? parsed.classrooms : initialState.classrooms
+    const classrooms = classroomSource.map((classroom) => ({
       ...classroom,
       students: (classroom.students ?? []).map((s) => normalizeStudentLists(s)),
     }))
