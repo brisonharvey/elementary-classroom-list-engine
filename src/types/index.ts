@@ -24,6 +24,8 @@ export interface Student {
   ireadyReading?: string
   ireadyMath?: string
   noContactWith?: number[]
+  /** Soft preference: IDs of students this student should ideally be placed with. */
+  preferredWith?: number[]
   locked?: boolean
   /** Teacher name pre-assigned at import time. Populated from the CSV `teacher` column. */
   preassignedTeacher?: string

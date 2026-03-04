@@ -12,6 +12,7 @@ export const CSV_FIELD_OPTIONS = [
   { key: "academicTier", label: "Academic tier", required: false },
   { key: "behaviorTier", label: "Behavior tier", required: false },
   { key: "noContactWith", label: "No-contact IDs", required: false },
+  { key: "preferredWith", label: "Prefer with IDs", required: false },
   { key: "mapReading", label: "MAP reading", required: false },
   { key: "mapMath", label: "MAP math", required: false },
   { key: "ireadyReading", label: "i-Ready reading", required: false },
@@ -44,6 +45,7 @@ const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
   // "activeintervention|seb" = normalized "Active Intervention | SEB"
   behaviorTier: ["behaviortier", "behaviourtier", "behaviorsupporttier", "activeintervention|seb"],
   noContactWith: ["nocontactwith", "separatefrom", "donotpairwith"],
+  preferredWith: ["preferredwith", "preferwith", "sameclasswith", "sameroomwith", "keepwith", "withstudents"],
   // Winter MAP preferred over Fall MAP (most recent data)
   mapReading: ["mapreading", "readingmap", "mapreadingscore", "mapwinterreading|rit", "mapfallreading|rit"],
   mapMath: ["mapmath", "mathmap", "mapmathscore", "mapwintermath|rit", "mapfallmath|rit"],
@@ -83,12 +85,20 @@ function parseTier(val: string): 1 | 2 | 3 {
   return 1
 }
 
-function parseNoContact(val: string): number[] {
+function parseIdList(val: string): number[] {
   if (!val || !val.trim()) return []
   return val
-    .split(";")
+    .split(/[;,|]/)
     .map((s) => parseInt(s.trim(), 10))
     .filter((n) => !isNaN(n) && n > 0)
+}
+
+function parseNoContact(val: string): number[] {
+  return parseIdList(val)
+}
+
+function parsePreferredWith(val: string): number[] {
+  return parseIdList(val)
 }
 
 function parseStatus(val: string): "None" | "IEP" | "Referral" {
@@ -273,6 +283,7 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
       ireadyReading: parseOptionalString(get(values, "ireadyReading")),
       ireadyMath: parseOptionalString(get(values, "ireadyMath")),
       noContactWith: parseNoContact(get(values, "noContactWith")),
+      preferredWith: parsePreferredWith(get(values, "preferredWith")),
       preassignedTeacher:
         parseOptionalString(get(values, "teacher")) ||
         parseOptionalString(getByHeader(values, "teacher")) ||
@@ -287,12 +298,25 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
 
   const idSet = new Set(students.map((s) => s.id))
   for (const student of students) {
-    const invalid = (student.noContactWith ?? []).filter((nc) => !idSet.has(nc))
-    if (invalid.length > 0) {
+    const invalidNoContact = (student.noContactWith ?? []).filter((nc) => !idSet.has(nc))
+    if (invalidNoContact.length > 0) {
       errors.push(
-        `Student ${student.id} (${student.firstName} ${student.lastName}): noContactWith references unknown IDs: ${invalid.join(", ")}`
+        `Student ${student.id} (${student.firstName} ${student.lastName}): noContactWith references unknown IDs: ${invalidNoContact.join(", ")}`
       )
     }
+
+    student.noContactWith = (student.noContactWith ?? []).filter((nc) => nc !== student.id)
+
+    const invalidPreferred = (student.preferredWith ?? []).filter((peerId) => !idSet.has(peerId))
+    if (invalidPreferred.length > 0) {
+      errors.push(
+        `Student ${student.id} (${student.firstName} ${student.lastName}): preferredWith references unknown IDs: ${invalidPreferred.join(", ")}`
+      )
+    }
+
+    student.preferredWith = (student.preferredWith ?? [])
+      .filter((peerId) => peerId !== student.id && idSet.has(peerId))
+      .filter((peerId, idx, arr) => arr.indexOf(peerId) === idx)
   }
 
   return { students, errors, skipped }
@@ -307,20 +331,20 @@ export function parseCSV(text: string): ParseResult {
 /** Generate a sample CSV string for download/reference */
 export function generateSampleCSV(): string {
   const header =
-    "id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes"
+    "id,grade,firstName,lastName,gender,status,requiresCoTeachReading,requiresCoTeachMath,academicTier,behaviorTier,noContactWith,preferredWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,homeroom,notes"
   const rows = [
     // teacher column: pre-assigns student to a named teacher (classroom auto-mapped)
     // noContactWith: semicolon-separated IDs — supports multiple: e.g. "2;3"
-    "1,K,Alice,Smith,F,IEP,true,false,3,2,,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row",
-    "2,K,Bob,Jones,M,None,false,false,1,1,3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,",
-    "3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions",
-    "4,K,David,Wilson,M,IEP,true,true,3,3,,12,15,Early K,Early K,1,,false,true,K-102,",
-    "5,K,Emma,Taylor,F,None,false,false,1,1,,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,",
-    "6,1,Frank,Davis,M,None,false,false,2,2,,55,60,Mid 1,Mid 1,1,,false,false,1-201,",
-    "7,1,Grace,Miller,F,IEP,true,false,3,2,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,1-202,Speech services",
-    "8,1,Henry,Moore,M,None,false,false,1,1,9,78,80,Late 2,Late 2,0,,false,false,1-201,",
-    "9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,42,38,Mid 1,Early 1,2,,true,false,1-202,",
-    "10,1,Jack,Martin,M,None,false,false,1,3,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,1-203,Watch peer pairings",
+    "1,K,Alice,Smith,F,IEP,true,false,3,2,,2;3,18,22,Early K,Mid K,2,Ms. Johnson,true,false,K-101,Prefers front row",
+    "2,K,Bob,Jones,M,None,false,false,1,1,3,1;3,82,78,Late 1,Mid 1,0,Ms. Johnson,false,false,K-101,",
+    "3,K,Carol,Brown,F,Referral,false,false,2,3,1;2,1;2,35,40,Mid K,Early K,3,,true,true,K-102,Needs quiet transitions",
+    "4,K,David,Wilson,M,IEP,true,true,3,3,,5;6,12,15,Early K,Early K,1,,false,true,K-102,",
+    "5,K,Emma,Taylor,F,None,false,false,1,1,,4,90,88,Late 1,Late 1,0,Ms. Patel,false,false,K-103,",
+    "6,1,Frank,Davis,M,None,false,false,2,2,,,55,60,Mid 1,Mid 1,1,,false,false,1-201,",
+    "7,1,Grace,Miller,F,IEP,true,false,3,2,,,20,30,Early 1,Mid 1,0,Mr. Rivera,true,true,1-202,Speech services",
+    "8,1,Henry,Moore,M,None,false,false,1,1,9,,78,80,Late 2,Late 2,0,,false,false,1-201,",
+    "9,1,Isabel,Jackson,F,Referral,false,false,2,2,8,,42,38,Mid 1,Early 1,2,,true,false,1-202,",
+    "10,1,Jack,Martin,M,None,false,false,1,3,,,65,70,Mid 2,Late 2,4,Mr. Rivera,false,false,1-203,Watch peer pairings",
   ]
   return [header, ...rows].join("\n")
 }
