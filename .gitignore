@@ -1,4 +1,7 @@
 node_modules
 dist
 .env
+.env.signing
 .DS_Store
+release
+out

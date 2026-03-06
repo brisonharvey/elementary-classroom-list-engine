@@ -49,6 +49,48 @@ npm run dev
 npm run build
 ```
 
+### Desktop packaging
+
+```bash
+# Run Electron against the Vite dev server
+npm run dev:desktop
+
+# Build desktop package for current platform
+npm run build:desktop
+
+# Build macOS artifacts (.dmg + .zip)
+npm run dist:mac
+
+# Build Windows x64 artifacts (installer + portable .exe)
+npm run dist:win
+```
+
+Desktop build outputs are written to `release/`.
+
+### Signing and notarization setup
+
+Create a local env file (for example `.env.signing`) with your distribution cert settings:
+
+```bash
+# macOS code signing certificate (Developer ID Application) in keychain
+CSC_NAME="Developer ID Application: Your Org (TEAMID)"
+
+# Optional: use a .p12 instead of keychain identity
+# CSC_LINK="/absolute/path/to/certs/macos-signing-cert.p12"
+# CSC_KEY_PASSWORD="p12-password"
+
+# Apple notarization credentials
+APPLE_ID="developer-account@example.com"
+APPLE_APP_SPECIFIC_PASSWORD="app-specific-password"
+APPLE_TEAM_ID="TEAMID1234"
+
+# Windows Authenticode certificate (for signed Windows installers/exe)
+# CSC_LINK="/absolute/path/to/certs/windows-signing-cert.pfx"
+# CSC_KEY_PASSWORD="pfx-password"
+```
+
+Then run packaging commands with those env vars loaded so Electron Builder can sign and notarize.
+
 ### Lint
 
 ```bash
@@ -108,6 +150,11 @@ The uploader supports flexible header names using alias matching, then lets you 
 ## Scripts
 
 - `npm run dev` - start dev server
+- `npm run dev:desktop` - run the app in Electron during development
 - `npm run build` - type-check and production build
+- `npm run build:desktop` - build desktop app for current platform
+- `npm run dist:mac` - build universal macOS desktop artifacts
+- `npm run dist:win` - build Windows x64 desktop artifacts
+- `npm run dist:win:arm64` - build Windows ARM64 desktop artifacts
 - `npm run lint` - lint source files
 - `npm run preview` - preview production build

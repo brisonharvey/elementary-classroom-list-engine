@@ -2,22 +2,75 @@
   "name": "claude-classroom-engine",
   "private": true,
   "version": "1.0.0",
+  "description": "Desktop and web app for generating balanced elementary classroom rosters.",
+  "author": "Elementary Classroom List Engine Team",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
+    "dev:desktop": "concurrently -k \"vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
     "build": "tsc -b && vite build",
+    "build:renderer": "tsc -b && vite build",
+    "build:desktop": "npm run build:renderer && electron-builder",
+    "dist:mac": "npm run build:renderer && electron-builder --mac --universal",
+    "dist:win": "npm run build:renderer && electron-builder --win --x64",
+    "dist:win:arm64": "npm run build:renderer && electron-builder --win --arm64",
     "lint": "eslint .",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.brisonharvey.classroomengine",
+    "productName": "Elementary Classroom List Engine",
+    "afterSign": "electron/notarize.cjs",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "icon": "build/app.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.education"
+    },
+    "win": {
+      "icon": "build/app.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^40.8.0",
+    "electron-builder": "^26.8.1",
+    "icon-gen": "^5.0.0",
     "typescript": "^5.5.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "wait-on": "^9.0.4"
   }
 }
