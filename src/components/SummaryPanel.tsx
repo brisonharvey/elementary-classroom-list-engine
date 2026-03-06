@@ -8,6 +8,17 @@ function fmt(n: number): string {
   return n.toFixed(2)
 }
 
+const RACE_CHIP_PALETTE = [
+  { backgroundColor: "#dbeafe", borderColor: "#93c5fd", color: "#1e3a8a" },
+  { backgroundColor: "#dcfce7", borderColor: "#86efac", color: "#14532d" },
+  { backgroundColor: "#fef3c7", borderColor: "#fcd34d", color: "#78350f" },
+  { backgroundColor: "#ffe4e6", borderColor: "#fda4af", color: "#881337" },
+  { backgroundColor: "#ede9fe", borderColor: "#c4b5fd", color: "#4c1d95" },
+  { backgroundColor: "#cffafe", borderColor: "#67e8f9", color: "#164e63" },
+  { backgroundColor: "#f3e8ff", borderColor: "#d8b4fe", color: "#6b21a8" },
+  { backgroundColor: "#e0f2fe", borderColor: "#7dd3fc", color: "#0c4a6e" },
+]
+
 export const SummaryPanel = memo(function SummaryPanel() {
   const { state } = useApp()
   const { classrooms, activeGrade, allStudents, gradeSettings, showTeacherNames } = state
@@ -28,6 +39,13 @@ export const SummaryPanel = memo(function SummaryPanel() {
     }, {})
 
   const roomStats = useMemo(() => gradeClassrooms.map((c) => computeRoomStats(c)), [gradeClassrooms])
+  const raceStyleByLabel = useMemo(() => {
+    const labels = Object.keys(raceCounts).sort((a, b) => a.localeCompare(b))
+    return labels.reduce<Record<string, { backgroundColor: string; borderColor: string; color: string }>>((acc, race, index) => {
+      acc[race] = RACE_CHIP_PALETTE[index % RACE_CHIP_PALETTE.length]
+      return acc
+    }, {})
+  }, [raceCounts])
 
   const readingAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomReadingAvg(c))
   const mathAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomMathAvg(c))
@@ -74,7 +92,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
 
       <div className="race-totals">
         {Object.entries(raceCounts).sort(([a], [b]) => a.localeCompare(b)).map(([race, count]) => (
-          <span key={race} className="total-pill">{race}: {count}</span>
+          <span key={race} className="total-pill race-pill" style={raceStyleByLabel[race]}>{race}: {count}</span>
         ))}
       </div>
 
@@ -133,8 +151,6 @@ export const SummaryPanel = memo(function SummaryPanel() {
                 }, {})
               )
                 .sort(([a], [b]) => a.localeCompare(b))
-                .map(([race, count]) => `${race}: ${count}`)
-                .join(", ")
 
               return (
                 <tr key={c.label} className={genderWarn ? "row-warn" : ""}>
@@ -145,7 +161,15 @@ export const SummaryPanel = memo(function SummaryPanel() {
                   <td>{stats.referralCount > 0 ? <span className="qs-badge qs-ref">{stats.referralCount}</span> : "—"}</td>
                   <td>{stats.ellCount > 0 ? stats.ellCount : "—"}</td>
                   <td>{stats.section504Count > 0 ? stats.section504Count : "—"}</td>
-                  <td>{raceBreakdown || "—"}</td>
+                  <td>
+                    {raceBreakdown.length === 0 ? "—" : (
+                      <div className="race-chip-list">
+                        {raceBreakdown.map(([race, count]) => (
+                          <span key={`${c.id}-${race}`} className="race-pill" style={raceStyleByLabel[race]}>{race}: {count}</span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
                   <td className={genderWarn ? "cell-warn" : ""}>{stats.maleCount}M / {stats.femaleCount}F</td>
                   <td>{mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</td>
                   <td>{mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</td>

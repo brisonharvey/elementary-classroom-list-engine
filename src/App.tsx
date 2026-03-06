@@ -37,6 +37,7 @@ export default function App() {
   const { state, dispatch } = useApp()
   const hasStudents = state.allStudents.length > 0
   const [activePanel, setActivePanel] = useState<SlidePanel>("none")
+  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(true)
   const [bottomPanelState, setBottomPanelState] = useState<"expanded" | "minimized" | "hidden">("expanded")
 
   return (
@@ -80,6 +81,25 @@ export default function App() {
 
       <PlacementWorkspace />
 
+      {hasStudents && (
+        <>
+          <aside className={`summary-drawer ${summaryDrawerOpen ? "open" : ""}`} aria-hidden={!summaryDrawerOpen}>
+            <div className="summary-drawer-header">
+              <strong>Grade {state.activeGrade} Summary</strong>
+              <button className="btn btn-ghost btn-sm" onClick={() => setSummaryDrawerOpen(false)}>Hide</button>
+            </div>
+            <div className="summary-drawer-body">
+              <SummaryPanel />
+            </div>
+          </aside>
+          {!summaryDrawerOpen && (
+            <button className="summary-drawer-toggle" onClick={() => setSummaryDrawerOpen(true)}>
+              Show Summary
+            </button>
+          )}
+        </>
+      )}
+
       {hasStudents && bottomPanelState !== "hidden" && (
         <div className={`bottom-panels ${bottomPanelState === "minimized" ? "bottom-panels-minimized" : ""}`}>
           <div className="bottom-panel-controls">
@@ -91,20 +111,17 @@ export default function App() {
             <button className="btn btn-ghost btn-sm" onClick={() => setBottomPanelState("hidden")}>Hide</button>
           </div>
           {bottomPanelState === "expanded" ? (
-            <>
-              <SummaryPanel />
-              <SnapshotManager />
-            </>
+            <SnapshotManager />
           ) : (
             <button className="bottom-panel-minimized-bar" onClick={() => setBottomPanelState("expanded")} aria-label="Expand summary bar">
-              Grade {state.activeGrade} summary and snapshots hidden. Click to expand.
+              Grade {state.activeGrade} snapshots hidden. Click to expand.
             </button>
           )}
         </div>
       )}
 
       {hasStudents && bottomPanelState === "hidden" && (
-        <button className="bottom-panel-show-btn" onClick={() => setBottomPanelState("expanded")}>Show Summary Bar</button>
+        <button className="bottom-panel-show-btn" onClick={() => setBottomPanelState("expanded")}>Show Snapshots</button>
       )}
 
       {activePanel !== "none" && <div className="slide-panel-backdrop" onClick={() => setActivePanel("none")} />}
