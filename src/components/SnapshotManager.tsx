@@ -34,11 +34,21 @@ export function SnapshotManager() {
     <div className="snapshot-manager">
       <div className="snapshot-header">
         <h3 className="snapshot-title">Snapshots (Grade {activeGrade})</h3>
-        <div className="snapshot-save-row">
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Snapshot name" className="snapshot-input" />
-          <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note" className="snapshot-input" />
-          <button className="btn btn-primary btn-sm" onClick={save}>Save Snapshot</button>
-        </div>
+        <form
+          className="snapshot-save-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            save()
+          }}
+        >
+          <div className="snapshot-save-row">
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Snapshot name" className="snapshot-input" />
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note" className="snapshot-input" />
+          </div>
+          <div className="snapshot-save-actions">
+            <button type="submit" className="snapshot-save-btn">Save Snapshot</button>
+          </div>
+        </form>
       </div>
 
       {gradeSnapshots.length === 0 ? (

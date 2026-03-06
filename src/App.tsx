@@ -37,6 +37,7 @@ export default function App() {
   const { state, dispatch } = useApp()
   const hasStudents = state.allStudents.length > 0
   const [activePanel, setActivePanel] = useState<SlidePanel>("none")
+  const [bottomPanelState, setBottomPanelState] = useState<"expanded" | "minimized" | "hidden">("expanded")
 
   return (
     <div className="app">
@@ -79,11 +80,31 @@ export default function App() {
 
       <PlacementWorkspace />
 
-      {hasStudents && (
-        <div className="bottom-panels">
-          <SummaryPanel />
-          <SnapshotManager />
+      {hasStudents && bottomPanelState !== "hidden" && (
+        <div className={`bottom-panels ${bottomPanelState === "minimized" ? "bottom-panels-minimized" : ""}`}>
+          <div className="bottom-panel-controls">
+            {bottomPanelState === "expanded" ? (
+              <button className="btn btn-ghost btn-sm" onClick={() => setBottomPanelState("minimized")}>Minimize</button>
+            ) : (
+              <button className="btn btn-ghost btn-sm" onClick={() => setBottomPanelState("expanded")}>Expand</button>
+            )}
+            <button className="btn btn-ghost btn-sm" onClick={() => setBottomPanelState("hidden")}>Hide</button>
+          </div>
+          {bottomPanelState === "expanded" ? (
+            <>
+              <SummaryPanel />
+              <SnapshotManager />
+            </>
+          ) : (
+            <button className="bottom-panel-minimized-bar" onClick={() => setBottomPanelState("expanded")} aria-label="Expand summary bar">
+              Grade {state.activeGrade} summary and snapshots hidden. Click to expand.
+            </button>
+          )}
         </div>
+      )}
+
+      {hasStudents && bottomPanelState === "hidden" && (
+        <button className="bottom-panel-show-btn" onClick={() => setBottomPanelState("expanded")}>Show Summary Bar</button>
       )}
 
       {activePanel !== "none" && <div className="slide-panel-backdrop" onClick={() => setActivePanel("none")} />}
