@@ -29,14 +29,27 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
 
   const save = () => {
     if (!studentA || !studentB || studentA === studentB) return
+    const pair: [number, number] =
+      Number(studentA) < Number(studentB)
+        ? [Number(studentA), Number(studentB)]
+        : [Number(studentB), Number(studentA)]
+    const existing = state.relationshipRules.find((r) => {
+      if (r.grade !== state.activeGrade || r.type !== type) return false
+      const existingPair: [number, number] =
+        r.studentIds[0] < r.studentIds[1]
+          ? [r.studentIds[0], r.studentIds[1]]
+          : [r.studentIds[1], r.studentIds[0]]
+      return existingPair[0] === pair[0] && existingPair[1] === pair[1]
+    })
+
     dispatch({
       type: "UPSERT_RELATIONSHIP_RULE",
       payload: {
-        id: `rule-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
+        id: existing?.id ?? `rule-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
         type,
-        studentIds: [Number(studentA), Number(studentB)],
+        studentIds: pair,
         note: note.trim() || undefined,
-        createdAt: Date.now(),
+        createdAt: existing?.createdAt ?? Date.now(),
         grade: state.activeGrade,
       },
     })

@@ -1,15 +1,22 @@
 # Elementary Classroom List Engine
 
-A React + TypeScript web app for building balanced elementary classroom rosters (K–5) from a CSV student list.
+A React + TypeScript app for building balanced K-5 classroom rosters from CSV student data.
 
-## What this app does
+## Core capabilities
 
-- Imports student data from CSV with a guided two-step upload and header matching.
-- Organizes students by grade and classroom.
-- Uses weighted placement criteria to balance lists.
-- Supports manual drag-and-drop adjustments across classrooms.
-- Tracks unassigned students and class summaries.
-- Exports class lists and supports snapshots while iterating.
+- Two-step CSV import: upload, map source headers to app fields, then import.
+- Placement engine that runs per active grade and preserves locked students.
+- Hard constraints for capacity, co-teach coverage, IEP/referral caps, and no-contact rules.
+- Soft scoring for academic, behavioral, demographic, relationship, and grade-setting pressures.
+- Manual drag-and-drop moves with pre-move warning prompts.
+- Dynamic room management (add/delete rooms per grade).
+- Per-room editing for teacher name and co-teach coverage categories.
+- Per-grade settings panel for hard/soft constraint thresholds.
+- Relationship rules panel for `NO_CONTACT` (hard) and `DO_NOT_SEPARATE` (soft).
+- Snapshot manager (save, restore, duplicate, rename, note edits, delete).
+- Grade summary table with imbalance indicators and room-level metrics.
+- CSV export for current grade or all grades.
+- Local persistence (`localStorage`) with migration support from legacy state keys.
 
 ## Tech stack
 
@@ -21,7 +28,7 @@ A React + TypeScript web app for building balanced elementary classroom rosters 
 
 ### Prerequisites
 
-- Node.js 18+ (recommended)
+- Node.js 18+
 - npm
 
 ### Install dependencies
@@ -30,60 +37,77 @@ A React + TypeScript web app for building balanced elementary classroom rosters 
 npm install
 ```
 
-### Run in development
+### Run locally
 
 ```bash
 npm run dev
 ```
 
-Then open the local URL shown by Vite (typically `http://localhost:5173`).
-
-### Build for production
+### Build
 
 ```bash
 npm run build
 ```
 
-### Preview production build
+### Lint
 
 ```bash
-npm run preview
+npm run lint
 ```
 
 ## CSV input
 
-A sample CSV is included at:
+Starter files are in `public/`:
 
-- `public/sample-students.csv`
+- `sample-students.csv` - full example dataset
+- `student-import-template.csv` - header-only template for real data entry
 
-Upload your CSV from the app header. The import now opens a mapping step so you can match varied source headers (for example `Student Number` → `Student ID`) before loading students.
+The uploader supports flexible header names using alias matching, then lets you manually map columns before import.
 
-The sample includes extra optional import fields such as `ell`, `section504`, `homeroom`, and `notes`.
+### Required fields
 
-## Project structure (high level)
+- `id`
+- `grade`
+- `firstName`
+- `lastName`
 
-- `src/components/` UI components for uploader, controls, classroom columns, summaries, and snapshots.
-- `src/engine/` Placement algorithm.
-- `src/store/` App state management and drag context.
-- `src/utils/` CSV parsing, scoring, constraints, initialization, and export helpers.
-- `src/types/` Shared TypeScript types.
+### Common optional fields
+
+- Student profile: `gender`, `status`, `academicTier`, `behaviorTier`, `referrals`
+- Co-teach minutes by category: reading, writing, science/social studies, math, behavior, social, vocational
+- Assessments: `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
+- Relationships: `noContactWith`, `preferredWith`
+- Placement context: `teacher` (pre-assignment), `ell`, `section504`, `raceEthnicity`, `teacherNotes`
+
+## Placement workflow
+
+1. Load students from CSV.
+2. Optionally define grade settings and relationship rules.
+3. Run `Auto-Place` for the active grade.
+4. Review warnings/unresolved students.
+5. Manually adjust via drag-and-drop and lock/pin as needed.
+6. Save snapshots while iterating.
+7. Export final lists.
+
+## Behavior details
+
+- Auto-placement only runs for the currently active grade.
+- Locked students stay in place during auto-placement and grade reset.
+- Students with imported `teacher` values are preassigned, inserted into mapped rooms, and loaded as locked.
+- Manual moves can override constraints after warning confirmation.
+- `Clear All` resets students, rooms, snapshots, rules, settings, and warnings to initial state.
+
+## Project structure
+
+- `src/components/` - uploader, controls, classroom columns, summary, snapshots, settings, rules
+- `src/engine/` - placement engine
+- `src/store/` - reducer, app context, drag context
+- `src/utils/` - CSV parsing, scoring, constraints, co-teach helpers, exports, classroom init
+- `src/types/` - shared domain types
 
 ## Scripts
 
-- `npm run dev` — start dev server
-- `npm run build` — type-check and build
-- `npm run lint` — lint source files
-- `npm run preview` — preview production build
-
-## What changed (latest)
-
-- **Relationship rules manager (per grade):** Added a dedicated panel for creating/deleting `NO_CONTACT` (hard) and `DO_NOT_SEPARATE` (soft) student-pair rules with optional notes.
-- **Placement logic updates:**
-  - `NO_CONTACT` now blocks both auto-place and manual move validations.
-  - `DO_NOT_SEPARATE` now affects soft scoring so paired students are favored together.
-  - Existing preferred-with scoring is still active and combines with relationship scoring.
-- **Snapshots upgraded:** Multiple named snapshots per grade now support notes, duplicate/rename/edit note actions, and lightweight diff summaries.
-- **Dynamic classrooms (per grade):** Added add/delete classroom controls with stable room IDs and editable labels/teacher assignment compatibility.
-- **Room heatmaps:** Each room header now includes compact intensity tiles for reading, math, support, ELL, IEP cap pressure, and referral cap pressure.
-- **Per-grade settings panel:** Added per-grade hard/soft constraint settings for IEP cap, referral cap, ELL soft cap, gender tolerance (± students), and class-size variance limit with reset defaults.
-- **Service/support load balancing:** Support-load balancing remains in scoring/summaries and now appears in room heatmap pressure indicators.
+- `npm run dev` - start dev server
+- `npm run build` - type-check and production build
+- `npm run lint` - lint source files
+- `npm run preview` - preview production build

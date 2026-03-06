@@ -1,149 +1,193 @@
-# Classroom Placement Engine: Logic and UI Explanation
+# Classroom Placement Engine: Logic Definition
 
-## 1) Scoring Logic
+This document describes the current placement and UI behavior implemented in the app.
 
-The auto-placement algorithm assigns each candidate room a numeric score for each student. Lower scores are better.
+## 1. Data model
 
-### Student-level normalized signals
+### Student
 
-- **MAP scores** are converted into a 1–4 band:
-  - `<25 => 1`, `<50 => 2`, `<75 => 3`, otherwise `4`.
-  - Missing MAP defaults to neutral (2.5).
-- **i-Ready labels** (`Early|Mid|Late` + grade) are converted into a grade-relative offset:
-  - `labelGrade - studentGrade`, with timing offsets (`Early = -0.3`, `Late = +0.3`).
-  - Then converted into a bounded 1–4 score via `relative + 2.5` and clamped.
-- **Reading/Math student score** is the average of available MAP band + i-Ready converted score.
-  - If no data is present, score is neutral 2.5.
+Each student includes:
 
-### Support load and needs
+- Identity and grade: `id`, `firstName`, `lastName`, `grade`
+- Demographics/context: `gender`, `ell`, `section504`, `raceEthnicity`
+- Support profile:
+  - `specialEd.status` (`None`, `IEP`, `Referral`)
+  - `intervention.academicTier` (1-3)
+  - `behaviorTier` (1-3)
+  - `referrals`
+  - `coTeachMinutes` by category
+- Assessment inputs: `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
+- Relationship inputs: `noContactWith`, `preferredWith`
+- Placement controls: `locked`, `preassignedTeacher`
 
-- **Student support load** =
-  - `academicTier`
-  - `+ behaviorTier`
-  - `+2` if IEP, `+1` if Referral
-  - `+ referrals` count (if present)
-- **Academic need** used for matching =
-  - `academicTier + average(distance of reading and math from neutral 2.5)`
-- **Behavioral need** used for matching =
-  - `behaviorTier + referrals`
+### Classroom
 
-### Room-level stats used for scoring
+Each room includes:
 
-For each room, the engine tracks:
+- `id`, `grade`, `label`, `teacherName`
+- `maxSize`
+- `coTeachCoverage` (supported co-teach categories)
+- `students`
 
-- current size
-- average support load
-- average reading / math score
-- counts for IEP, Referral, Male, Female, ELL, and 504
+### Grade settings
 
-### Final scoring formula
+Per grade, settings are:
 
-For each valid room candidate:
+- `maxIEPPerRoom` (hard)
+- `maxReferralsPerRoom` (hard)
+- `ellConcentrationSoftCap` (soft)
+- `genderBalanceTolerance` (soft)
+- `classSizeVarianceLimit` (soft)
 
-- **Load score**: `(roomSize / maxSize) * 10`
-- **Academic penalty**: distance between room academic average and student academic need, scaled by the academic weight
-- **Behavioral penalty**: distance between room behavior average and student behavioral need, scaled by the behavioral weight
-- **Demographic penalty**: ratio-based concentration penalty for student attributes (gender, ELL, 504, IEP, Referral), scaled by demographic weight
-- **Preferred-with adjustment**:
-  - if a preferred peer is already in this room, subtract `1.75` (bonus)
-  - if that preferred peer is in another room, add `1.25` (penalty)
+## 2. Import and normalization
 
-The room with the **lowest total score** is selected.
+CSV import runs in two stages: preview/mapping, then parse with mapping.
 
----
+### Parsing behavior
 
-## 2) Placement Logic
+- Required mapped fields: `id`, `grade`, `firstName`, `lastName`.
+- Invalid IDs skip rows.
+- Grade parser supports `K`, `0`, `KG`, `Kind...`, `01-05`, ordinal strings (for 1-5).
+- Tier parsing defaults to `1` unless explicit `2/3` (or yes/y => 2).
+- Co-teach minutes are numeric, clamped to `0..999`.
+- Legacy boolean co-teach flags can be converted to 30-minute defaults.
+- `noContactWith` and `preferredWith` parse from `, ; |` separated ID tokens.
 
-Placement is done **per active grade** and only for unlocked students.
+### Relationship normalization at import
 
-### High-level flow
+- Unknown IDs in relationship lists generate warnings.
+- Self references are removed.
+- `preferredWith` is restricted to same-grade peers only.
+- Duplicates are removed.
 
-1. Clone current classrooms (safe, non-mutating workflow).
-2. Keep only locked students in active-grade rooms before placing.
-3. Build the unplaced list from active-grade students not currently locked into rooms.
-4. Sort students by priority:
-   - co-teach needs first (reading/math requirements)
-   - then special-ed status rank (IEP, then Referral, then None)
-   - then total support load descending
-5. For each student, evaluate every active-grade room:
+### Pre-assignment on load
+
+When students are loaded into app state:
+
+- Unique `(grade, preassignedTeacher)` combinations are mapped to rooms.
+- Existing matching teacher rooms are reused.
+- Empty rooms are reused first; new rooms are added if needed.
+- Preassigned students are inserted into those rooms (up to room capacity) and marked locked.
+
+## 3. Placement execution flow
+
+Auto-place runs for the active grade only.
+
+1. Clone classrooms.
+2. In active-grade rooms, keep only locked students.
+3. Build unplaced list from active-grade students not already locked in a room.
+4. Sort by priority:
+   - has co-teach need first
+   - higher total co-teach minutes first
+   - IEP before Referral before None
+   - higher support load first
+5. For each student, evaluate each active-grade room:
    - run hard constraints first
-   - if valid, compute room score
-   - choose best (lowest score)
-6. Place if possible; otherwise mark unresolved and collect reasons.
-7. Return updated classrooms + unresolved students + warning messages.
+   - if valid, compute soft score
+   - choose room with lowest score
+6. If no valid room exists, mark student unresolved and capture reasons.
+7. Return updated classrooms, unresolved reason map, and warnings.
 
-### Hard constraints (must pass)
+## 4. Hard constraints (blocking)
 
-A student cannot be auto-placed in a room if any of these fail:
+A candidate room is rejected if any condition fails:
 
-- room is at max capacity
-- required reading co-teach is missing
-- required math co-teach is missing
-- no-contact conflict exists with any student currently in the room (both directions checked)
+- Room is already at or above `maxSize`.
+- Student requires co-teach categories not covered by room `coTeachCoverage`.
+- Student with `IEP` would exceed `maxIEPPerRoom`.
+- Student with `Referral` status or `referrals > 0` would exceed `maxReferralsPerRoom`.
+- No-contact conflict exists via:
+  - student CSV `noContactWith` list (either direction), or
+  - grade-level `NO_CONTACT` relationship rule.
 
-### Warning behavior
+## 5. Soft scoring (minimize)
 
-- If grade has co-teach-needing students but no room enables the needed co-teach type, a warning is generated.
-- Unplaced students generate summary warnings and categorized reason groups.
+For each valid room, final score is:
 
-### Import-time pre-assignment behavior
+`load + academicPenalty + behavioralPenalty + demographicPenalty + preferredAdjustment + doNotSeparateAdjustment + settingsPenalty`
 
-When loading CSV data:
+### Components
 
-- students with a `teacher` value are treated as preassigned
-- unique `(grade, teacher)` pairs are mapped to grade room letters in first-seen order
-- those students are inserted into mapped classrooms and marked `locked: true`
-- later auto-placement keeps locked students in place
+- `load`: `(roomSize / maxSize) * 10`
+- `academicPenalty`: mismatch between student academic need and room average, scaled by academic weight
+- `behavioralPenalty`: mismatch between student behavioral need and room average, scaled by behavioral weight
+- `demographicPenalty`: concentration pressure for gender/ELL/504/IEP/Referral, scaled by demographic weight
+- `preferredAdjustment`:
+  - peer already in same room: bonus (`-1.75`)
+  - peer assigned to different room: penalty (`+1.25`)
+- `doNotSeparateAdjustment`:
+  - paired peer in same room: bonus (`-2.25`)
+  - paired peer in different room: penalty (`+1.5`)
+- `settingsPenalty` (scaled by demographic weight):
+  - ELL ratio over soft cap
+  - gender delta over tolerance
+  - class-size variance over limit
 
----
+## 6. Academic and support derivations
 
-## 3) UI Layout and Interaction Model
+### MAP band conversion
 
-The app is structured as a top-to-bottom workspace with a fixed-height dashboard layout.
+- `<25 => 1`, `<50 => 2`, `<75 => 3`, otherwise `4`
+- missing => neutral `2.5`
 
-### Vertical layout
+### i-Ready relative conversion
 
-1. **Header**
-   - app title/subtitle
-   - CSV uploader (with mapping panel support)
-2. **Toolbar**
-   - active grade indicator
-   - grade selector
-3. **Controls row**
-   - control buttons (auto-place/reset/export/safety actions)
-   - scoring weight sliders
-4. **Main workspace**
-   - unassigned panel (left)
-   - one classroom column per room in active grade (A–D)
-5. **Bottom panels** (shown once students exist)
-   - summary panel
-   - snapshot manager
+- Parse labels like `Early|Mid|Late K|1|2|3|4|5`
+- Convert to relative offset from student grade
+- Apply timing offsets: `Early -0.3`, `Late +0.3`
+- Convert with `relative + 2.5`, clamped to `1..4`
 
-### Main workspace behavior
+### Student reading/math score
 
-- Drag-and-drop is enabled through a drag context provider around the workspace.
-- Unassigned students can be dragged into classrooms and back.
-- Manual drops trigger a warning prompt if move would violate constraints, but user can still force placement.
-- Classroom columns support:
-  - editable teacher name
-  - max-size editing
-  - co-teach toggles
-  - per-room sort toggle (A→Z)
-  - quick badges (IEP, Referral, M/F counts)
-  - capacity bar visualizing occupancy
+- Average of available MAP band and i-Ready converted score
+- If no inputs, defaults to `2.5`
 
-### Summary panel behavior
+### Student support load
 
-- Shows grade totals and per-room table metrics.
-- Computes and highlights imbalance warnings for:
-  - reading spread
-  - math spread
-  - support load spread
-  - large gender deltas per room
+`academicTier + behaviorTier + specialEdBonus + referrals + coTeachLoad`
 
-### Design system notes
+- `specialEdBonus`: IEP `+2`, Referral `+1`
+- `coTeachLoad`: total co-teach minutes / 60, clamped `0..2`
 
-- The app uses CSS variables for colors, spacing, shadows, and panel heights.
-- Layout is flex-based with fixed upper rows and a horizontally scrollable workspace.
-- Visual states emphasize capacity pressure, warnings, and special-service indicators.
+## 7. Warnings and unresolved handling
 
+Warnings include:
+
+- Missing grade-level co-teach coverage for needed categories.
+- Count of unresolved students.
+- Grouped unresolved reasons by category (capacity, coverage, no-contact, IEP cap, referral cap, other).
+
+Unresolved reasons are stored per student and shown in the unassigned panel.
+
+## 8. Manual placement behavior
+
+Drag-and-drop supports:
+
+- Unassigned -> room
+- Room -> room
+- Room -> unassigned
+
+Before dropping into a room, manual move warnings are computed with the same constraint checks. Users can proceed anyway after confirmation.
+
+## 9. Snapshots and settings
+
+Snapshots are grade-specific and include:
+
+- Grade classrooms
+- Grade settings at save time
+- Name, optional note, created timestamp
+
+Restore replaces only that grade's classrooms/settings and switches active grade to the snapshot grade.
+
+## 10. Persistence and migration
+
+State is persisted to `localStorage` key `classroom-placement-state-v2` (with fallback read from `-v1`).
+
+Migration/normalization includes:
+
+- Legacy co-teach booleans -> minute/category representation
+- Student relationship list normalization
+- Classroom co-teach coverage normalization
+- Default grade settings backfill
+
+Migration warnings are appended to placement warnings so users can review converted data.

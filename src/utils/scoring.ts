@@ -236,8 +236,13 @@ function getSettingsPenalty(student: Student, stats: RoomStats, context: Placeme
   const sizes = gradeRooms.map((room) => room.students.length)
   const currentMin = Math.min(...sizes)
   const currentMax = Math.max(...sizes)
+  const minRoomCount = sizes.filter((size) => size === currentMin).length
   const simulatedMax = Math.max(currentMax, newSize)
-  const variance = simulatedMax - currentMin
+  const simulatedMin =
+    stats.size === currentMin && minRoomCount === 1
+      ? Math.min(...sizes.map((size) => (size === currentMin ? currentMin + 1 : size)))
+      : currentMin
+  const variance = simulatedMax - simulatedMin
   if (variance > settings.classSizeVarianceLimit) {
     penalty += variance - settings.classSizeVarianceLimit
   }

@@ -295,6 +295,7 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
   const headerLookup = new Map(headers.map((header, index) => [normalizeHeader(header), index]))
   const errors: string[] = []
   const students: Student[] = []
+  const seenIds = new Set<number>()
   let skipped = 0
 
   const get = (values: string[], field: CsvFieldKey): string => {
@@ -319,6 +320,12 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
       skipped++
       continue
     }
+    if (seenIds.has(id)) {
+      errors.push(`Row ${rowIndex + 2}: Duplicate ID "${id}" — skipped. IDs must be unique.`)
+      skipped++
+      continue
+    }
+    seenIds.add(id)
 
     const noContactRaw = get(values, "noContactWith")
     const preferredWithRaw = get(values, "preferredWith")
