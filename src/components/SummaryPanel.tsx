@@ -10,7 +10,7 @@ function fmt(n: number): string {
 
 export const SummaryPanel = memo(function SummaryPanel() {
   const { state } = useApp()
-  const { classrooms, activeGrade, allStudents, gradeSettings } = state
+  const { classrooms, activeGrade, allStudents, gradeSettings, showTeacherNames } = state
 
   const gradeClassrooms = useMemo(() => getClassroomsForGrade(classrooms, activeGrade), [classrooms, activeGrade])
 
@@ -40,13 +40,14 @@ export const SummaryPanel = memo(function SummaryPanel() {
 
   const settings = gradeSettings[activeGrade]
 
-  const genderWarnings = gradeClassrooms
+  const genderWarningRooms = gradeClassrooms
     .filter((c) => {
       const m = c.students.filter((s) => s.gender === "M").length
       const f = c.students.filter((s) => s.gender === "F").length
       return Math.abs(m - f) > settings.genderBalanceTolerance
     })
-    .map((c) => c.id)
+  const genderWarnings = genderWarningRooms.map((c) => c.id)
+  const genderWarningLabels = genderWarningRooms.map((c) => c.teacherName?.trim() || `${c.grade}-${c.label}`)
 
   return (
     <div className="summary-panel">
@@ -63,7 +64,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
 
       {(readingImbalance || mathImbalance || supportImbalance || genderWarnings.length > 0) && (
         <div className="warnings-row">
-          {genderWarnings.length > 0 && <div className="warning-chip">⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarnings.join(", ")}</div>}
+          {genderWarnings.length > 0 && <div className="warning-chip">⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
           {readingImbalance && <div className="warning-chip">⚠ Reading level spread across classrooms</div>}
           {mathImbalance && <div className="warning-chip">⚠ Math level spread across classrooms</div>}
           {supportImbalance && <div className="warning-chip">⚠ Support load imbalanced across classrooms</div>}
@@ -92,6 +93,9 @@ export const SummaryPanel = memo(function SummaryPanel() {
               <th>Students</th>
               <th>IEP</th>
               <th>Ref</th>
+              <th>EL</th>
+              <th>504</th>
+              <th>Race / Ethnicity</th>
               <th>M / F</th>
               <th>Avg MAP Read</th>
               <th>Avg MAP Math</th>
@@ -121,14 +125,27 @@ export const SummaryPanel = memo(function SummaryPanel() {
                 .filter(([, minutes]) => minutes > 0)
                 .map(([category, minutes]) => `${CO_TEACH_LABELS[category as keyof typeof CO_TEACH_LABELS]}: ${minutes}`)
                 .join("\n")
+              const raceBreakdown = Object.entries(
+                c.students.reduce<Record<string, number>>((acc, student) => {
+                  const race = student.raceEthnicity?.trim() || "Unreported"
+                  acc[race] = (acc[race] ?? 0) + 1
+                  return acc
+                }, {})
+              )
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([race, count]) => `${race}: ${count}`)
+                .join(", ")
 
               return (
                 <tr key={c.label} className={genderWarn ? "row-warn" : ""}>
                   <td className="cell-id">{c.label}</td>
-                  <td className="cell-teacher">{c.teacherName || "—"}</td>
+                  <td className="cell-teacher">{showTeacherNames ? (c.teacherName || "—") : "Hidden"}</td>
                   <td><span style={{ color: stats.size >= c.maxSize ? "#ef4444" : stats.size / c.maxSize > 0.85 ? "#f59e0b" : "inherit", fontWeight: stats.size >= c.maxSize ? "bold" : "normal" }}>{stats.size}/{c.maxSize}</span></td>
                   <td>{stats.iepCount > 0 ? <span className="qs-badge qs-iep">{stats.iepCount}</span> : "—"}</td>
                   <td>{stats.referralCount > 0 ? <span className="qs-badge qs-ref">{stats.referralCount}</span> : "—"}</td>
+                  <td>{stats.ellCount > 0 ? stats.ellCount : "—"}</td>
+                  <td>{stats.section504Count > 0 ? stats.section504Count : "—"}</td>
+                  <td>{raceBreakdown || "—"}</td>
                   <td className={genderWarn ? "cell-warn" : ""}>{stats.maleCount}M / {stats.femaleCount}F</td>
                   <td>{mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</td>
                   <td>{mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</td>

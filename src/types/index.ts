@@ -97,6 +97,7 @@ export interface AppState {
   allStudents: Student[]
   classrooms: Classroom[]
   activeGrade: Grade
+  showTeacherNames: boolean
   weights: Weights
   snapshots: Snapshot[]
   relationshipRules: RelationshipRule[]

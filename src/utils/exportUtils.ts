@@ -1,33 +1,116 @@
-import { Classroom, Grade } from "../types"
-import { getStudentCoTeachTotal } from "./coTeach"
+import { Classroom, Grade, Student } from "../types"
+
+const IMPORT_HEADER = [
+  "id",
+  "grade",
+  "firstName",
+  "lastName",
+  "gender",
+  "status",
+  "coTeachReadingMinutes",
+  "coTeachWritingMinutes",
+  "coTeachScienceSocialStudiesMinutes",
+  "coTeachMathMinutes",
+  "coTeachBehaviorMinutes",
+  "coTeachSocialMinutes",
+  "coTeachVocationalMinutes",
+  "academicTier",
+  "behaviorTier",
+  "noContactWith",
+  "preferredWith",
+  "mapReading",
+  "mapMath",
+  "ireadyReading",
+  "ireadyMath",
+  "referrals",
+  "teacher",
+  "ell",
+  "section504",
+  "raceEthnicity",
+  "teacherNotes",
+]
+
+function csvEscape(value: string | number | boolean | undefined): string {
+  if (value === undefined || value === null) return ""
+  const raw = String(value)
+  if (raw.includes(",") || raw.includes('"') || raw.includes("\n")) {
+    return `"${raw.replace(/"/g, '""')}"`
+  }
+  return raw
+}
+
+function tsvEscape(value: string | number | boolean | undefined): string {
+  if (value === undefined || value === null) return ""
+  return String(value).replace(/\t/g, " ").replace(/\r?\n/g, " ")
+}
+
+function buildAssignedTeacherByStudentId(classrooms: Classroom[]): Map<number, string> {
+  const assignedTeacherByStudentId = new Map<number, string>()
+  for (const classroom of classrooms) {
+    const teacherName = classroom.teacherName || classroom.id
+    for (const student of classroom.students) {
+      assignedTeacherByStudentId.set(student.id, teacherName)
+    }
+  }
+  return assignedTeacherByStudentId
+}
+
+function compareStudents(a: Student, b: Student): number {
+  const gradeCmp = a.grade.localeCompare(b.grade)
+  if (gradeCmp !== 0) return gradeCmp
+  const lastCmp = a.lastName.localeCompare(b.lastName, undefined, { sensitivity: "base" })
+  if (lastCmp !== 0) return lastCmp
+  const firstCmp = a.firstName.localeCompare(b.firstName, undefined, { sensitivity: "base" })
+  if (firstCmp !== 0) return firstCmp
+  return a.id - b.id
+}
 
 /** Build CSV string of final placements */
-export function buildPlacementCSV(classrooms: Classroom[], grade?: Grade): string {
-  const header = "Teacher,ClassroomID,StudentID,FirstName,LastName,Grade,Gender,IEP,TotalCoTeachMinutes,AcademicTier,BehaviorTier"
-  const filtered = grade ? classrooms.filter((c) => c.grade === grade) : classrooms
+export function buildPlacementCSV(classrooms: Classroom[], allStudents: Student[], grade?: Grade): string {
+  const filteredStudents = grade ? allStudents.filter((s) => s.grade === grade) : allStudents
+  const assignedTeacherByStudentId = buildAssignedTeacherByStudentId(classrooms)
 
-  const rows = filtered.flatMap((c) =>
-    c.students.map((s) => {
-      const teacher = c.teacherName ? `"${c.teacherName}"` : c.id
-      const iep = s.specialEd.status
-      const totalCoTeach = getStudentCoTeachTotal(s)
+  const rows = [...filteredStudents]
+    .sort(compareStudents)
+    .map((student) => {
+      const teacher =
+        assignedTeacherByStudentId.get(student.id) ||
+        student.preassignedTeacher ||
+        ""
       return [
+        student.id,
+        student.grade,
+        student.firstName,
+        student.lastName,
+        student.gender,
+        student.specialEd.status,
+        student.coTeachMinutes.reading ?? 0,
+        student.coTeachMinutes.writing ?? 0,
+        student.coTeachMinutes.scienceSocialStudies ?? 0,
+        student.coTeachMinutes.math ?? 0,
+        student.coTeachMinutes.behavior ?? 0,
+        student.coTeachMinutes.social ?? 0,
+        student.coTeachMinutes.vocational ?? 0,
+        student.intervention.academicTier,
+        student.behaviorTier,
+        (student.noContactWith ?? []).join(";"),
+        (student.preferredWith ?? []).join(";"),
+        student.mapReading,
+        student.mapMath,
+        student.ireadyReading,
+        student.ireadyMath,
+        student.referrals ?? 0,
         teacher,
-        c.id,
-        s.id,
-        `"${s.firstName}"`,
-        `"${s.lastName}"`,
-        s.grade,
-        s.gender,
-        iep,
-        totalCoTeach,
-        s.intervention.academicTier,
-        s.behaviorTier,
-      ].join(",")
+        student.ell ?? false,
+        student.section504 ?? false,
+        student.raceEthnicity,
+        student.teacherNotes,
+      ]
+        .map(csvEscape)
+        .join(",")
     })
-  )
 
-  return [header, ...rows].join("\n")
+  return [IMPORT_HEADER.join(","), ...rows].join("\n")
 }
 
 /** Trigger a browser download of a text file */
@@ -44,27 +127,49 @@ export function downloadFile(content: string, filename: string, mimeType = "text
 }
 
 /** Build a Google Sheets–compatible tab-separated export */
-export function buildGoogleSheetsExport(classrooms: Classroom[], grade?: Grade): string {
-  const header = "Teacher\tClassroomID\tStudentID\tFirstName\tLastName\tGrade\tGender\tIEP\tAcademicTier\tBehaviorTier"
-  const filtered = grade ? classrooms.filter((c) => c.grade === grade) : classrooms
+export function buildGoogleSheetsExport(classrooms: Classroom[], allStudents: Student[], grade?: Grade): string {
+  const filteredStudents = grade ? allStudents.filter((s) => s.grade === grade) : allStudents
+  const assignedTeacherByStudentId = buildAssignedTeacherByStudentId(classrooms)
 
-  const rows = filtered.flatMap((c) =>
-    c.students.map((s) => {
-      const teacher = c.teacherName || c.id
+  const rows = [...filteredStudents]
+    .sort(compareStudents)
+    .map((student) => {
+      const teacher =
+        assignedTeacherByStudentId.get(student.id) ||
+        student.preassignedTeacher ||
+        ""
       return [
+        student.id,
+        student.grade,
+        student.firstName,
+        student.lastName,
+        student.gender,
+        student.specialEd.status,
+        student.coTeachMinutes.reading ?? 0,
+        student.coTeachMinutes.writing ?? 0,
+        student.coTeachMinutes.scienceSocialStudies ?? 0,
+        student.coTeachMinutes.math ?? 0,
+        student.coTeachMinutes.behavior ?? 0,
+        student.coTeachMinutes.social ?? 0,
+        student.coTeachMinutes.vocational ?? 0,
+        student.intervention.academicTier,
+        student.behaviorTier,
+        (student.noContactWith ?? []).join(";"),
+        (student.preferredWith ?? []).join(";"),
+        student.mapReading,
+        student.mapMath,
+        student.ireadyReading,
+        student.ireadyMath,
+        student.referrals ?? 0,
         teacher,
-        c.id,
-        s.id,
-        s.firstName,
-        s.lastName,
-        s.grade,
-        s.gender,
-        s.specialEd.status,
-        s.intervention.academicTier,
-        s.behaviorTier,
-      ].join("\t")
+        student.ell ?? false,
+        student.section504 ?? false,
+        student.raceEthnicity,
+        student.teacherNotes,
+      ]
+        .map(tsvEscape)
+        .join("\t")
     })
-  )
 
-  return [header, ...rows].join("\n")
+  return [IMPORT_HEADER.join("\t"), ...rows].join("\n")
 }

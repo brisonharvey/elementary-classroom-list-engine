@@ -20,6 +20,12 @@ export function ControlBar() {
   const autoPlace = () => {
     dispatch({ type: "AUTO_PLACE" })
   }
+  const sortClassroomsByLastName = () => {
+    dispatch({ type: "SORT_CLASSROOMS_BY_LAST_NAME" })
+  }
+  const toggleTeacherNames = () => {
+    dispatch({ type: "SET_SHOW_TEACHER_NAMES", payload: !state.showTeacherNames })
+  }
 
   const resetGrade = () => {
     const ok = window.confirm(
@@ -43,12 +49,12 @@ export function ControlBar() {
   }
 
   const exportGrade = () => {
-    const csv = buildPlacementCSV(state.classrooms, state.activeGrade)
+    const csv = buildPlacementCSV(state.classrooms, state.allStudents, state.activeGrade)
     downloadFile(csv, `placement-grade-${state.activeGrade}.csv`)
   }
 
   const exportAll = () => {
-    const csv = buildPlacementCSV(state.classrooms)
+    const csv = buildPlacementCSV(state.classrooms, state.allStudents)
     downloadFile(csv, `placement-all-grades.csv`)
   }
 
@@ -78,6 +84,14 @@ export function ControlBar() {
           Reset Grade
         </button>
         <button
+          className="btn btn-ghost"
+          onClick={sortClassroomsByLastName}
+          disabled={!hasStudents}
+          title="Sort each classroom by student last name (A-Z)"
+        >
+          Sort A-Z
+        </button>
+        <button
           className="btn btn-danger"
           onClick={clearAll}
           disabled={!hasStudents && state.snapshots.length === 0}
@@ -102,6 +116,13 @@ export function ControlBar() {
           title="Export all grades to CSV"
         >
           Export All
+        </button>
+        <button
+          className="btn btn-ghost"
+          onClick={toggleTeacherNames}
+          title="Toggle teacher names in summary and classroom columns"
+        >
+          {state.showTeacherNames ? "Hide Teacher Names" : "Show Teacher Names"}
         </button>
       </div>
 

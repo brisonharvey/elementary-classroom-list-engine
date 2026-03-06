@@ -20,6 +20,7 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
   const [coverageOpen, setCoverageOpen] = useState(false)
 
   const stats = computeRoomStats(classroom)
+  const canShowTeacherName = state.showTeacherNames
   const isFull = stats.size >= classroom.maxSize
   const fillPct = Math.min(100, Math.round((stats.size / classroom.maxSize) * 100))
 
@@ -92,7 +93,7 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     >
       <div className="classroom-header">
         <div className="classroom-id">{classroom.label}</div>
-        {editingName ? (
+        {editingName && canShowTeacherName ? (
           <div className="name-edit">
             <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} className="name-input" />
             <button
@@ -106,8 +107,9 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
             </button>
           </div>
         ) : (
-          <div className="teacher-name" onClick={() => setEditingName(true)}>
-            {classroom.teacherName || <em>Unnamed teacher</em>} <span className="edit-hint">✎</span>
+          <div className="teacher-name" onClick={() => canShowTeacherName && setEditingName(true)}>
+            {canShowTeacherName ? (classroom.teacherName || <em>Unnamed teacher</em>) : <em>Teacher hidden</em>}
+            {canShowTeacherName ? <span className="edit-hint">✎</span> : null}
           </div>
         )}
 

@@ -20,7 +20,9 @@ import { normalizeCoTeachMinutes } from "../utils/coTeach"
 export type Action =
   | { type: "LOAD_STUDENTS"; payload: Student[] }
   | { type: "SET_ACTIVE_GRADE"; payload: Grade }
+  | { type: "SET_SHOW_TEACHER_NAMES"; payload: boolean }
   | { type: "SET_WEIGHTS"; payload: Partial<Weights> }
+  | { type: "SORT_CLASSROOMS_BY_LAST_NAME" }
   | { type: "AUTO_PLACE" }
   | { type: "MOVE_STUDENT"; payload: { studentId: number; fromId: string | null; toId: string | null } }
   | { type: "TOGGLE_LOCK"; payload: number }
@@ -44,6 +46,7 @@ export const initialState: AppState = {
   allStudents: [],
   classrooms: initializeClassrooms(),
   activeGrade: "K",
+  showTeacherNames: true,
   weights: { academic: 50, behavioral: 50, demographic: 50 },
   snapshots: [],
   relationshipRules: [],
@@ -54,6 +57,14 @@ export const initialState: AppState = {
 
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
+}
+
+function compareStudentsByName(a: Student, b: Student): number {
+  const byLast = a.lastName.localeCompare(b.lastName, undefined, { sensitivity: "base" })
+  if (byLast !== 0) return byLast
+  const byFirst = a.firstName.localeCompare(b.firstName, undefined, { sensitivity: "base" })
+  if (byFirst !== 0) return byFirst
+  return a.id - b.id
 }
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -121,8 +132,18 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case "SET_ACTIVE_GRADE":
       return { ...state, activeGrade: action.payload }
+    case "SET_SHOW_TEACHER_NAMES":
+      return { ...state, showTeacherNames: action.payload }
     case "SET_WEIGHTS":
       return { ...state, weights: { ...state.weights, ...action.payload } }
+    case "SORT_CLASSROOMS_BY_LAST_NAME":
+      return {
+        ...state,
+        classrooms: state.classrooms.map((c) => ({
+          ...c,
+          students: [...c.students].sort(compareStudentsByName),
+        })),
+      }
     case "AUTO_PLACE": {
       const settings = state.gradeSettings[state.activeGrade]
       const { classrooms, warnings, unresolvedReasons } = runPlacement(
