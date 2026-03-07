@@ -39,6 +39,9 @@ export default function App() {
   const [activePanel, setActivePanel] = useState<SlidePanel>("none")
   const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(true)
   const [bottomPanelState, setBottomPanelState] = useState<"expanded" | "minimized" | "hidden">("expanded")
+  const showSummaryButton = hasStudents && !summaryDrawerOpen
+  const showSnapshotsButton = hasStudents && bottomPanelState === "hidden"
+  const showFloatingActions = showSummaryButton || showSnapshotsButton
 
   return (
     <div className="app">
@@ -92,11 +95,6 @@ export default function App() {
               <SummaryPanel />
             </div>
           </aside>
-          {!summaryDrawerOpen && (
-            <button className="summary-drawer-toggle" onClick={() => setSummaryDrawerOpen(true)}>
-              Show Summary
-            </button>
-          )}
         </>
       )}
 
@@ -120,8 +118,19 @@ export default function App() {
         </div>
       )}
 
-      {hasStudents && bottomPanelState === "hidden" && (
-        <button className="bottom-panel-show-btn" onClick={() => setBottomPanelState("expanded")}>Show Snapshots</button>
+      {showFloatingActions && (
+        <div className={`floating-actions floating-actions-${bottomPanelState}`}>
+          {showSummaryButton && (
+            <button className="floating-action-btn" onClick={() => setSummaryDrawerOpen(true)}>
+              Show Summary
+            </button>
+          )}
+          {showSnapshotsButton && (
+            <button className="floating-action-btn" onClick={() => setBottomPanelState("expanded")}>
+              Show Snapshots
+            </button>
+          )}
+        </div>
       )}
 
       {activePanel !== "none" && <div className="slide-panel-backdrop" onClick={() => setActivePanel("none")} />}
