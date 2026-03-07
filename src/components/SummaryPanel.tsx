@@ -2,7 +2,7 @@ import { memo, useMemo } from "react"
 import { useApp } from "../store/AppContext"
 import { getClassroomsForGrade } from "../utils/classroomInit"
 import { CO_TEACH_LABELS } from "../utils/coTeach"
-import { computeRoomStats, getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "../utils/scoring"
+import { computeRoomStats, getRoomSupportLoad } from "../utils/scoring"
 
 function fmt(n: number): string {
   return n.toFixed(2)
@@ -47,15 +47,6 @@ export const SummaryPanel = memo(function SummaryPanel() {
     }, {})
   }, [raceCounts])
 
-  const readingAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomReadingAvg(c))
-  const mathAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomMathAvg(c))
-  const supportAvgs = gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomSupportLoad(c))
-
-  const range = (arr: number[]) => (arr.length < 2 ? 0 : Math.max(...arr) - Math.min(...arr))
-  const readingImbalance = range(readingAvgs) > 0.75
-  const mathImbalance = range(mathAvgs) > 0.75
-  const supportImbalance = range(supportAvgs) > 4
-
   const settings = gradeSettings[activeGrade]
 
   const genderWarningRooms = gradeClassrooms
@@ -65,7 +56,6 @@ export const SummaryPanel = memo(function SummaryPanel() {
       return Math.abs(m - f) > settings.genderBalanceTolerance
     })
   const genderWarnings = genderWarningRooms.map((c) => c.id)
-  const genderWarningLabels = genderWarningRooms.map((c) => c.teacherName?.trim() || `${c.grade}-${c.label}`)
 
   return (
     <div className="summary-panel">
@@ -80,16 +70,6 @@ export const SummaryPanel = memo(function SummaryPanel() {
         </div>
       </div>
 
-      {(readingImbalance || mathImbalance || supportImbalance || genderWarnings.length > 0) && (
-        <div className="warnings-row">
-          {genderWarnings.length > 0 && <div className="warning-chip">⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
-          {readingImbalance && <div className="warning-chip">⚠ Reading level spread across classrooms</div>}
-          {mathImbalance && <div className="warning-chip">⚠ Math level spread across classrooms</div>}
-          {supportImbalance && <div className="warning-chip">⚠ Support load imbalanced across classrooms</div>}
-        </div>
-      )}
-
-
       <div className="race-totals">
         {Object.entries(raceCounts).sort(([a], [b]) => a.localeCompare(b)).map(([race, count]) => (
           <span key={race} className="total-pill race-pill" style={raceStyleByLabel[race]}>{race}: {count}</span>
@@ -103,85 +83,76 @@ export const SummaryPanel = memo(function SummaryPanel() {
       </div>
 
       <div className="summary-table-wrap">
-        <table className="summary-table">
-          <thead>
-            <tr>
-              <th>Room</th>
-              <th>Teacher</th>
-              <th>Students</th>
-              <th>IEP</th>
-              <th>Ref</th>
-              <th>EL</th>
-              <th>504</th>
-              <th>Race / Ethnicity</th>
-              <th>M / F</th>
-              <th>Avg MAP Read</th>
-              <th>Avg MAP Math</th>
-              <th>Support Load</th>
-              <th>Total Co-teach Min</th>
-              <th>Avg Co-teach Min</th>
-              <th>Coverage</th>
-            </tr>
-          </thead>
-          <tbody>
-            {gradeClassrooms.map((c, i) => {
-              const stats = roomStats[i]
-              const supportLoad = getRoomSupportLoad(c)
-              const mapReadAvg =
-                c.students.length > 0 && c.students.some((s) => s.mapReading !== undefined)
-                  ? c.students.filter((s) => s.mapReading !== undefined).reduce((sum, s) => sum + s.mapReading!, 0) /
-                    c.students.filter((s) => s.mapReading !== undefined).length
-                  : null
-              const mapMathAvg =
-                c.students.length > 0 && c.students.some((s) => s.mapMath !== undefined)
-                  ? c.students.filter((s) => s.mapMath !== undefined).reduce((sum, s) => sum + s.mapMath!, 0) /
-                    c.students.filter((s) => s.mapMath !== undefined).length
-                  : null
+        <div className="summary-room-list">
+          {gradeClassrooms.map((c, i) => {
+            const stats = roomStats[i]
+            const supportLoad = getRoomSupportLoad(c)
+            const getAvg = (kind: "mapReading" | "mapMath"): number | null => {
+              const vals = c.students.map((s) => s[kind]).filter((v): v is number => v !== undefined)
+              if (vals.length === 0) return null
+              return vals.reduce((sum, val) => sum + val, 0) / vals.length
+            }
+            const mapReadAvg = getAvg("mapReading")
+            const mapMathAvg = getAvg("mapMath")
 
-              const genderWarn = genderWarnings.includes(c.id)
-              const coTeachBreakdown = Object.entries(stats.coTeachMinutesByCategory)
-                .filter(([, minutes]) => minutes > 0)
-                .map(([category, minutes]) => `${CO_TEACH_LABELS[category as keyof typeof CO_TEACH_LABELS]}: ${minutes}`)
-                .join("\n")
-              const raceBreakdown = Object.entries(
-                c.students.reduce<Record<string, number>>((acc, student) => {
-                  const race = student.raceEthnicity?.trim() || "Unreported"
-                  acc[race] = (acc[race] ?? 0) + 1
-                  return acc
-                }, {})
-              )
-                .sort(([a], [b]) => a.localeCompare(b))
+            const genderWarn = genderWarnings.includes(c.id)
+            const coTeachBreakdown = Object.entries(stats.coTeachMinutesByCategory)
+              .filter(([, minutes]) => minutes > 0)
+              .map(([category, minutes]) => `${CO_TEACH_LABELS[category as keyof typeof CO_TEACH_LABELS]}: ${minutes}`)
+              .join("\n")
+            const raceBreakdown = Object.entries(
+              c.students.reduce<Record<string, number>>((acc, student) => {
+                const race = student.raceEthnicity?.trim() || "Unreported"
+                acc[race] = (acc[race] ?? 0) + 1
+                return acc
+              }, {})
+            ).sort(([a], [b]) => a.localeCompare(b))
 
-              return (
-                <tr key={c.label} className={genderWarn ? "row-warn" : ""}>
-                  <td className="cell-id">{c.label}</td>
-                  <td className="cell-teacher">{showTeacherNames ? (c.teacherName || "—") : "Hidden"}</td>
-                  <td><span style={{ color: stats.size >= c.maxSize ? "#ef4444" : stats.size / c.maxSize > 0.85 ? "#f59e0b" : "inherit", fontWeight: stats.size >= c.maxSize ? "bold" : "normal" }}>{stats.size}/{c.maxSize}</span></td>
-                  <td>{stats.iepCount > 0 ? <span className="qs-badge qs-iep">{stats.iepCount}</span> : "—"}</td>
-                  <td>{stats.referralCount > 0 ? <span className="qs-badge qs-ref">{stats.referralCount}</span> : "—"}</td>
-                  <td>{stats.ellCount > 0 ? stats.ellCount : "—"}</td>
-                  <td>{stats.section504Count > 0 ? stats.section504Count : "—"}</td>
-                  <td>
-                    {raceBreakdown.length === 0 ? "—" : (
-                      <div className="race-chip-list">
-                        {raceBreakdown.map(([race, count]) => (
-                          <span key={`${c.id}-${race}`} className="race-pill" style={raceStyleByLabel[race]}>{race}: {count}</span>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                  <td className={genderWarn ? "cell-warn" : ""}>{stats.maleCount}M / {stats.femaleCount}F</td>
-                  <td>{mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</td>
-                  <td>{mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</td>
-                  <td>{fmt(supportLoad)}</td>
-                  <td title={coTeachBreakdown || "No co-teach minutes"}>{stats.totalCoTeachMinutes}</td>
-                  <td>{fmt(stats.avgCoTeachMinutes)}</td>
-                  <td>{c.coTeachCoverage.length ? c.coTeachCoverage.map((category) => <span key={category} className="coteach-chip">{CO_TEACH_LABELS[category]}</span>) : "—"}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+            return (
+              <article key={c.id} className={`summary-room-card ${genderWarn ? "summary-room-card-warn" : ""}`}>
+                <div className="summary-room-header">
+                  <div className="summary-room-title">{c.grade}-{c.label}</div>
+                  <div className="summary-room-teacher">{showTeacherNames ? (c.teacherName || "—") : "Hidden"}</div>
+                  <span className="summary-room-size" style={{ color: stats.size >= c.maxSize ? "#ef4444" : stats.size / c.maxSize > 0.85 ? "#f59e0b" : "inherit" }}>
+                    {stats.size}/{c.maxSize}
+                  </span>
+                </div>
+
+                <div className="summary-room-metrics">
+                  <span className="summary-metric">IEP: {stats.iepCount || "—"}</span>
+                  <span className="summary-metric">Ref: {stats.referralCount || "—"}</span>
+                  <span className="summary-metric">EL: {stats.ellCount || "—"}</span>
+                  <span className="summary-metric">504: {stats.section504Count || "—"}</span>
+                  <span className={`summary-metric ${genderWarn ? "cell-warn" : ""}`}>M/F: {stats.maleCount}/{stats.femaleCount}</span>
+                  <span className="summary-metric">MAP R: {mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</span>
+                  <span className="summary-metric">MAP M: {mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</span>
+                  <span className="summary-metric">Support: {fmt(supportLoad)}</span>
+                  <span className="summary-metric" title={coTeachBreakdown || "No co-teach minutes"}>Co-teach: {stats.totalCoTeachMinutes} total / {fmt(stats.avgCoTeachMinutes)} avg</span>
+                </div>
+
+                <div className="summary-room-section">
+                  <div className="summary-room-section-label">Race / Ethnicity</div>
+                  {raceBreakdown.length === 0 ? "—" : (
+                    <div className="race-chip-list">
+                      {raceBreakdown.map(([race, count]) => (
+                        <span key={`${c.id}-${race}`} className="race-pill" style={raceStyleByLabel[race]}>{race}: {count}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="summary-room-section">
+                  <div className="summary-room-section-label">Co-teach Coverage</div>
+                  <div>
+                    {c.coTeachCoverage.length
+                      ? c.coTeachCoverage.map((category) => <span key={category} className="coteach-chip">{CO_TEACH_LABELS[category]}</span>)
+                      : "—"}
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

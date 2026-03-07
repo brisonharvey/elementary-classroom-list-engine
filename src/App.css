@@ -254,7 +254,8 @@ html, body, #root {
 
 .summary-drawer-body {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .summary-drawer .summary-panel {
@@ -1202,11 +1203,9 @@ html, body, #root {
 ══════════════════════════════════════════ */
 
 .summary-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: block;
   border-right: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .summary-header {
@@ -1271,8 +1270,17 @@ html, body, #root {
 }
 
 .summary-table-wrap {
-  flex: 1;
-  overflow: auto;
+  overflow: visible;
+}
+
+.main-warnings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 20px;
+  background: #fffbeb;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .summary-table {
@@ -1310,6 +1318,84 @@ html, body, #root {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.summary-room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 12px;
+}
+
+.summary-room-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-room-card-warn {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.summary-room-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.summary-room-title {
+  font-weight: 700;
+  color: var(--primary-dark);
+  font-size: 12px;
+}
+
+.summary-room-teacher {
+  color: var(--text-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-room-size {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.summary-room-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.summary-metric {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.summary-room-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-room-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-light);
 }
 
 .coteach-chip {

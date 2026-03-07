@@ -12,6 +12,7 @@ import { SnapshotManager } from "./components/SnapshotManager"
 import { RelationshipManager } from "./components/RelationshipManager"
 import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { getClassroomsForGrade } from "./utils/classroomInit"
+import { getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "./utils/scoring"
 
 type SlidePanel = "none" | "rules" | "settings"
 
@@ -42,6 +43,25 @@ export default function App() {
   const showSummaryButton = hasStudents && !summaryDrawerOpen
   const showSnapshotsButton = hasStudents && bottomPanelState === "hidden"
   const showFloatingActions = showSummaryButton || showSnapshotsButton
+  const gradeClassrooms = useMemo(
+    () => getClassroomsForGrade(state.classrooms, state.activeGrade),
+    [state.classrooms, state.activeGrade]
+  )
+  const settings = state.gradeSettings[state.activeGrade]
+  const range = (arr: number[]) => (arr.length < 2 ? 0 : Math.max(...arr) - Math.min(...arr))
+  const readingImbalance = range(gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomReadingAvg(c))) > 0.75
+  const mathImbalance = range(gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomMathAvg(c))) > 0.75
+  const supportImbalance = range(gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomSupportLoad(c))) > 4
+  const genderWarningLabels = gradeClassrooms
+    .filter((c) => {
+      const m = c.students.filter((s) => s.gender === "M").length
+      const f = c.students.filter((s) => s.gender === "F").length
+      return Math.abs(m - f) > settings.genderBalanceTolerance
+    })
+    .map((c) => {
+      const fallback = `${c.grade}-${c.label}`
+      return state.showTeacherNames ? (c.teacherName?.trim() || fallback) : fallback
+    })
 
   return (
     <div className="app">
@@ -81,6 +101,15 @@ export default function App() {
         <ControlBar />
         <WeightSliders />
       </div>
+
+      {(readingImbalance || mathImbalance || supportImbalance || genderWarningLabels.length > 0) && (
+        <div className="main-warnings-row">
+          {genderWarningLabels.length > 0 && <div className="warning-chip">⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
+          {readingImbalance && <div className="warning-chip">⚠ Reading level spread across classrooms</div>}
+          {mathImbalance && <div className="warning-chip">⚠ Math level spread across classrooms</div>}
+          {supportImbalance && <div className="warning-chip">⚠ Support load imbalanced across classrooms</div>}
+        </div>
+      )}
 
       <PlacementWorkspace />
 
