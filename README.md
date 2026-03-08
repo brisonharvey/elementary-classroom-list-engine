@@ -1,28 +1,30 @@
 # Elementary Classroom List Engine
 
-A React + TypeScript app for building balanced K-5 classroom rosters from CSV student data.
+Desktop and web app for building balanced K-5 classroom rosters from CSV student data.
 
-## Core capabilities
+## What the current build does
 
-- Two-step CSV import: upload, map source headers to app fields, then import.
-- Placement engine that runs per active grade and preserves locked students.
-- Hard constraints for capacity, co-teach coverage, IEP/referral caps, and no-contact rules.
-- Soft scoring for academic, behavioral, demographic, relationship, and grade-setting pressures.
-- Manual drag-and-drop moves with pre-move warning prompts.
-- Dynamic room management (add/delete rooms per grade).
-- Per-room editing for teacher name and co-teach coverage categories.
-- Per-grade settings panel for hard/soft constraint thresholds.
-- Relationship rules panel for `NO_CONTACT` (hard) and `DO_NOT_SEPARATE` (soft).
-- Snapshot manager (save, restore, duplicate, rename, note edits, delete).
-- Grade summary table with imbalance indicators and room-level metrics.
-- CSV export for current grade or all grades.
-- Local persistence (`localStorage`) with migration support from legacy state keys.
+- Imports student rosters through a two-step CSV flow: upload, review suggested header matches, then import.
+- Runs auto-placement for the active grade only.
+- Preserves locked students during auto-place and grade resets.
+- Honors hard constraints for room capacity, co-teach coverage, IEP caps, referral caps, and no-contact conflicts.
+- Applies soft scoring for academic, behavioral, demographic, preferred-peer, do-not-separate, and grade-setting pressures.
+- Supports manual drag-and-drop between rooms and unassigned, with override warnings before invalid moves.
+- Lets users add or delete classrooms for the active grade.
+- Lets users edit teacher names, room capacities, and co-teach coverage per room.
+- Includes a grade settings panel for hard/soft threshold tuning.
+- Includes a relationship manager for `NO_CONTACT` and `DO_NOT_SEPARATE` rules.
+- Shows an unassigned panel, grade summary drawer, imbalance warning chips, and placement warning popover.
+- Saves grade-specific snapshots with restore, duplicate, rename, note editing, and diff summaries.
+- Exports either the active grade or all grades back to CSV.
+- Persists app state in `localStorage`, including migration from older saved formats.
 
 ## Tech stack
 
 - React 18
 - TypeScript
 - Vite
+- Electron Builder
 
 ## Getting started
 
@@ -31,65 +33,47 @@ A React + TypeScript app for building balanced K-5 classroom rosters from CSV st
 - Node.js 18+
 - npm
 
-### Install dependencies
+### Install
 
 ```bash
 npm install
 ```
 
-### Run locally
+### Run the web app
 
 ```bash
 npm run dev
 ```
 
-### Build
+### Run the desktop app in development
+
+```bash
+npm run dev:desktop
+```
+
+### Build the renderer
 
 ```bash
 npm run build
 ```
 
-### Desktop packaging
+### Build desktop packages
 
 ```bash
-# Run Electron against the Vite dev server
-npm run dev:desktop
-
-# Build desktop package for current platform
+# Current platform
 npm run build:desktop
 
-# Build macOS artifacts (.dmg + .zip)
+# macOS universal artifacts (.dmg + .zip)
 npm run dist:mac
 
-# Build Windows x64 artifacts (installer + portable .exe)
+# Windows x64 artifacts (NSIS installer + portable .exe)
 npm run dist:win
+
+# Windows ARM64 artifacts
+npm run dist:win:arm64
 ```
 
-Desktop build outputs are written to `release/`.
-
-### Signing and notarization setup
-
-Create a local env file (for example `.env.signing`) with your distribution cert settings:
-
-```bash
-# macOS code signing certificate (Developer ID Application) in keychain
-CSC_NAME="Developer ID Application: Your Org (TEAMID)"
-
-# Optional: use a .p12 instead of keychain identity
-# CSC_LINK="/absolute/path/to/certs/macos-signing-cert.p12"
-# CSC_KEY_PASSWORD="p12-password"
-
-# Apple notarization credentials
-APPLE_ID="developer-account@example.com"
-APPLE_APP_SPECIFIC_PASSWORD="app-specific-password"
-APPLE_TEAM_ID="TEAMID1234"
-
-# Windows Authenticode certificate (for signed Windows installers/exe)
-# CSC_LINK="/absolute/path/to/certs/windows-signing-cert.pfx"
-# CSC_KEY_PASSWORD="pfx-password"
-```
-
-Then run packaging commands with those env vars loaded so Electron Builder can sign and notarize.
+Desktop artifacts are written to `release/`.
 
 ### Lint
 
@@ -97,64 +81,101 @@ Then run packaging commands with those env vars loaded so Electron Builder can s
 npm run lint
 ```
 
-## CSV input
+## CSV import
 
-Starter files are in `public/`:
+Starter files live in `public/`:
 
-- `sample-students.csv` - full example dataset
-- `student-import-template.csv` - header-only template for real data entry
+- `sample-students.csv`: populated example dataset
+- `student-import-template.csv`: header-only template
 
-The uploader supports flexible header names using alias matching, then lets you manually map columns before import.
-
-### Required fields
+The importer first previews headers and sample values, then lets the user map each source column to an app field. Required fields are:
 
 - `id`
 - `grade`
 - `firstName`
 - `lastName`
 
-### Common optional fields
+Common optional fields:
 
 - Student profile: `gender`, `status`, `academicTier`, `behaviorTier`, `referrals`
-- Co-teach minutes by category: reading, writing, science/social studies, math, behavior, social, vocational
+- Co-teach service minutes: `coTeachReadingMinutes`, `coTeachWritingMinutes`, `coTeachScienceSocialStudiesMinutes`, `coTeachMathMinutes`, `coTeachBehaviorMinutes`, `coTeachSocialMinutes`, `coTeachVocationalMinutes`
+- Legacy co-teach booleans: `requiresCoTeachReading`, `requiresCoTeachMath`
 - Assessments: `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
 - Relationships: `noContactWith`, `preferredWith`
-- Placement context: `teacher` (pre-assignment), `ell`, `section504`, `raceEthnicity`, `teacherNotes`
+- Placement context: `teacher`, `ell`, `section504`, `raceEthnicity`, `teacherNotes`
+
+Import behavior in the current build:
+
+- IDs must be unique positive integers. Invalid or duplicate IDs are skipped.
+- Grades accept `K`, `0`, `KG`, kindergarten variants, `01-05`, and ordinal forms like `1st`.
+- Tier values default to `1`; explicit `2`, `3`, `yes`, or `y` raise support tiers.
+- Co-teach minutes are numeric and clamped to `0..999`.
+- Legacy reading/math co-teach booleans are converted to 30 minutes when explicit minutes are missing.
+- Relationship lists accept `,`, `;`, or `|` separators.
+- Unknown relationship IDs generate import warnings.
+- `preferredWith` is limited to same-grade peers and deduplicated.
+- Imported `teacher` values preassign students into teacher rooms and load them as locked when possible.
 
 ## Placement workflow
 
-1. Load students from CSV.
-2. Optionally define grade settings and relationship rules.
-3. Run `Auto-Place` for the active grade.
-4. Review warnings/unresolved students.
-5. Manually adjust via drag-and-drop and lock/pin as needed.
-6. Save snapshots while iterating.
-7. Export final lists.
+1. Import students from CSV.
+2. Switch to a grade with the grade selector.
+3. Optionally tune weights, room setup, relationship rules, and grade settings.
+4. Run `Auto-Place Grade X`.
+5. Review warning chips, placement warnings, unassigned students, and the summary drawer.
+6. Manually drag students as needed and lock placements that should be preserved.
+7. Save snapshots while iterating.
+8. Export the active grade or all grades.
 
-## Behavior details
+## Defaults and behavior details
 
-- Auto-placement only runs for the currently active grade.
-- Locked students stay in place during auto-placement and grade reset.
-- Students with imported `teacher` values are preassigned, inserted into mapped rooms, and loaded as locked.
-- Manual moves can override constraints after warning confirmation.
-- `Clear All` resets students, rooms, snapshots, rules, settings, and warnings to initial state.
+- The app initializes four classrooms per grade.
+- New classrooms default to max size `28`.
+- The first room created for a grade starts with reading co-teach coverage; other default rooms start with none.
+- Auto-place clears only unlocked students from rooms in the active grade before recalculating placements.
+- `Reset Grade` removes only unlocked placements for the active grade.
+- `Clear All` resets students, rooms, rules, settings, warnings, and snapshots.
+- Loading a new CSV replaces current students and classrooms and clears snapshots, rules, unresolved reasons, and warnings.
+- State is saved to `localStorage` under `classroom-placement-state-v2`, with fallback migration from `classroom-placement-state-v1`.
+
+## Summary and warnings
+
+The current summary drawer shows, for the active grade:
+
+- Student, IEP, Referral, EL, and 504 totals
+- Race/ethnicity totals
+- Per-room size, gender split, MAP averages, support load, and co-teach totals
+- Per-room race/ethnicity breakdown
+- Per-room co-teach coverage badges
+
+The main workspace also surfaces:
+
+- Gender imbalance chips when a room exceeds the configured tolerance
+- Reading spread, math spread, and support-load imbalance chips
+- Placement warnings after auto-place, including unresolved students and grouped hard-constraint reasons
 
 ## Project structure
 
-- `src/components/` - uploader, controls, classroom columns, summary, snapshots, settings, rules
-- `src/engine/` - placement engine
-- `src/store/` - reducer, app context, drag context
-- `src/utils/` - CSV parsing, scoring, constraints, co-teach helpers, exports, classroom init
-- `src/types/` - shared domain types
+- `src/components/`: uploader, controls, room columns, summary, snapshots, settings, and relationship management
+- `src/engine/`: auto-placement engine
+- `src/store/`: reducer, app context, drag context
+- `src/utils/`: CSV parsing, scoring, constraints, co-teach helpers, exports, and classroom initialization
+- `src/types/`: shared domain types
+- `electron/`: desktop shell and notarization hook
 
 ## Scripts
 
-- `npm run dev` - start dev server
-- `npm run dev:desktop` - run the app in Electron during development
-- `npm run build` - type-check and production build
-- `npm run build:desktop` - build desktop app for current platform
-- `npm run dist:mac` - build universal macOS desktop artifacts
-- `npm run dist:win` - build Windows x64 desktop artifacts
-- `npm run dist:win:arm64` - build Windows ARM64 desktop artifacts
-- `npm run lint` - lint source files
-- `npm run preview` - preview production build
+- `npm run dev`: start the Vite dev server
+- `npm run dev:desktop`: run Electron against the local Vite server
+- `npm run build`: type-check and build the renderer
+- `npm run build:renderer`: same renderer build used by packaging
+- `npm run build:desktop`: package the current platform desktop app
+- `npm run dist:mac`: build macOS universal artifacts
+- `npm run dist:win`: build Windows x64 artifacts
+- `npm run dist:win:arm64`: build Windows ARM64 artifacts
+- `npm run lint`: lint the project
+- `npm run preview`: preview the production renderer build
+
+## Signing and notarization
+
+Use `.env.signing.example` as the template for local signing credentials. Electron Builder reads the relevant certificate and notarization environment variables during packaging.
