@@ -13,6 +13,7 @@ import { RelationshipManager } from "./components/RelationshipManager"
 import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 import { getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "./utils/scoring"
+import { getGradeTagSupportLoadSummary, TAG_SUPPORT_LOAD_CATEGORY_LABELS, TagSupportLoadCategory } from "./utils/tagSupportLoad"
 
 type SlidePanel = "none" | "rules" | "settings"
 
@@ -52,6 +53,13 @@ export default function App() {
   const readingImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomReadingAvg(classroom))) > 0.75
   const mathImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomMathAvg(classroom))) > 0.75
   const supportImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomSupportLoad(classroom))) > 4
+  const tagSummary = useMemo(() => getGradeTagSupportLoadSummary(gradeClassrooms, state.activeGrade), [gradeClassrooms, state.activeGrade])
+  const tagSupportImbalance = tagSummary.rangeTotal >= 6
+  const worstTagCategory = useMemo(() => {
+    const categories = Object.keys(tagSummary.rangeByCategory) as TagSupportLoadCategory[]
+    return categories.sort((a, b) => tagSummary.rangeByCategory[b] - tagSummary.rangeByCategory[a])[0] ?? "behavioral"
+  }, [tagSummary.rangeByCategory])
+  const categoryTagImbalance = tagSummary.rangeByCategory[worstTagCategory] >= 4
   const isKindergarten = state.activeGrade === "K"
   const genderWarningLabels = gradeClassrooms
     .filter((classroom) => {
@@ -103,7 +111,7 @@ export default function App() {
         <WeightSliders />
       </div>
 
-      {(readingImbalance || mathImbalance || supportImbalance || genderWarningLabels.length > 0) && (
+      {(readingImbalance || mathImbalance || supportImbalance || tagSupportImbalance || categoryTagImbalance || genderWarningLabels.length > 0) && (
         <div className="main-warnings-row">
           {genderWarningLabels.length > 0 && <div className="warning-chip">Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
           {isKindergarten ? (
@@ -115,6 +123,12 @@ export default function App() {
             </>
           )}
           {supportImbalance && <div className="warning-chip">Support load imbalanced across classrooms</div>}
+          {tagSupportImbalance && <div className="warning-chip">Tag support load range is {tagSummary.rangeTotal.toFixed(1)} across classrooms</div>}
+          {categoryTagImbalance && (
+            <div className="warning-chip">
+              {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} tag load is concentrated in one room group ({tagSummary.rangeByCategory[worstTagCategory].toFixed(1)} spread)
+            </div>
+          )}
         </div>
       )}
 

@@ -4,6 +4,7 @@ import { getClassroomsForGrade } from "../utils/classroomInit"
 import { CO_TEACH_LABELS } from "../utils/coTeach"
 import { computeRoomStats, getRoomSupportLoad } from "../utils/scoring"
 import { getPoorFitStudentCount } from "../utils/teacherFit"
+import { getGradeTagSupportLoadSummary, TAG_SUPPORT_LOAD_CATEGORY_LABELS, TagSupportLoadCategory } from "../utils/tagSupportLoad"
 
 function fmt(n: number): string {
   return n.toFixed(2)
@@ -42,6 +43,12 @@ export const SummaryPanel = memo(function SummaryPanel() {
     }, {})
 
   const roomStats = useMemo(() => gradeClassrooms.map((classroom) => computeRoomStats(classroom)), [gradeClassrooms])
+  const tagSummary = useMemo(() => getGradeTagSupportLoadSummary(gradeClassrooms, activeGrade), [gradeClassrooms, activeGrade])
+  const totalTagSupportLoad = roomStats.reduce((sum, stats) => sum + stats.tagSupportLoad, 0)
+  const worstTagCategory = useMemo(() => {
+    const categories = Object.keys(tagSummary.rangeByCategory) as TagSupportLoadCategory[]
+    return categories.sort((a, b) => tagSummary.rangeByCategory[b] - tagSummary.rangeByCategory[a])[0] ?? "behavioral"
+  }, [tagSummary.rangeByCategory])
   const raceStyleByLabel = useMemo(() => {
     const labels = Object.keys(raceCounts).sort((a, b) => a.localeCompare(b))
     return labels.reduce<Record<string, { backgroundColor: string; borderColor: string; color: string }>>((acc, race, index) => {
@@ -69,6 +76,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
           <span className="total-pill pill-ref">{totalReferral} Referral</span>
           <span className="total-pill">{totalEL} EL</span>
           <span className="total-pill">{total504} 504</span>
+          <span className="total-pill total-pill-tag-load">Tag load {fmt(totalTagSupportLoad)}</span>
           {totalPoorFit > 0 && <span className="total-pill total-pill-poor-fit">{totalPoorFit} poor fit</span>}
         </div>
       </div>
@@ -84,10 +92,26 @@ export const SummaryPanel = memo(function SummaryPanel() {
       </div>
 
       <div className="support-load-help">
-        <strong>Placement order:</strong> hard constraints first, then teacher-fit alignment, then academic/behavior/demographic balancing.
+        <strong>Placement order:</strong> hard constraints first, then teacher-fit alignment, then weighted balancing.
         <br />
         <strong>Support Load:</strong> academic tier + behavior tier + special education status bonus + referral count + normalized co-teach load.
+        <br />
+        <strong>Tag Support Load:</strong> derived from the imported student tags and added as a soft balancing signal after teacher-fit comparison.
         {isKindergarten && <><br /><strong>Kindergarten academics:</strong> Brigance readiness replaces MAP and i-Ready in placement scoring.</>}
+      </div>
+
+      <div className="tag-support-overview">
+        <div className="tag-support-overview-header">Tag-Based Classroom Support Load</div>
+        <div className="tag-support-overview-chips">
+          <span className="summary-metric summary-metric-tag">Average total: {fmt(tagSummary.averageTotal)}</span>
+          <span className="summary-metric summary-metric-tag">Range: {fmt(tagSummary.rangeTotal)}</span>
+          <span className="summary-metric summary-metric-tag">
+            Highest room: {fmt(tagSummary.highestTotal)} / Lowest room: {fmt(tagSummary.lowestTotal)}
+          </span>
+          <span className="summary-metric summary-metric-tag">
+            Worst category: {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} ({fmt(tagSummary.rangeByCategory[worstTagCategory])})
+          </span>
+        </div>
       </div>
 
       <div className="summary-table-wrap">
@@ -106,6 +130,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
             const mapMathAvg = getAverage("mapMath")
 
             const genderWarn = genderWarnings.includes(classroom.id)
+            const tagWarn = stats.tagSupportLoad - tagSummary.averageTotal >= 3
             const coTeachBreakdown = Object.entries(stats.coTeachMinutesByCategory)
               .filter(([, minutes]) => minutes > 0)
               .map(([category, minutes]) => `${CO_TEACH_LABELS[category as keyof typeof CO_TEACH_LABELS]}: ${minutes}`)
@@ -119,7 +144,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
             ).sort(([a], [b]) => a.localeCompare(b))
 
             return (
-              <article key={classroom.id} className={`summary-room-card ${genderWarn ? "summary-room-card-warn" : ""}`}>
+              <article key={classroom.id} className={`summary-room-card ${genderWarn ? "summary-room-card-warn" : ""} ${tagWarn ? "summary-room-card-tag-warn" : ""}`}>
                 <div className="summary-room-header">
                   <div className="summary-room-title">{classroom.grade}-{classroom.label}</div>
                   <div className="summary-room-teacher">{showTeacherNames ? classroom.teacherName || "-" : "Hidden"}</div>
@@ -143,8 +168,21 @@ export const SummaryPanel = memo(function SummaryPanel() {
                     </>
                   )}
                   <span className="summary-metric">Support: {fmt(supportLoad)}</span>
+                  <span className={`summary-metric summary-metric-tag ${tagWarn ? "summary-metric-tag-warn" : ""}`}>Tag: {fmt(stats.tagSupportLoad)}</span>
                   <span className="summary-metric" title={coTeachBreakdown || "No co-teach minutes"}>Co-teach: {stats.totalCoTeachMinutes} total / {fmt(stats.avgCoTeachMinutes)} avg</span>
                   {poorFitCount > 0 && <span className="summary-metric summary-metric-poor-fit">Poor fit: {poorFitCount}</span>}
+                </div>
+
+                <div className="summary-room-section">
+                  <div className="summary-room-section-label">Tag Support Load</div>
+                  <div className="summary-room-tag-grid">
+                    <span className={`summary-metric summary-metric-tag ${tagWarn ? "summary-metric-tag-warn" : ""}`}>Total {fmt(stats.tagSupportLoad)}</span>
+                    <span className="summary-metric summary-metric-tag">Behavioral {fmt(stats.behavioralTagSupportLoad)}</span>
+                    <span className="summary-metric summary-metric-tag">Emotional {fmt(stats.emotionalTagSupportLoad)}</span>
+                    <span className="summary-metric summary-metric-tag">Instructional {fmt(stats.instructionalTagSupportLoad)}</span>
+                    <span className="summary-metric summary-metric-tag">Energy {fmt(stats.energyTagSupportLoad)}</span>
+                    <span className="summary-metric summary-metric-tag">Grade avg {fmt(tagSummary.averageTotal)}</span>
+                  </div>
                 </div>
 
                 <div className="summary-room-section">

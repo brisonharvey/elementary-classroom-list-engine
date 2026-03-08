@@ -41,7 +41,7 @@ Kindergarten rule:
 
 - For grade `K`, use `briganceReadiness`.
 - For kindergarten placement, Brigance replaces MAP and i-Ready in the logic engine.
-- MAP and i-Ready can be left blank for K students.
+- MAP and i-Ready can be left blank for kindergarten students.
 
 Relationship columns:
 
@@ -58,9 +58,12 @@ Example:
 
 ### Student tags
 
-Use the `studentTags` column for teacher-fit inputs.
+Use the `studentTags` column for both:
 
-Enter one or more of these exact tag names, separated by semicolons:
+- teacher-fit comparison
+- tag-based Classroom Support Load Index derivation
+
+Enter one or more of these exact tag names, separated by semicolons, commas, or pipes inside the field:
 
 - `Needs strong routine`
 - `Needs frequent redirection`
@@ -80,6 +83,49 @@ Example:
 ```csv
 Needs strong routine;Needs reassurance
 ```
+
+### Tag support-load weights
+
+These weights are derived automatically in the app. Do not add extra columns for them.
+
+- `Needs strong routine = 2`
+- `Needs frequent redirection = 4`
+- `Easily frustrated = 3`
+- `Needs reassurance = 2`
+- `Sensitive to correction = 2`
+- `Easily influenced by peers = 2`
+- `Needs positive peer models = 1`
+- `High energy = 2`
+- `Needs movement breaks = 2`
+- `Needs enrichment = 1`
+- `Independent worker = -1`
+- `Low academic confidence = 2`
+
+### Tag categories used in room balancing
+
+Behavioral:
+
+- `Needs frequent redirection`
+- `Easily influenced by peers`
+
+Emotional:
+
+- `Easily frustrated`
+- `Needs reassurance`
+- `Sensitive to correction`
+- `Low academic confidence`
+
+Instructional:
+
+- `Needs strong routine`
+- `Needs positive peer models`
+- `Needs enrichment`
+- `Independent worker`
+
+Energy:
+
+- `High energy`
+- `Needs movement breaks`
 
 ## Teacher template
 
@@ -108,7 +154,7 @@ Use this scale consistently:
 
 - `1` = low strength / rarely a strong match for that need
 - `2` = below average support for that need
-- `3` = solid neutral/default support
+- `3` = neutral/default support
 - `4` = strong support for that need
 - `5` = standout strength for that need
 
@@ -155,11 +201,12 @@ Teacher row:
 K,Ms. GradeKA,5,4,5,3,3,4,4,5
 ```
 
-That teacher profile is a strong fit for:
+That student contributes `4` points of tag support load from:
 
-- `Needs strong routine`
-- `Needs reassurance`
-- students who benefit from emotional support and confidence building
+- `Needs strong routine = 2`
+- `Needs reassurance = 2`
+
+That teacher profile is also a strong fit for those same tags.
 
 ## Notes
 
@@ -167,4 +214,4 @@ That teacher profile is a strong fit for:
 - Teacher imports do not lock students.
 - Locking happens only inside the app.
 - Poor teacher fits are highlighted with purple student name text after placement.
-
+- The templates do not include extra columns for derived tag-load totals because the app computes them from `studentTags`.

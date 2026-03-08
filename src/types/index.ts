@@ -97,6 +97,7 @@ export interface Weights {
   academic: number
   behavioral: number
   demographic: number
+  tagSupportLoad: number
 }
 
 export interface Snapshot {
@@ -159,4 +160,9 @@ export interface RoomStats {
   totalCoTeachMinutes: number
   avgCoTeachMinutes: number
   coTeachMinutesByCategory: Record<CoTeachCategory, number>
+  tagSupportLoad: number
+  behavioralTagSupportLoad: number
+  emotionalTagSupportLoad: number
+  instructionalTagSupportLoad: number
+  energyTagSupportLoad: number
 }

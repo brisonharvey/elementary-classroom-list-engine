@@ -1,7 +1,14 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Student } from "../types"
+import { getClassroomsForGrade } from "../utils/classroomInit"
 import { CO_TEACH_LABELS, getStudentCoTeachTotal, getStudentRequiredCoTeachCategories } from "../utils/coTeach"
+import {
+  getClassroomTagSupportLoadBreakdown,
+  getGradeTagSupportLoadSummary,
+  getStudentTagSupportContributions,
+  getStudentTagSupportLoad,
+} from "../utils/tagSupportLoad"
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
 import { getStudentTeacherFitForClassroom } from "../utils/teacherFit"
@@ -15,6 +22,10 @@ function tierClass(tier: 1 | 2 | 3): string {
   if (tier === 3) return "tier-3"
   if (tier === 2) return "tier-2"
   return "tier-1"
+}
+
+function formatContribution(weight: number): string {
+  return weight > 0 ? `+${weight}` : `${weight}`
 }
 
 export const StudentCard = memo(function StudentCard({ student, classroomId }: StudentCardProps) {
@@ -34,15 +45,23 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     () => (classroomId ? state.classrooms.find((classroom) => classroom.id === classroomId) ?? null : null),
     [classroomId, state.classrooms]
   )
+  const gradeRooms = useMemo(() => getClassroomsForGrade(state.classrooms, student.grade), [state.classrooms, student.grade])
   const teacherFit = currentClassroom ? getStudentTeacherFitForClassroom(student, currentClassroom, state.teacherProfiles) : null
   const isPoorTeacherFit = Boolean(teacherFit?.isPoorFit)
   const isKindergarten = student.grade === "K"
+  const tagSupportLoad = useMemo(() => getStudentTagSupportLoad(student), [student])
+  const tagContributions = useMemo(() => getStudentTagSupportContributions(student), [student])
+  const roomTagBreakdown = useMemo(
+    () => (currentClassroom ? getClassroomTagSupportLoadBreakdown(currentClassroom) : null),
+    [currentClassroom]
+  )
+  const gradeTagSummary = useMemo(() => getGradeTagSupportLoadSummary(gradeRooms, student.grade), [gradeRooms, student.grade])
 
   const onMouseEnter = () => {
     timerRef.current = setTimeout(() => {
       if (!cardRef.current) return
-      const tooltipWidth = 300
-      const tooltipHeight = 380
+      const tooltipWidth = 320
+      const tooltipHeight = 460
       const rect = cardRef.current.getBoundingClientRect()
       let x = rect.right + 8
       if (x + tooltipWidth > window.innerWidth - 8) x = rect.left - tooltipWidth - 8
@@ -150,6 +169,12 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
               </span>
             )}
 
+            {tagContributions.length > 0 && (
+              <span className={`badge badge-tag-load ${tagSupportLoad < 0 ? "badge-tag-load-negative" : ""}`} title={`Tag-based support load: ${tagSupportLoad}`}>
+                TSL:{tagSupportLoad}
+              </span>
+            )}
+
             {(student.tags?.length ?? 0) > 0 && (
               <span className="badge badge-tags" title={(student.tags ?? []).join(", ")}>
                 Tags:{student.tags!.length}
@@ -252,6 +277,44 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </>
               )}
 
+              {(tagContributions.length > 0 || roomTagBreakdown) && (
+                <>
+                  <hr className="tt-sep" />
+                  <div className="tt-row">
+                    <span className="tt-label">Tag Load</span>
+                    <span className={tagSupportLoad >= 4 ? "tt-flag" : ""}>{tagSupportLoad}</span>
+                  </div>
+                  {tagContributions.length > 0 && (
+                    <div className="tt-row">
+                      <span className="tt-label">Load Tags</span>
+                      <span className="tt-no-contact">
+                        {tagContributions
+                          .map((contribution) => `${contribution.tag} (${formatContribution(contribution.weight)})`)
+                          .join(", ")}
+                      </span>
+                    </div>
+                  )}
+                  {roomTagBreakdown && (
+                    <>
+                      <div className="tt-row">
+                        <span className="tt-label">Room Tag Load</span>
+                        <span className={roomTagBreakdown.total - gradeTagSummary.averageTotal >= 3 ? "tt-poor-fit" : ""}>
+                          {roomTagBreakdown.total.toFixed(1)} total
+                        </span>
+                      </div>
+                      <div className="tt-row">
+                        <span className="tt-label">Grade Avg</span>
+                        <span>{gradeTagSummary.averageTotal.toFixed(1)}</span>
+                      </div>
+                      <div className="tt-row">
+                        <span className="tt-label">Room Impact</span>
+                        <span>{formatContribution(tagSupportLoad)} from this student</span>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
               {(student.tags?.length ?? 0) > 0 && (
                 <>
                   <hr className="tt-sep" />
@@ -320,4 +383,3 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     </>
   )
 })
-

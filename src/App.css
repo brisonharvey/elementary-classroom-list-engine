@@ -1760,3 +1760,84 @@ input { font-family: inherit; }
   font-weight: 700;
 }
 
+
+.qs-tag {
+  background: #ecfeff;
+  color: #155e75;
+  border: 1px solid #67e8f9;
+}
+
+.qs-tag-warn {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #c4b5fd;
+}
+
+.classroom-column-tag-warn {
+  border-color: #c4b5fd;
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.18);
+}
+
+.badge-tag-load {
+  background: #ecfdf5;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.badge-tag-load-negative {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.total-pill-tag-load {
+  background: #ecfeff;
+  color: #155e75;
+  border-color: #67e8f9;
+}
+
+.tag-support-overview {
+  margin: 0 0 10px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+
+.tag-support-overview-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.tag-support-overview-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.summary-room-card-tag-warn {
+  border-color: #c4b5fd;
+  background: linear-gradient(180deg, rgba(243, 232, 255, 0.55) 0%, rgba(255, 255, 255, 1) 36%);
+}
+
+.summary-room-tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.summary-metric-tag {
+  background: #ecfeff;
+  color: #155e75;
+  border-color: #67e8f9;
+}
+
+.summary-metric-tag-warn {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border-color: #c4b5fd;
+}

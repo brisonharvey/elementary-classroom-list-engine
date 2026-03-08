@@ -50,7 +50,7 @@ export const initialState: AppState = {
   classrooms: initializeClassrooms(),
   activeGrade: "K",
   showTeacherNames: true,
-  weights: { academic: 50, behavioral: 50, demographic: 50 },
+  weights: { academic: 50, behavioral: 50, demographic: 50, tagSupportLoad: 50 },
   snapshots: [],
   relationshipRules: [],
   gradeSettings: createDefaultGradeSettingsMap(),
@@ -272,3 +272,4 @@ export function reducer(state: AppState, action: Action): AppState {
       return state
   }
 }
+

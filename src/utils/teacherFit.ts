@@ -5,6 +5,7 @@ import {
   TeacherCharacteristicKey,
   TeacherProfile,
 } from "../types"
+import { STUDENT_TAG_TEACHER_CHARACTERISTIC_REQUIREMENTS } from "./tagSupportLoad"
 
 export const TEACHER_CHARACTERISTIC_LABELS: Record<TeacherCharacteristicKey, string> = {
   classroomStructure: "Classroom structure",
@@ -15,21 +16,6 @@ export const TEACHER_CHARACTERISTIC_LABELS: Record<TeacherCharacteristicKey, str
   movementFlexibility: "Movement flexibility",
   peerSocialCoaching: "Peer social coaching",
   confidenceBuilding: "Confidence building",
-}
-
-const STUDENT_TAG_REQUIREMENTS: Record<StudentTag, Partial<Record<TeacherCharacteristicKey, number>>> = {
-  "Needs strong routine": { classroomStructure: 1.4, behaviorManagementStrength: 0.6 },
-  "Needs frequent redirection": { behaviorManagementStrength: 1.5, classroomStructure: 0.5 },
-  "Easily frustrated": { emotionalSupportNurturing: 1.2, confidenceBuilding: 0.8 },
-  "Needs reassurance": { emotionalSupportNurturing: 1, confidenceBuilding: 1 },
-  "Sensitive to correction": { emotionalSupportNurturing: 1.3, confidenceBuilding: 0.7 },
-  "Easily influenced by peers": { peerSocialCoaching: 1.2, classroomStructure: 0.4 },
-  "Needs positive peer models": { peerSocialCoaching: 1.4, classroomStructure: 0.3 },
-  "High energy": { movementFlexibility: 1, behaviorManagementStrength: 1 },
-  "Needs movement breaks": { movementFlexibility: 1.5 },
-  "Needs enrichment": { academicEnrichmentStrength: 1.5 },
-  "Independent worker": { independenceScaffolding: 1.5 },
-  "Low academic confidence": { confidenceBuilding: 1.2, emotionalSupportNurturing: 0.6 },
 }
 
 const DEFAULT_MISSING_PROFILE_PENALTY = 0.4
@@ -61,7 +47,7 @@ export function assessStudentTeacherFit(
   teacherProfile: TeacherProfile | undefined,
   hasTeacherProfiles: boolean
 ): TeacherFitAssessment {
-  const matchedTags = (student.tags ?? []).filter((tag) => STUDENT_TAG_REQUIREMENTS[tag] != null)
+  const matchedTags = (student.tags ?? []).filter((tag) => STUDENT_TAG_TEACHER_CHARACTERISTIC_REQUIREMENTS[tag] != null)
   if (matchedTags.length === 0) {
     return {
       penalty: 0,
@@ -86,7 +72,7 @@ export function assessStudentTeacherFit(
   }
 
   const tagPenalties = matchedTags.map((tag) => {
-    const requirements = STUDENT_TAG_REQUIREMENTS[tag]
+    const requirements = STUDENT_TAG_TEACHER_CHARACTERISTIC_REQUIREMENTS[tag]
     let weightedGap = 0
     let weightTotal = 0
 

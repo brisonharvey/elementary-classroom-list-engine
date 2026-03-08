@@ -16,6 +16,7 @@
     "dist:win": "npm run build:renderer && electron-builder --win --x64",
     "dist:win:arm64": "npm run build:renderer && electron-builder --win --arm64",
     "lint": "eslint .",
+    "test": "tsc -p tsconfig.tests.json && node tests/tag-support-load.test.cjs",
     "preview": "vite preview"
   },
   "build": {
@@ -74,3 +75,4 @@
     "wait-on": "^9.0.4"
   }
 }
+
