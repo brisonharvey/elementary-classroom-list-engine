@@ -1162,24 +1162,10 @@ html, body, #root {
 
 .badge-referrals { background: #fef2f2; color: #b91c1c; }
 .badge-map { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
-.badge-preassigned {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-/* Pre-assigned card gets green left border */
-.student-card.card-preassigned {
-  border-left-color: #10b981;
-}
-/* IEP overrides to keep red border even if also pre-assigned */
-.student-card.card-iep.card-preassigned {
-  border-left-color: var(--iep-border);
-}
+
+
+
 
 /* Lock button */
 .lock-btn {
@@ -1730,3 +1716,47 @@ input { font-family: inherit; }
   gap: 6px;
   padding: 6px 0;
 }
+
+.import-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-name-poor-fit {
+  color: var(--purple);
+}
+
+.student-card.card-poor-fit {
+  border-color: #d8b4fe;
+}
+
+.badge-tags {
+  background: #ecfeff;
+  color: #155e75;
+  border: 1px solid #67e8f9;
+}
+
+.badge-poor-fit {
+  background: var(--purple-light);
+  color: #6b21a8;
+  border: 1px solid #c4b5fd;
+}
+
+.total-pill-poor-fit {
+  background: var(--purple-light);
+  color: #6b21a8;
+  border-color: #c4b5fd;
+}
+
+.summary-metric-poor-fit {
+  background: var(--purple-light);
+  color: #6b21a8;
+  border-color: #c4b5fd;
+}
+
+.tt-poor-fit {
+  color: #6b21a8;
+  font-weight: 700;
+}
+

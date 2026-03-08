@@ -12,6 +12,45 @@ export type CoTeachCategory =
 export const GRADES: Grade[] = ["K", "1", "2", "3", "4", "5"]
 export const LETTERS = ["A", "B", "C", "D"] as const
 
+export const STUDENT_TAGS = [
+  "Needs strong routine",
+  "Needs frequent redirection",
+  "Easily frustrated",
+  "Needs reassurance",
+  "Sensitive to correction",
+  "Easily influenced by peers",
+  "Needs positive peer models",
+  "High energy",
+  "Needs movement breaks",
+  "Needs enrichment",
+  "Independent worker",
+  "Low academic confidence",
+] as const
+
+export type StudentTag = (typeof STUDENT_TAGS)[number]
+
+export const TEACHER_CHARACTERISTIC_KEYS = [
+  "classroomStructure",
+  "behaviorManagementStrength",
+  "emotionalSupportNurturing",
+  "academicEnrichmentStrength",
+  "independenceScaffolding",
+  "movementFlexibility",
+  "peerSocialCoaching",
+  "confidenceBuilding",
+] as const
+
+export type TeacherCharacteristicKey = (typeof TEACHER_CHARACTERISTIC_KEYS)[number]
+
+export type TeacherCharacteristics = Record<TeacherCharacteristicKey, 1 | 2 | 3 | 4 | 5>
+
+export interface TeacherProfile {
+  id: string
+  grade: Grade
+  teacherName: string
+  characteristics: TeacherCharacteristics
+}
+
 export interface Student {
   id: number
   grade: Grade
@@ -29,16 +68,15 @@ export interface Student {
   }
   behaviorTier: 1 | 2 | 3
   referrals?: number
+  briganceReadiness?: number
   mapReading?: number
   mapMath?: number
   ireadyReading?: string
   ireadyMath?: string
+  tags?: StudentTag[]
   noContactWith?: number[]
-  /** Soft preference: IDs of students this student should ideally be placed with. */
   preferredWith?: number[]
   locked?: boolean
-  /** Teacher name pre-assigned at import time. Populated from the CSV `teacher` column. */
-  preassignedTeacher?: string
   ell?: boolean
   section504?: boolean
   raceEthnicity?: string
@@ -86,7 +124,6 @@ export interface GradeSettings {
   maxIEPPerRoom: number
   maxReferralsPerRoom: number
   ellConcentrationSoftCap: number
-  /** Tolerance for M/F count spread across rooms measured in students. */
   genderBalanceTolerance: number
   classSizeVarianceLimit: number
 }
@@ -95,6 +132,7 @@ export type GradeSettingsMap = Record<Grade, GradeSettings>
 
 export interface AppState {
   allStudents: Student[]
+  teacherProfiles: TeacherProfile[]
   classrooms: Classroom[]
   activeGrade: Grade
   showTeacherNames: boolean

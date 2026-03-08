@@ -1,23 +1,18 @@
 # Elementary Classroom List Engine
 
-Desktop and web app for building balanced K-5 classroom rosters from CSV student data.
+Desktop and web app for building balanced K-5 classroom rosters from separate student and teacher CSV imports.
 
-## What the current build does
+## Current capabilities
 
-- Imports student rosters through a two-step CSV flow: upload, review suggested header matches, then import.
-- Runs auto-placement for the active grade only.
-- Preserves locked students during auto-place and grade resets.
-- Honors hard constraints for room capacity, co-teach coverage, IEP caps, referral caps, and no-contact conflicts.
-- Applies soft scoring for academic, behavioral, demographic, preferred-peer, do-not-separate, and grade-setting pressures.
-- Supports manual drag-and-drop between rooms and unassigned, with override warnings before invalid moves.
-- Lets users add or delete classrooms for the active grade.
-- Lets users edit teacher names, room capacities, and co-teach coverage per room.
-- Includes a grade settings panel for hard/soft threshold tuning.
-- Includes a relationship manager for `NO_CONTACT` and `DO_NOT_SEPARATE` rules.
-- Shows an unassigned panel, grade summary drawer, imbalance warning chips, and placement warning popover.
-- Saves grade-specific snapshots with restore, duplicate, rename, note editing, and diff summaries.
-- Exports either the active grade or all grades back to CSV.
-- Persists app state in `localStorage`, including migration from older saved formats.
+- Imports students through a two-step CSV flow: upload, map headers, then load.
+- Imports teacher characteristics through a separate two-step CSV flow.
+- Uses hard constraints first, teacher-fit scoring second, and academic/behavior/demographic balancing after that.
+- Uses Brigance Kindergarten readiness scores for kindergarten placement in place of MAP and i-Ready.
+- Honors room capacity, co-teach coverage, IEP caps, referral caps, and no-contact conflicts.
+- Supports preferred-peer and do-not-separate relationship rules.
+- Lets users manually drag students, then lock placements inside the app.
+- Marks poor teacher-fit placements directly on student cards with purple name text.
+- Saves snapshots, exports placements, and persists state locally.
 
 ## Tech stack
 
@@ -51,29 +46,11 @@ npm run dev
 npm run dev:desktop
 ```
 
-### Build the renderer
+### Type-check and build
 
 ```bash
 npm run build
 ```
-
-### Build desktop packages
-
-```bash
-# Current platform
-npm run build:desktop
-
-# macOS universal artifacts (.dmg + .zip)
-npm run dist:mac
-
-# Windows x64 artifacts (NSIS installer + portable .exe)
-npm run dist:win
-
-# Windows ARM64 artifacts
-npm run dist:win:arm64
-```
-
-Desktop artifacts are written to `release/`.
 
 ### Lint
 
@@ -81,101 +58,138 @@ Desktop artifacts are written to `release/`.
 npm run lint
 ```
 
-## CSV import
+## Import files
 
-Starter files live in `public/`:
+Files in `public/`:
 
-- `sample-students.csv`: populated example dataset
-- `student-import-template.csv`: header-only template
+- `student-import-template.csv`
+- `sample-students.csv`
+- `teacher-import-template.csv`
+- `sample-teachers.csv`
 
-The importer first previews headers and sample values, then lets the user map each source column to an app field. Required fields are:
+The app also provides download buttons for both template and sample files inside the uploader.
+
+## Student import schema
+
+Required columns:
 
 - `id`
 - `grade`
 - `firstName`
 - `lastName`
 
-Common optional fields:
+Common optional columns:
 
 - Student profile: `gender`, `status`, `academicTier`, `behaviorTier`, `referrals`
-- Co-teach service minutes: `coTeachReadingMinutes`, `coTeachWritingMinutes`, `coTeachScienceSocialStudiesMinutes`, `coTeachMathMinutes`, `coTeachBehaviorMinutes`, `coTeachSocialMinutes`, `coTeachVocationalMinutes`
-- Legacy co-teach booleans: `requiresCoTeachReading`, `requiresCoTeachMath`
-- Assessments: `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
+- Co-teach minutes: `coTeachReadingMinutes`, `coTeachWritingMinutes`, `coTeachScienceSocialStudiesMinutes`, `coTeachMathMinutes`, `coTeachBehaviorMinutes`, `coTeachSocialMinutes`, `coTeachVocationalMinutes`
 - Relationships: `noContactWith`, `preferredWith`
-- Placement context: `teacher`, `ell`, `section504`, `raceEthnicity`, `teacherNotes`
+- Assessments: `briganceReadiness`, `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
+- Demographics/context: `ell`, `section504`, `raceEthnicity`, `studentTags`, `teacherNotes`
 
-Import behavior in the current build:
+Important changes:
 
-- IDs must be unique positive integers. Invalid or duplicate IDs are skipped.
-- Grades accept `K`, `0`, `KG`, kindergarten variants, `01-05`, and ordinal forms like `1st`.
-- Tier values default to `1`; explicit `2`, `3`, `yes`, or `y` raise support tiers.
-- Co-teach minutes are numeric and clamped to `0..999`.
-- Legacy reading/math co-teach booleans are converted to 30 minutes when explicit minutes are missing.
-- Relationship lists accept `,`, `;`, or `|` separators.
-- Unknown relationship IDs generate import warnings.
-- `preferredWith` is limited to same-grade peers and deduplicated.
-- Imported `teacher` values preassign students into teacher rooms and load them as locked when possible.
+- The student import no longer accepts a pre-assigned teacher column.
+- Students are only locked or fixed to rooms from inside the app.
+- Kindergarten students should use `briganceReadiness`; MAP and i-Ready can be left blank for K.
+- `studentTags` should be semicolon-separated using the exact tag names documented in [TEMPLATE_USAGE.md](/C:/Users/briso/GitHub/elementary-classroom-list-engine/TEMPLATE_USAGE.md).
+
+## Teacher import schema
+
+Required columns:
+
+- `grade`
+- `teacherName`
+- `classroomStructure`
+- `behaviorManagementStrength`
+- `emotionalSupportNurturing`
+- `academicEnrichmentStrength`
+- `independenceScaffolding`
+- `movementFlexibility`
+- `peerSocialCoaching`
+- `confidenceBuilding`
+
+Teacher ratings are `1-5`.
+
+Teacher import behavior:
+
+- Teacher rows are applied to classrooms in CSV order within each grade.
+- If a grade has more imported teachers than existing rooms, the app adds rooms.
+- If a teacher import is loaded after students, the students remain in place and room teacher names are updated.
+- Teacher-fit scoring uses the imported teacher profile whose grade and teacher name match the classroom.
 
 ## Placement workflow
 
-1. Import students from CSV.
-2. Switch to a grade with the grade selector.
-3. Optionally tune weights, room setup, relationship rules, and grade settings.
-4. Run `Auto-Place Grade X`.
-5. Review warning chips, placement warnings, unassigned students, and the summary drawer.
-6. Manually drag students as needed and lock placements that should be preserved.
-7. Save snapshots while iterating.
-8. Export the active grade or all grades.
+1. Import students.
+2. Import teachers.
+3. Review teacher names per classroom if needed.
+4. Adjust rules, settings, and weights.
+5. Run auto-place for the active grade.
+6. Review warnings, poor-fit cards, the unassigned panel, and the summary drawer.
+7. Drag students manually as needed.
+8. Lock placements that should be preserved.
+9. Export the current grade or all grades.
 
-## Defaults and behavior details
+## Placement model
 
-- The app initializes four classrooms per grade.
-- New classrooms default to max size `28`.
-- The first room created for a grade starts with reading co-teach coverage; other default rooms start with none.
-- Auto-place clears only unlocked students from rooms in the active grade before recalculating placements.
-- `Reset Grade` removes only unlocked placements for the active grade.
-- `Clear All` resets students, rooms, rules, settings, warnings, and snapshots.
-- Loading a new CSV replaces current students and classrooms and clears snapshots, rules, unresolved reasons, and warnings.
-- State is saved to `localStorage` under `classroom-placement-state-v2`, with fallback migration from `classroom-placement-state-v1`.
+Order of operations for each candidate room:
 
-## Summary and warnings
+1. Hard constraints must pass.
+2. Teacher fit is compared next.
+3. If teacher fit ties, the engine falls through to academic, behavior, demographic, class size, relationship, and settings balancing.
 
-The current summary drawer shows, for the active grade:
+The engine still prioritizes higher-need students earlier in the placement pass, especially students with co-teach needs, IEP/Referral status, and higher support load.
 
-- Student, IEP, Referral, EL, and 504 totals
-- Race/ethnicity totals
-- Per-room size, gender split, MAP averages, support load, and co-teach totals
-- Per-room race/ethnicity breakdown
-- Per-room co-teach coverage badges
+## Kindergarten scoring
 
-The main workspace also surfaces:
+For grade `K` only:
 
-- Gender imbalance chips when a room exceeds the configured tolerance
-- Reading spread, math spread, and support-load imbalance chips
-- Placement warnings after auto-place, including unresolved students and grouped hard-constraint reasons
+- `briganceReadiness` replaces MAP and i-Ready in placement scoring.
+- Student cards show Brigance instead of MAP badges.
+- Summary cards show Brigance room averages instead of MAP averages.
+- The main workspace warning chip uses Brigance spread wording for kindergarten.
+
+For grades `1-5`, MAP and i-Ready continue to drive academic balancing.
+
+## Teacher fit and poor-fit marking
+
+Teacher fit is driven by the student tags and teacher ratings.
+
+Examples:
+
+- `Needs strong routine` aligns to `classroomStructure`
+- `Needs frequent redirection` aligns to `behaviorManagementStrength`
+- `Needs movement breaks` aligns to `movementFlexibility`
+- `Needs enrichment` aligns to `academicEnrichmentStrength`
+- `Low academic confidence` aligns to `confidenceBuilding`
+
+Students placed with a poor-fit teacher are marked with purple name text in their student cards and counted in the summary.
+
+## Export behavior
+
+Exports include the new student import fields plus an `assignedTeacher` column at the end.
+
+That means:
+
+- student templates are for import
+- placement exports are for reporting and review
+- exports are not intended to be the same schema as the student import anymore
 
 ## Project structure
 
 - `src/components/`: uploader, controls, room columns, summary, snapshots, settings, and relationship management
-- `src/engine/`: auto-placement engine
+- `src/engine/`: placement engine
 - `src/store/`: reducer, app context, drag context
-- `src/utils/`: CSV parsing, scoring, constraints, co-teach helpers, exports, and classroom initialization
+- `src/utils/`: CSV parsing, teacher-fit logic, scoring, constraints, exports, and classroom initialization
 - `src/types/`: shared domain types
+- `public/`: shipped CSV templates and samples
 - `electron/`: desktop shell and notarization hook
 
-## Scripts
+## Verification notes
 
-- `npm run dev`: start the Vite dev server
-- `npm run dev:desktop`: run Electron against the local Vite server
-- `npm run build`: type-check and build the renderer
-- `npm run build:renderer`: same renderer build used by packaging
-- `npm run build:desktop`: package the current platform desktop app
-- `npm run dist:mac`: build macOS universal artifacts
-- `npm run dist:win`: build Windows x64 artifacts
-- `npm run dist:win:arm64`: build Windows ARM64 artifacts
-- `npm run lint`: lint the project
-- `npm run preview`: preview the production renderer build
+TypeScript verification passes with:
 
-## Signing and notarization
+```bash
+node_modules/.bin/tsc -b
+```
 
-Use `.env.signing.example` as the template for local signing credentials. Electron Builder reads the relevant certificate and notarization environment variables during packaging.
+`npm run build` may still fail in this sandboxed environment because Vite/esbuild cannot spawn its build subprocess here (`spawn EPERM`).

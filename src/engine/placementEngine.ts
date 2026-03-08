@@ -1,15 +1,16 @@
-import { Classroom, Grade, GradeSettings, RelationshipRule, RoomStats, Student, Weights } from "../types"
+import { Classroom, Grade, GradeSettings, RelationshipRule, RoomStats, Student, TeacherProfile, Weights } from "../types"
 import { checkHardConstraints } from "../utils/constraints"
 import { CO_TEACH_CATEGORIES, CO_TEACH_LABELS, getStudentCoTeachTotal } from "../utils/coTeach"
 import { computeRoomStats, getStudentSupportLoad, scoreStudentForRoom } from "../utils/scoring"
+import { getStudentTeacherFitForClassroom } from "../utils/teacherFit"
 
 function deepCloneClassrooms(classrooms: Classroom[]): Classroom[] {
-  return classrooms.map((c) => ({ ...c, students: c.students.map((s) => ({ ...s })) }))
+  return classrooms.map((classroom) => ({ ...classroom, students: classroom.students.map((student) => ({ ...student })) }))
 }
 
 export function getUnassignedStudents(allStudents: Student[], classrooms: Classroom[], grade: Grade): Student[] {
-  const assignedIds = new Set(classrooms.filter((c) => c.grade === grade).flatMap((c) => c.students.map((s) => s.id)))
-  return allStudents.filter((s) => s.grade === grade && !assignedIds.has(s.id))
+  const assignedIds = new Set(classrooms.filter((classroom) => classroom.grade === grade).flatMap((classroom) => classroom.students.map((student) => student.id)))
+  return allStudents.filter((student) => student.grade === grade && !assignedIds.has(student.id))
 }
 
 function prioritySort(students: Student[]): Student[] {
@@ -21,7 +22,7 @@ function prioritySort(students: Student[]): Student[] {
     if (bHas !== aHas) return bHas - aHas
     if (bCoTeach !== aCoTeach) return bCoTeach - aCoTeach
 
-    const statusRank = (s: Student) => (s.specialEd.status === "IEP" ? 2 : s.specialEd.status === "Referral" ? 1 : 0)
+    const statusRank = (student: Student) => (student.specialEd.status === "IEP" ? 2 : student.specialEd.status === "Referral" ? 1 : 0)
     if (statusRank(b) !== statusRank(a)) return statusRank(b) - statusRank(a)
 
     return getStudentSupportLoad(b) - getStudentSupportLoad(a)
@@ -45,15 +46,16 @@ function formatConstraintCategory(reason: string): string {
 }
 
 function getMissingGradeCoverageWarning(gradeRooms: Classroom[], gradeStudents: Student[], activeGrade: Grade): string | null {
-  const needed = CO_TEACH_CATEGORIES.filter((category) => gradeStudents.some((s) => (s.coTeachMinutes[category] ?? 0) > 0))
+  const needed = CO_TEACH_CATEGORIES.filter((category) => gradeStudents.some((student) => (student.coTeachMinutes[category] ?? 0) > 0))
   const covered = new Set(gradeRooms.flatMap((room) => room.coTeachCoverage))
   const missing = needed.filter((category) => !covered.has(category))
   if (missing.length === 0) return null
-  return `No classrooms in Grade ${activeGrade} provide co-teach coverage for: ${missing.map((c) => CO_TEACH_LABELS[c]).join(", ")}`
+  return `No classrooms in Grade ${activeGrade} provide co-teach coverage for: ${missing.map((category) => CO_TEACH_LABELS[category]).join(", ")}`
 }
 
 export function runPlacement(
   allStudents: Student[],
+  teacherProfiles: TeacherProfile[],
   allClassrooms: Classroom[],
   activeGrade: Grade,
   weights: Weights,
@@ -62,22 +64,22 @@ export function runPlacement(
 ): PlacementResult {
   const warnings: string[] = []
   const classrooms = deepCloneClassrooms(allClassrooms)
-  const gradeRooms = classrooms.filter((c) => c.grade === activeGrade)
+  const gradeRooms = classrooms.filter((classroom) => classroom.grade === activeGrade)
 
   for (const room of gradeRooms) {
-    room.students = room.students.filter((s) => s.locked)
+    room.students = room.students.filter((student) => student.locked)
   }
 
-  const lockedIds = new Set(gradeRooms.flatMap((r) => r.students.map((s) => s.id)))
-  const gradeStudents = allStudents.filter((s) => s.grade === activeGrade)
+  const lockedIds = new Set(gradeRooms.flatMap((room) => room.students.map((student) => student.id)))
+  const gradeStudents = allStudents.filter((student) => student.grade === activeGrade)
   const coverageWarning = getMissingGradeCoverageWarning(gradeRooms, gradeStudents, activeGrade)
   if (coverageWarning) warnings.push(coverageWarning)
-  const unplaced = gradeStudents.filter((s) => !lockedIds.has(s.id))
+  const unplaced = gradeStudents.filter((student) => !lockedIds.has(student.id))
   const sorted = prioritySort(unplaced)
 
   const unresolved: Student[] = []
   const unresolvedReasons = new Map<number, Set<string>>()
-  const roomStatsMap = new Map<string, RoomStats>(gradeRooms.map((r) => [r.id, computeRoomStats(r)]))
+  const roomStatsMap = new Map<string, RoomStats>(gradeRooms.map((room) => [room.id, computeRoomStats(room)]))
   const assignedRoomByStudentId = new Map<number, string>()
 
   for (const room of gradeRooms) {
@@ -88,6 +90,7 @@ export function runPlacement(
 
   for (const student of sorted) {
     let bestRoom: Classroom | null = null
+    let bestTeacherFitPenalty = Infinity
     let bestScore = Infinity
     const reasons = new Set<string>()
 
@@ -102,13 +105,19 @@ export function runPlacement(
         continue
       }
 
+      const teacherFit = getStudentTeacherFitForClassroom(student, room, teacherProfiles)
       const score = scoreStudentForRoom(student, room, stats, weights, {
         assignedRoomByStudentId,
         relationshipRules,
         gradeSettings,
         gradeRooms,
       })
-      if (score < bestScore) {
+
+      if (
+        teacherFit.penalty < bestTeacherFitPenalty ||
+        (teacherFit.penalty === bestTeacherFitPenalty && score < bestScore)
+      ) {
+        bestTeacherFitPenalty = teacherFit.penalty
         bestScore = score
         bestRoom = room
       }
@@ -133,7 +142,7 @@ export function runPlacement(
       for (const reason of reasons) {
         const category = formatConstraintCategory(reason)
         if (!grouped.has(category)) grouped.set(category, [])
-        grouped.get(category)!.push(`${student.firstName} ${student.lastName} — ${reason}`)
+        grouped.get(category)!.push(`${student.firstName} ${student.lastName} - ${reason}`)
       }
     }
 
@@ -142,10 +151,18 @@ export function runPlacement(
     }
   }
 
+  const poorFitCount = gradeRooms.reduce(
+    (sum, room) => sum + room.students.filter((student) => getStudentTeacherFitForClassroom(student, room, teacherProfiles).isPoorFit).length,
+    0
+  )
+  if (poorFitCount > 0) {
+    warnings.push(`${poorFitCount} student(s) are currently marked as poor teacher fits.`)
+  }
+
   return {
     classrooms,
     unresolved,
-    unresolvedReasons: Object.fromEntries(Array.from(unresolvedReasons.entries()).map(([id, rs]) => [id, Array.from(rs)])),
+    unresolvedReasons: Object.fromEntries(Array.from(unresolvedReasons.entries()).map(([id, reasons]) => [id, Array.from(reasons)])),
     warnings,
   }
 }
