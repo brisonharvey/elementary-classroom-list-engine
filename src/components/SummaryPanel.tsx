@@ -119,14 +119,14 @@ export const SummaryPanel = memo(function SummaryPanel() {
                 </div>
 
                 <div className="summary-room-metrics">
-                  <span className="summary-metric">IEP: {stats.iepCount || "—"}</span>
-                  <span className="summary-metric">Ref: {stats.referralCount || "—"}</span>
-                  <span className="summary-metric">EL: {stats.ellCount || "—"}</span>
-                  <span className="summary-metric">504: {stats.section504Count || "—"}</span>
-                  <span className={`summary-metric ${genderWarn ? "cell-warn" : ""}`}>M/F: {stats.maleCount}/{stats.femaleCount}</span>
-                  <span className="summary-metric">MAP R: {mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</span>
-                  <span className="summary-metric">MAP M: {mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</span>
-                  <span className="summary-metric">Support: {fmt(supportLoad)}</span>
+                  <span className="summary-metric summary-metric-demographic">IEP: {stats.iepCount || "—"}</span>
+                  <span className="summary-metric summary-metric-demographic">Ref: {stats.referralCount || "—"}</span>
+                  <span className="summary-metric summary-metric-demographic">EL: {stats.ellCount || "—"}</span>
+                  <span className="summary-metric summary-metric-demographic">504: {stats.section504Count || "—"}</span>
+                  <span className={`summary-metric summary-metric-demographic ${genderWarn ? "cell-warn" : ""}`}>M/F: {stats.maleCount}/{stats.femaleCount}</span>
+                  <span className="summary-metric summary-metric-academic">MAP R: {mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</span>
+                  <span className="summary-metric summary-metric-academic">MAP M: {mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</span>
+                  <span className="summary-metric summary-metric-support">Support: {fmt(supportLoad)}</span>
                   <span className="summary-metric" title={coTeachBreakdown || "No co-teach minutes"}>Co-teach: {stats.totalCoTeachMinutes} total / {fmt(stats.avgCoTeachMinutes)} avg</span>
                 </div>
 

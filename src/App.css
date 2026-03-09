@@ -1384,6 +1384,24 @@ html, body, #root {
   color: var(--text-muted);
 }
 
+.summary-metric-demographic {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  color: #0c4a6e;
+}
+
+.summary-metric-academic {
+  background: #ecfccb;
+  border-color: #bef264;
+  color: #365314;
+}
+
+.summary-metric-support {
+  background: #f3e8ff;
+  border-color: #d8b4fe;
+  color: #6b21a8;
+}
+
 .summary-room-section {
   display: flex;
   flex-direction: column;
