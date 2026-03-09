@@ -1,5 +1,6 @@
-import { CoTeachCategory, Grade, STUDENT_TAGS, Student, StudentTag } from "../types"
+import { CoTeachCategory, Grade, Student, StudentTag } from "../types"
 import { MAX_COTEACH_MINUTES, normalizeCoTeachMinutes } from "./coTeach"
+import { normalizeStudentTag } from "./tagSupportLoad"
 
 export interface CsvFieldOption {
   key: string
@@ -294,8 +295,6 @@ function buildCoTeachMinutes(values: string[], rowIndex: number, get: (values: s
   return normalizeCoTeachMinutes(coTeachMinutes)
 }
 
-const TAG_LOOKUP = new Map(STUDENT_TAGS.map((tag) => [tag.trim().toLowerCase(), tag]))
-
 function parseStudentTags(raw: string): { tags: StudentTag[]; invalidTokens: string[] } {
   if (!raw || !raw.trim()) return { tags: [], invalidTokens: [] }
 
@@ -304,7 +303,7 @@ function parseStudentTags(raw: string): { tags: StudentTag[]; invalidTokens: str
   for (const rawToken of raw.split(/[;,|]/)) {
     const token = rawToken.trim()
     if (!token) continue
-    const matched = TAG_LOOKUP.get(token.toLowerCase())
+    const matched = normalizeStudentTag(token)
     if (!matched) {
       invalidTokens.push(token)
       continue
@@ -493,13 +492,13 @@ export function generateStudentSampleCSV(): string {
   const lastNames = ["Anderson", "Brooks", "Carter", "Diaz", "Ellis", "Foster", "Garcia", "Hayes"]
   const races = ["White", "Black", "Hispanic/Latino", "Asian", "Multiracial"]
   const tagSets = [
-    "Needs strong routine;Needs reassurance",
-    "Needs frequent redirection;High energy",
-    "Needs enrichment;Independent worker",
-    "Sensitive to correction;Low academic confidence",
-    "Needs movement breaks;High energy",
-    "Needs positive peer models;Easily influenced by peers",
-    "Easily frustrated;Needs reassurance",
+    "Needs structure;Needs emotional reassurance",
+    "Needs redirection support;Needs movement support",
+    "Needs academic enrichment;Independent worker",
+    "Needs emotional reassurance",
+    "Needs movement support",
+    "Needs peer support",
+    "Needs emotional reassurance",
     "Independent worker",
   ]
 
@@ -567,3 +566,5 @@ export function generateStudentSampleCSV(): string {
 
   return [generateStudentTemplateCSV(), ...rows].join("\n")
 }
+
+

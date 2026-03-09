@@ -1,7 +1,8 @@
 import React, { createContext, Dispatch, useContext, useEffect, useReducer } from "react"
-import { AppState, Classroom, STUDENT_TAGS, Student, TeacherProfile } from "../types"
+import { AppState, Classroom, Student, TeacherProfile } from "../types"
 import { createDefaultGradeSettingsMap, getRoomLabelFromIndex } from "../utils/classroomInit"
 import { normalizeCoTeachMinutes } from "../utils/coTeach"
+import { normalizeStudentTagList } from "../utils/tagSupportLoad"
 import { Action, initialState, reducer } from "./reducer"
 
 interface AppContextValue {
@@ -24,8 +25,7 @@ function normalizeIdList(value: unknown): number[] {
 }
 
 function normalizeTagList(value: unknown): Student["tags"] {
-  if (!Array.isArray(value)) return []
-  return value.filter((entry): entry is (typeof STUDENT_TAGS)[number] => typeof entry === "string" && STUDENT_TAGS.includes(entry as (typeof STUDENT_TAGS)[number]))
+  return normalizeStudentTagList(value)
 }
 
 function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown; tags?: unknown }>(student: T): T {
@@ -56,8 +56,8 @@ function normalizeStudent(student: Student): Student {
 function normalizeClassroom(classroom: Classroom, index: number): Classroom {
   const legacyCoTeach = (classroom as Classroom & { coTeach?: { reading?: boolean; math?: boolean } }).coTeach
   const legacyCoverage = [
-    ...(legacyCoTeach?.reading ? ["reading" as const] : []),
-    ...(legacyCoTeach?.math ? ["math" as const] : []),
+    ...(legacyCoTeach?.reading ? (["reading"] as const) : []),
+    ...(legacyCoTeach?.math ? (["math"] as const) : []),
   ]
 
   return {

@@ -7,17 +7,11 @@ Desktop and web app for building balanced K-5 classroom rosters from separate st
 - Separate student and teacher CSV imports with header mapping.
 - Hard constraints first, teacher-fit comparison second, and weighted soft balancing after that.
 - Existing weighted balancing still includes class size, academic need, behavioral need, demographic balance, preferred-peer adjustment, do-not-separate adjustment, and grade settings pressure.
-- New additive tag-based Classroom Support Load Index derived from `studentTags`.
+- Additive tag-based Classroom Support Load Index derived from `studentTags`.
+- Simplified student tag schema with backward-compatible normalization from the older detailed labels.
 - Kindergarten placement uses `briganceReadiness` instead of MAP/i-Ready for academic scoring.
 - Manual drag/drop, locks, snapshots, exports, and local persistence.
 - Poor teacher-fit students remain marked with purple name text.
-
-## Tech stack
-
-- React 18
-- TypeScript
-- Vite
-- Electron Builder
 
 ## Getting started
 
@@ -60,8 +54,6 @@ Files in `public/`:
 - `teacher-import-template.csv`
 - `sample-teachers.csv`
 
-The uploader also exposes template and sample downloads inside the app.
-
 ## Student import schema
 
 Required columns:
@@ -79,13 +71,24 @@ Common optional columns:
 - Assessments: `briganceReadiness`, `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
 - Demographics/context: `ell`, `section504`, `raceEthnicity`, `studentTags`, `teacherNotes`
 
+Public tag set:
+
+- `Needs structure`
+- `Needs redirection support`
+- `Needs emotional reassurance`
+- `Needs peer support`
+- `Needs movement support`
+- `Needs academic enrichment`
+- `Independent worker`
+
 Notes:
 
+- `studentTags` now use the simplified labels above.
+- Older CSVs that still use the previous detailed labels are accepted and normalized into the simplified tag set during import.
 - Student imports do not accept pre-assigned teachers.
 - Students are only locked or fixed to rooms inside the app.
 - For kindergarten, use `briganceReadiness` and leave MAP/i-Ready blank if you do not need them for reporting.
-- `studentTags` must use the exact human-readable labels documented in [TEMPLATE_USAGE.md](/C:/Users/briso/GitHub/elementary-classroom-list-engine/TEMPLATE_USAGE.md).
-- `studentTags` now drive both teacher-fit comparison and the tag-based classroom support-load balancing signal.
+- `studentTags` drive both teacher-fit comparison and the tag-based classroom support-load balancing signal.
 
 ## Teacher import schema
 
@@ -104,24 +107,6 @@ Required columns:
 
 Teacher ratings are `1-5`.
 
-Teacher import behavior:
-
-- Teacher rows are applied to classrooms in CSV order within each grade.
-- If a grade has more imported teachers than existing rooms, the app adds rooms.
-- Loading teachers later updates teacher names and profiles without clearing student placements.
-- Teacher-fit scoring matches the room using `grade + teacherName`.
-
-## Placement workflow
-
-1. Import students.
-2. Import teachers.
-3. Review teacher names, co-teach coverage, rules, settings, and weights.
-4. Run auto-place for the active grade.
-5. Review warnings, poor-fit cards, room tag-load summaries, and the summary drawer.
-6. Drag students manually as needed.
-7. Lock placements that should be preserved.
-8. Export the active grade or all grades.
-
 ## Placement model
 
 Per candidate room, the engine evaluates in this order:
@@ -136,9 +121,7 @@ The weighted soft score remains:
 
 `tagSupportLoadPenalty` is additive only. It does not replace teacher-fit comparison, academic balancing, behavioral balancing, or demographic balancing.
 
-## Tag-based Classroom Support Load Index
-
-The app derives a second support signal from `studentTags`.
+## Simplified tag-based Classroom Support Load Index
 
 Per-student derived value:
 
@@ -152,28 +135,27 @@ Per-room derived values:
 - `instructionalTagSupportLoad`
 - `energyTagSupportLoad`
 
-Current tag weights:
+Current weights:
 
-- `Needs strong routine = 2`
-- `Needs frequent redirection = 4`
-- `Easily frustrated = 3`
-- `Needs reassurance = 2`
-- `Sensitive to correction = 2`
-- `Easily influenced by peers = 2`
-- `Needs positive peer models = 1`
-- `High energy = 2`
-- `Needs movement breaks = 2`
-- `Needs enrichment = 1`
+- `Needs structure = 3`
+- `Needs redirection support = 4`
+- `Needs emotional reassurance = 4`
+- `Needs peer support = 3`
+- `Needs movement support = 3`
+- `Needs academic enrichment = 1`
 - `Independent worker = -1`
-- `Low academic confidence = 2`
 
-This derived load is surfaced in:
+Teacher-fit alignment:
 
-- student cards and tooltips
-- classroom quick stats
-- room summary cards
-- grade-level warning chips
-- manual-move warnings
+- `Needs structure` -> `classroomStructure`, `behaviorManagementStrength`
+- `Needs redirection support` -> `behaviorManagementStrength`, `classroomStructure`
+- `Needs emotional reassurance` -> `emotionalSupportNurturing`, `confidenceBuilding`
+- `Needs peer support` -> `peerSocialCoaching`, `classroomStructure`
+- `Needs movement support` -> `movementFlexibility`, `behaviorManagementStrength`
+- `Needs academic enrichment` -> `academicEnrichmentStrength`
+- `Independent worker` -> `independenceScaffolding`
+
+This derived load is surfaced in student cards/tooltips, classroom quick stats, room summary cards, grade-level warning chips, and manual-move warnings.
 
 ## Kindergarten scoring
 
@@ -184,33 +166,16 @@ For grade `K` only:
 - Room summaries show Brigance room averages.
 - Top-level warning chips use Brigance wording instead of reading spread wording.
 
-Grades `1-5` continue using MAP and i-Ready for academic balancing.
-
 ## Export behavior
 
 Exports are reporting-oriented, not round-trip import templates.
 
-Exports currently include:
-
-- the student reporting fields already in the app
-- `assignedTeacher`
-
+Exports currently include the student reporting fields already in the app plus `assignedTeacher`.
 Derived tag-support-load values are not exported as additional columns.
-
-## Project structure
-
-- `src/components/`: uploader, controls, room columns, summary, snapshots, settings, and relationship management
-- `src/engine/`: placement engine
-- `src/store/`: reducer, app context, drag context
-- `src/utils/`: CSV parsing, teacher fit, tag-load derivation, scoring, constraints, exports, and classroom initialization
-- `src/types/`: shared domain types
-- `public/`: shipped CSV templates and samples
-- `tests/`: lightweight logic tests
-- `electron/`: desktop shell and notarization hook
 
 ## Verification notes
 
-- `npm run test` validates tag-load derivation, projected penalty behavior, and backward-compatible `studentTags` parsing.
+- `npm run test` validates simplified tag-load derivation, projected penalty behavior, and tag parsing compatibility.
 - `node_modules/.bin/tsc -b` verifies the TypeScript projects.
 - `npm run build` may still fail in a restricted sandbox if Vite/esbuild cannot spawn its subprocess.
 - `npm run lint` requires `eslint` to be installed in the environment.

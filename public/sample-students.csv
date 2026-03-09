@@ -1,13 +1,13 @@
 id,grade,firstName,lastName,gender,status,coTeachReadingMinutes,coTeachWritingMinutes,coTeachScienceSocialStudiesMinutes,coTeachMathMinutes,coTeachBehaviorMinutes,coTeachSocialMinutes,coTeachVocationalMinutes,academicTier,behaviorTier,noContactWith,preferredWith,briganceReadiness,mapReading,mapMath,ireadyReading,ireadyMath,referrals,ell,section504,raceEthnicity,studentTags,teacherNotes
-1001,K,Amaya,Brooks,F,IEP,30,0,0,30,0,0,0,3,2,1002,1003,62,,,,,1,TRUE,FALSE,Black,Needs strong routine;Needs reassurance,Needs a calm predictable start to the day
-1002,K,Leo,Carter,M,None,0,0,0,0,0,0,0,1,2,,,48,,,,,0,FALSE,FALSE,White,High energy;Needs movement breaks,Movement helps regulation
-1003,K,Sofia,Diaz,F,None,0,0,0,0,0,0,0,2,1,,1001,74,,,,,0,TRUE,FALSE,Hispanic/Latino,Needs enrichment;Independent worker,Thrives with extension choices
-1004,1,Mason,Ellis,M,Referral,30,0,0,30,15,0,0,3,3,,,,168,171,Early 1,Mid 1,2,FALSE,FALSE,White,Needs frequent redirection;High energy,Responds best to quick resets
-1005,1,Zoe,Foster,F,None,0,0,0,0,0,0,0,2,1,,,,184,181,Mid 1,Late 1,0,TRUE,TRUE,Asian,Low academic confidence;Needs reassurance,Needs frequent encouragement during independent work
-1006,1,Ethan,Garcia,M,None,0,0,0,0,0,0,0,1,1,1007,,,176,179,Late 1,Early 2,0,FALSE,FALSE,Multiracial,Needs positive peer models;Easily influenced by peers,Pair with steady classmates
-1007,2,Chloe,Hayes,F,IEP,45,0,0,30,0,15,0,3,2,1006,,,182,185,Mid 2,Mid 2,1,FALSE,FALSE,Black,Easily frustrated;Sensitive to correction,Needs gentle feedback language
+1001,K,Amaya,Brooks,F,IEP,30,0,0,30,0,0,0,3,2,1002,1003,62,,,,,1,TRUE,FALSE,Black,Needs structure;Needs emotional reassurance,Needs a calm predictable start to the day
+1002,K,Leo,Carter,M,None,0,0,0,0,0,0,0,1,2,,,48,,,,,0,FALSE,FALSE,White,Needs movement support,Movement helps regulation
+1003,K,Sofia,Diaz,F,None,0,0,0,0,0,0,0,2,1,,1001,74,,,,,0,TRUE,FALSE,Hispanic/Latino,Needs academic enrichment;Independent worker,Thrives with extension choices
+1004,1,Mason,Ellis,M,Referral,30,0,0,30,15,0,0,3,3,,,,168,171,Early 1,Mid 1,2,FALSE,FALSE,White,Needs redirection support;Needs movement support,Responds best to quick resets
+1005,1,Zoe,Foster,F,None,0,0,0,0,0,0,0,2,1,,,,184,181,Mid 1,Late 1,0,TRUE,TRUE,Asian,Needs emotional reassurance,Needs frequent encouragement during independent work
+1006,1,Ethan,Garcia,M,None,0,0,0,0,0,0,0,1,1,1007,,,176,179,Late 1,Early 2,0,FALSE,FALSE,Multiracial,Needs peer support,Pair with steady classmates
+1007,2,Chloe,Hayes,F,IEP,45,0,0,30,0,15,0,3,2,1006,,,182,185,Mid 2,Mid 2,1,FALSE,FALSE,Black,Needs emotional reassurance,Needs gentle feedback language
 1008,2,Noah,Ingram,M,None,0,0,0,0,0,0,0,1,1,,,,196,198,Late 2,Early 3,0,TRUE,FALSE,Hispanic/Latino,Independent worker,Can sustain work with light check-ins
-1009,3,Ava,Jenkins,F,None,0,0,0,0,0,0,0,2,1,,,,201,205,Early 3,Mid 3,0,FALSE,FALSE,Asian,Needs enrichment,Strong candidate for advanced projects
-1010,3,Wyatt,Kim,M,Referral,0,0,0,0,20,0,0,2,3,,,,188,190,Late 2,Early 3,2,FALSE,FALSE,White,Needs frequent redirection;Needs strong routine,Does better with explicit routines and proximity
-1011,4,Emma,Lopez,F,None,0,0,0,0,0,0,0,1,1,,,,214,216,Mid 4,Mid 4,0,TRUE,FALSE,Multiracial,Needs positive peer models,Strong socially but follows louder peers
-1012,5,Lucas,Martin,M,None,0,0,0,0,0,0,0,1,1,,,,223,226,Early 5,Mid 5,0,FALSE,FALSE,Black,Low academic confidence,Confidence rises with public celebration of growth
+1009,3,Ava,Jenkins,F,None,0,0,0,0,0,0,0,2,1,,,,201,205,Early 3,Mid 3,0,FALSE,FALSE,Asian,Needs academic enrichment,Strong candidate for advanced projects
+1010,3,Wyatt,Kim,M,Referral,0,0,0,0,20,0,0,2,3,,,,188,190,Late 2,Early 3,2,FALSE,FALSE,White,Needs redirection support;Needs structure,Does better with explicit routines and proximity
+1011,4,Emma,Lopez,F,None,0,0,0,0,0,0,0,1,1,,,,214,216,Mid 4,Mid 4,0,TRUE,FALSE,Multiracial,Needs peer support,Strong socially but follows louder peers
+1012,5,Lucas,Martin,M,None,0,0,0,0,0,0,0,1,1,,,,223,226,Early 5,Mid 5,0,FALSE,FALSE,Black,Needs emotional reassurance,Confidence rises with public celebration of growth

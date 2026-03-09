@@ -13,18 +13,13 @@ export const GRADES: Grade[] = ["K", "1", "2", "3", "4", "5"]
 export const LETTERS = ["A", "B", "C", "D"] as const
 
 export const STUDENT_TAGS = [
-  "Needs strong routine",
-  "Needs frequent redirection",
-  "Easily frustrated",
-  "Needs reassurance",
-  "Sensitive to correction",
-  "Easily influenced by peers",
-  "Needs positive peer models",
-  "High energy",
-  "Needs movement breaks",
-  "Needs enrichment",
+  "Needs structure",
+  "Needs redirection support",
+  "Needs emotional reassurance",
+  "Needs peer support",
+  "Needs movement support",
+  "Needs academic enrichment",
   "Independent worker",
-  "Low academic confidence",
 ] as const
 
 export type StudentTag = (typeof STUDENT_TAGS)[number]

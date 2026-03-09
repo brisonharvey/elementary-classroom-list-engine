@@ -51,46 +51,46 @@ function createClassroom(id, students) {
 
 const tests = [
   {
-    name: "student tag support load is derived from tag weights and categories",
+    name: "student tag support load is derived from the simplified tag weights and categories",
     run: () => {
       const student = createStudent({
-        tags: ["Needs strong routine", "Needs frequent redirection", "Independent worker"],
+        tags: ["Needs structure", "Needs redirection support", "Independent worker"],
       })
 
       const total = getStudentTagSupportLoad(student)
       const breakdown = getStudentTagSupportLoadBreakdown(student)
 
-      assert.equal(total, 5)
-      assert.equal(breakdown.total, 5)
+      assert.equal(total, 6)
+      assert.equal(breakdown.total, 6)
       assert.equal(breakdown.behavioral, 4)
       assert.equal(breakdown.emotional, 0)
-      assert.equal(breakdown.instructional, 1)
+      assert.equal(breakdown.instructional, 2)
       assert.equal(breakdown.energy, 0)
       assert.deepEqual(
         breakdown.contributions.map((entry) => [entry.tag, entry.weight]),
         [
-          ["Needs strong routine", 2],
-          ["Needs frequent redirection", 4],
+          ["Needs structure", 3],
+          ["Needs redirection support", 4],
           ["Independent worker", -1],
         ]
       )
     },
   },
   {
-    name: "classroom tag support load breakdown sums student totals and category subtotals",
+    name: "classroom tag support load breakdown sums simplified student totals and category subtotals",
     run: () => {
       const classroom = createClassroom("1-A", [
-        createStudent({ id: 1, tags: ["Needs strong routine", "Needs frequent redirection", "Independent worker"] }),
-        createStudent({ id: 2, tags: ["Easily frustrated", "Needs movement breaks"] }),
+        createStudent({ id: 1, tags: ["Needs structure", "Needs redirection support", "Independent worker"] }),
+        createStudent({ id: 2, tags: ["Needs emotional reassurance", "Needs movement support"] }),
       ])
 
       const breakdown = getClassroomTagSupportLoadBreakdown(classroom)
 
-      assert.equal(breakdown.total, 10)
+      assert.equal(breakdown.total, 13)
       assert.equal(breakdown.behavioral, 4)
-      assert.equal(breakdown.emotional, 3)
-      assert.equal(breakdown.instructional, 1)
-      assert.equal(breakdown.energy, 2)
+      assert.equal(breakdown.emotional, 4)
+      assert.equal(breakdown.instructional, 2)
+      assert.equal(breakdown.energy, 3)
     },
   },
   {
@@ -98,10 +98,10 @@ const tests = [
     run: () => {
       const candidate = createStudent({
         id: 10,
-        tags: ["Needs frequent redirection", "High energy"],
+        tags: ["Needs redirection support", "Needs movement support"],
       })
       const roomA = createClassroom("1-A", [
-        createStudent({ id: 1, tags: ["Needs frequent redirection", "Easily frustrated", "Needs movement breaks"] }),
+        createStudent({ id: 1, tags: ["Needs redirection support", "Needs emotional reassurance", "Needs movement support"] }),
       ])
       const roomB = createClassroom("1-B", [
         createStudent({ id: 2, tags: ["Independent worker"] }),
@@ -116,12 +116,12 @@ const tests = [
     },
   },
   {
-    name: "studentTags CSV parsing stays backward compatible with existing separators and exact labels",
+    name: "studentTags CSV parsing accepts both simplified labels and legacy labels", 
     run: () => {
       const csv = [
         "id,grade,firstName,lastName,studentTags",
-        '101,1,Ada,Stone,"Needs strong routine;Needs reassurance"',
-        '102,1,Ben,Reed,"Needs movement breaks|Independent worker"',
+        '101,1,Ada,Stone,"Needs structure;Needs emotional reassurance"',
+        '102,1,Ben,Reed,"Needs strong routine|Needs reassurance"',
       ].join("\n")
 
       const result = parseStudentCSVWithMapping(csv, {
@@ -134,8 +134,8 @@ const tests = [
 
       assert.equal(result.skipped, 0)
       assert.equal(result.errors.length, 0)
-      assert.deepEqual(result.students[0].tags, ["Needs strong routine", "Needs reassurance"])
-      assert.deepEqual(result.students[1].tags, ["Needs movement breaks", "Independent worker"])
+      assert.deepEqual(result.students[0].tags, ["Needs structure", "Needs emotional reassurance"])
+      assert.deepEqual(result.students[1].tags, ["Needs structure", "Needs emotional reassurance"])
     },
   },
 ]

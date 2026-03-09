@@ -50,82 +50,72 @@ Relationship columns:
 
 Use student IDs separated by semicolons.
 
-Example:
-
-```csv
-1001;1004;1012
-```
-
-### Student tags
+## Student tags
 
 Use the `studentTags` column for both:
 
 - teacher-fit comparison
 - tag-based Classroom Support Load Index derivation
 
-Enter one or more of these exact tag names, separated by semicolons, commas, or pipes inside the field:
+Use one or more of these exact simplified labels:
 
-- `Needs strong routine`
-- `Needs frequent redirection`
-- `Easily frustrated`
-- `Needs reassurance`
-- `Sensitive to correction`
-- `Easily influenced by peers`
-- `Needs positive peer models`
-- `High energy`
-- `Needs movement breaks`
-- `Needs enrichment`
+- `Needs structure`
+- `Needs redirection support`
+- `Needs emotional reassurance`
+- `Needs peer support`
+- `Needs movement support`
+- `Needs academic enrichment`
 - `Independent worker`
-- `Low academic confidence`
+
+Separators accepted inside the field:
+
+- `;`
+- `,`
+- `|`
 
 Example:
 
 ```csv
-Needs strong routine;Needs reassurance
+Needs structure;Needs emotional reassurance
 ```
+
+### Compatibility note
+
+Older CSVs that still use the previous detailed labels are still accepted.
+The app normalizes them into the simplified tags above during import.
 
 ### Tag support-load weights
 
 These weights are derived automatically in the app. Do not add extra columns for them.
 
-- `Needs strong routine = 2`
-- `Needs frequent redirection = 4`
-- `Easily frustrated = 3`
-- `Needs reassurance = 2`
-- `Sensitive to correction = 2`
-- `Easily influenced by peers = 2`
-- `Needs positive peer models = 1`
-- `High energy = 2`
-- `Needs movement breaks = 2`
-- `Needs enrichment = 1`
+- `Needs structure = 3`
+- `Needs redirection support = 4`
+- `Needs emotional reassurance = 4`
+- `Needs peer support = 3`
+- `Needs movement support = 3`
+- `Needs academic enrichment = 1`
 - `Independent worker = -1`
-- `Low academic confidence = 2`
 
 ### Tag categories used in room balancing
 
 Behavioral:
 
-- `Needs frequent redirection`
-- `Easily influenced by peers`
+- `Needs redirection support`
+- `Needs peer support`
 
 Emotional:
 
-- `Easily frustrated`
-- `Needs reassurance`
-- `Sensitive to correction`
-- `Low academic confidence`
+- `Needs emotional reassurance`
 
 Instructional:
 
-- `Needs strong routine`
-- `Needs positive peer models`
-- `Needs enrichment`
+- `Needs structure`
+- `Needs academic enrichment`
 - `Independent worker`
 
 Energy:
 
-- `High energy`
-- `Needs movement breaks`
+- `Needs movement support`
 
 ## Teacher template
 
@@ -158,41 +148,22 @@ Use this scale consistently:
 - `4` = strong support for that need
 - `5` = standout strength for that need
 
-## How tags align to teacher ratings
+## How simplified tags align to teacher ratings
 
-The engine compares student tags to these teacher characteristics:
-
-- `Needs strong routine` -> `classroomStructure`, `behaviorManagementStrength`
-- `Needs frequent redirection` -> `behaviorManagementStrength`, `classroomStructure`
-- `Easily frustrated` -> `emotionalSupportNurturing`, `confidenceBuilding`
-- `Needs reassurance` -> `emotionalSupportNurturing`, `confidenceBuilding`
-- `Sensitive to correction` -> `emotionalSupportNurturing`, `confidenceBuilding`
-- `Easily influenced by peers` -> `peerSocialCoaching`, `classroomStructure`
-- `Needs positive peer models` -> `peerSocialCoaching`, `classroomStructure`
-- `High energy` -> `movementFlexibility`, `behaviorManagementStrength`
-- `Needs movement breaks` -> `movementFlexibility`
-- `Needs enrichment` -> `academicEnrichmentStrength`
+- `Needs structure` -> `classroomStructure`, `behaviorManagementStrength`
+- `Needs redirection support` -> `behaviorManagementStrength`, `classroomStructure`
+- `Needs emotional reassurance` -> `emotionalSupportNurturing`, `confidenceBuilding`
+- `Needs peer support` -> `peerSocialCoaching`, `classroomStructure`
+- `Needs movement support` -> `movementFlexibility`, `behaviorManagementStrength`
+- `Needs academic enrichment` -> `academicEnrichmentStrength`
 - `Independent worker` -> `independenceScaffolding`
-- `Low academic confidence` -> `confidenceBuilding`, `emotionalSupportNurturing`
-
-## Teacher import ordering
-
-Teacher rows are assigned to classrooms in CSV order within each grade.
-
-That means:
-
-- the first imported teacher for a grade is matched to the first classroom for that grade
-- the second imported teacher is matched to the second classroom
-- and so on
-
-If you want a specific teacher order across rooms, order the teacher rows that way in the CSV.
 
 ## Practical example
 
 Student row:
 
 ```csv
-1001,K,Amaya,Brooks,F,IEP,30,0,0,30,0,0,0,3,2,1002,1003,62,,,,,1,TRUE,FALSE,Black,Needs strong routine;Needs reassurance,Needs a calm predictable start to the day
+1001,K,Amaya,Brooks,F,IEP,30,0,0,30,0,0,0,3,2,1002,1003,62,,,,,1,TRUE,FALSE,Black,Needs structure;Needs emotional reassurance,Needs a calm predictable start to the day
 ```
 
 Teacher row:
@@ -201,12 +172,10 @@ Teacher row:
 K,Ms. GradeKA,5,4,5,3,3,4,4,5
 ```
 
-That student contributes `4` points of tag support load from:
+That student contributes `7` points of simplified tag support load from:
 
-- `Needs strong routine = 2`
-- `Needs reassurance = 2`
-
-That teacher profile is also a strong fit for those same tags.
+- `Needs structure = 3`
+- `Needs emotional reassurance = 4`
 
 ## Notes
 

@@ -9,44 +9,75 @@ export const TAG_SUPPORT_LOAD_CATEGORY_LABELS: Record<TagSupportLoadCategory, st
   energy: "Energy",
 }
 
+export const LEGACY_STUDENT_TAG_ALIASES = {
+  "Needs strong routine": "Needs structure",
+  "Needs frequent redirection": "Needs redirection support",
+  "Easily frustrated": "Needs emotional reassurance",
+  "Needs reassurance": "Needs emotional reassurance",
+  "Sensitive to correction": "Needs emotional reassurance",
+  "Easily influenced by peers": "Needs peer support",
+  "Needs positive peer models": "Needs peer support",
+  "High energy": "Needs movement support",
+  "Needs movement breaks": "Needs movement support",
+  "Needs enrichment": "Needs academic enrichment",
+  "Low academic confidence": "Needs emotional reassurance",
+} as const satisfies Record<string, StudentTag>
+
+const STUDENT_TAG_NORMALIZATION_LOOKUP = new Map<string, StudentTag>([
+  ["needs structure", "Needs structure"],
+  ["needs redirection support", "Needs redirection support"],
+  ["needs emotional reassurance", "Needs emotional reassurance"],
+  ["needs peer support", "Needs peer support"],
+  ["needs movement support", "Needs movement support"],
+  ["needs academic enrichment", "Needs academic enrichment"],
+  ["independent worker", "Independent worker"],
+  ...Object.entries(LEGACY_STUDENT_TAG_ALIASES).map(([legacy, normalized]) => [legacy.trim().toLowerCase(), normalized] as const),
+])
+
+export function normalizeStudentTag(raw: string): StudentTag | null {
+  return STUDENT_TAG_NORMALIZATION_LOOKUP.get(raw.trim().toLowerCase()) ?? null
+}
+
+export function normalizeStudentTagList(values: unknown): StudentTag[] {
+  if (!Array.isArray(values)) return []
+
+  const normalized: StudentTag[] = []
+  for (const entry of values) {
+    if (typeof entry !== "string") continue
+    const tag = normalizeStudentTag(entry)
+    if (tag && !normalized.includes(tag)) normalized.push(tag)
+  }
+  return normalized
+}
+
 export const STUDENT_TAG_TEACHER_CHARACTERISTIC_REQUIREMENTS: Record<
   StudentTag,
   Partial<Record<TeacherCharacteristicKey, number>>
 > = {
-  "Needs strong routine": { classroomStructure: 1.4, behaviorManagementStrength: 0.6 },
-  "Needs frequent redirection": { behaviorManagementStrength: 1.5, classroomStructure: 0.5 },
-  "Easily frustrated": { emotionalSupportNurturing: 1.2, confidenceBuilding: 0.8 },
-  "Needs reassurance": { emotionalSupportNurturing: 1, confidenceBuilding: 1 },
-  "Sensitive to correction": { emotionalSupportNurturing: 1.3, confidenceBuilding: 0.7 },
-  "Easily influenced by peers": { peerSocialCoaching: 1.2, classroomStructure: 0.4 },
-  "Needs positive peer models": { peerSocialCoaching: 1.4, classroomStructure: 0.3 },
-  "High energy": { movementFlexibility: 1, behaviorManagementStrength: 1 },
-  "Needs movement breaks": { movementFlexibility: 1.5 },
-  "Needs enrichment": { academicEnrichmentStrength: 1.5 },
+  "Needs structure": { classroomStructure: 1.2, behaviorManagementStrength: 0.8 },
+  "Needs redirection support": { behaviorManagementStrength: 1.4, classroomStructure: 0.6 },
+  "Needs emotional reassurance": { emotionalSupportNurturing: 1.1, confidenceBuilding: 0.9 },
+  "Needs peer support": { peerSocialCoaching: 1.2, classroomStructure: 0.5 },
+  "Needs movement support": { movementFlexibility: 1.2, behaviorManagementStrength: 0.8 },
+  "Needs academic enrichment": { academicEnrichmentStrength: 1.5 },
   "Independent worker": { independenceScaffolding: 1.5 },
-  "Low academic confidence": { confidenceBuilding: 1.2, emotionalSupportNurturing: 0.6 },
 }
 
 export const STUDENT_TAG_SUPPORT_WEIGHTS: Record<StudentTag, number> = {
-  "Needs strong routine": 2,
-  "Needs frequent redirection": 4,
-  "Easily frustrated": 3,
-  "Needs reassurance": 2,
-  "Sensitive to correction": 2,
-  "Easily influenced by peers": 2,
-  "Needs positive peer models": 1,
-  "High energy": 2,
-  "Needs movement breaks": 2,
-  "Needs enrichment": 1,
+  "Needs structure": 3,
+  "Needs redirection support": 4,
+  "Needs emotional reassurance": 4,
+  "Needs peer support": 3,
+  "Needs movement support": 3,
+  "Needs academic enrichment": 1,
   "Independent worker": -1,
-  "Low academic confidence": 2,
 }
 
 export const TAG_SUPPORT_LOAD_CATEGORIES: Record<TagSupportLoadCategory, StudentTag[]> = {
-  behavioral: ["Needs frequent redirection", "Easily influenced by peers"],
-  emotional: ["Easily frustrated", "Needs reassurance", "Sensitive to correction", "Low academic confidence"],
-  instructional: ["Needs strong routine", "Needs positive peer models", "Needs enrichment", "Independent worker"],
-  energy: ["High energy", "Needs movement breaks"],
+  behavioral: ["Needs redirection support", "Needs peer support"],
+  emotional: ["Needs emotional reassurance"],
+  instructional: ["Needs structure", "Needs academic enrichment", "Independent worker"],
+  energy: ["Needs movement support"],
 }
 
 export interface StudentTagSupportContribution {
