@@ -76,8 +76,9 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
   padding: 0 20px;
-  height: var(--header-h);
+  min-height: var(--header-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -91,6 +92,8 @@ html, body, #root {
   display: flex;
   align-items: baseline;
   gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .app-title {
@@ -110,6 +113,8 @@ html, body, #root {
   align-items: center;
   gap: 12px;
   position: relative;
+  margin-left: auto;
+  min-width: 0;
 }
 
 /* ── Toolbar ── */
@@ -117,8 +122,9 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
   padding: 0 20px;
-  height: var(--toolbar-h);
+  min-height: var(--toolbar-h);
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -128,6 +134,7 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .active-grade-indicator {
@@ -144,10 +151,11 @@ html, body, #root {
 /* ── Controls row ── */
 .controls-row {
   display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0 20px;
-  height: var(--controls-h);
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  min-height: var(--controls-h);
   background: var(--surface);
   border-bottom: 2px solid var(--border);
   flex-shrink: 0;
@@ -371,6 +379,7 @@ html, body, #root {
   border-radius: var(--radius);
   background: var(--surface);
   min-width: 560px;
+  max-width: min(92vw, 760px);
   box-shadow: var(--shadow-md);
   position: absolute;
   top: calc(100% + 8px);
@@ -546,6 +555,8 @@ html, body, #root {
   align-items: flex-start;
   padding: 0 20px;
   flex: 1;
+  flex-wrap: wrap;
+  min-width: 320px;
 }
 
 .slider-group {
@@ -668,19 +679,32 @@ html, body, #root {
   padding-right: 20px;
   border-right: 1px solid var(--border);
   flex-shrink: 0;
+  min-width: min(100%, 640px);
 }
 
 .control-actions {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.divider {
-  width: 1px;
-  height: 24px;
-  background: var(--border);
-  margin: 0 4px;
+.control-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-right: 10px;
+  margin-right: 2px;
+  border-right: 1px solid var(--border);
+}
+
+.control-group:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.control-group-secondary {
+  margin-left: auto;
 }
 
 .placement-warnings {
@@ -1267,6 +1291,167 @@ html, body, #root {
   background: #fffbeb;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+@media (max-width: 1280px) {
+  .summary-drawer {
+    width: min(640px, 64vw);
+    min-width: 380px;
+  }
+
+  .controls-row {
+    align-items: flex-start;
+  }
+
+  .weight-sliders {
+    padding: 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-header,
+  .toolbar,
+  .controls-row,
+  .main-warnings-row {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .header-right {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .toolbar-left {
+    gap: 10px;
+  }
+
+  .control-bar {
+    width: 100%;
+    min-width: 0;
+    padding-right: 0;
+    border-right: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .control-group-secondary {
+    margin-left: 0;
+  }
+
+  .weight-sliders {
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+  }
+
+  .summary-drawer {
+    top: calc(var(--header-h) + var(--toolbar-h) + 34px);
+    width: min(560px, 86vw);
+    min-width: 0;
+  }
+
+  .slide-panel {
+    width: min(560px, 86vw);
+    min-width: 0;
+  }
+
+  .mapping-panel {
+    min-width: 0;
+    width: min(92vw, 640px);
+  }
+
+  .mapping-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .app {
+    overflow: auto;
+  }
+
+  html, body, #root {
+    overflow: auto;
+  }
+
+  .app-header {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .header-left {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .toolbar {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .controls-row {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .workspace {
+    padding: 10px 12px;
+  }
+
+  .summary-drawer {
+    top: auto;
+    bottom: 0;
+    width: 100vw;
+    height: min(78vh, 720px);
+  }
+
+  .summary-drawer-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .slide-panel {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .floating-actions {
+    right: 10px;
+    left: 10px;
+    align-items: stretch;
+  }
+
+  .floating-action-btn {
+    justify-content: center;
+  }
+
+  .bottom-panels {
+    max-height: 38vh;
+  }
+
+  .control-group {
+    width: 100%;
+    border-right: 0;
+    padding-right: 0;
+    margin-right: 0;
+  }
+
+  .control-group .btn {
+    flex: 1 1 150px;
+    justify-content: center;
+  }
+
+  .grade-selector {
+    flex-wrap: wrap;
+  }
+
+  .grade-btn {
+    min-width: 44px;
+    flex: 1 1 44px;
+  }
 }
 
 .summary-table {

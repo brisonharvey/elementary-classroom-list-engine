@@ -67,63 +67,69 @@ export function ControlBar() {
   return (
     <div className="control-bar" ref={barRef}>
       <div className="control-actions">
-        <button
-          className="btn btn-primary"
-          onClick={autoPlace}
-          disabled={!hasStudents}
-          title="Auto-place unlocked students for the active grade"
-        >
-          Auto-Place Grade {state.activeGrade}
-        </button>
-        <button
-          className="btn btn-warning"
-          onClick={resetGrade}
-          disabled={!hasStudents}
-          title="Clear unlocked placements for active grade"
-        >
-          Reset Grade
-        </button>
-        <button
-          className="btn btn-ghost"
-          onClick={sortClassroomsByLastName}
-          disabled={!hasStudents}
-          title="Sort each classroom by student last name (A-Z)"
-        >
-          Sort A-Z
-        </button>
-        <button
-          className="btn btn-danger"
-          onClick={clearAll}
-          disabled={!hasStudents && state.snapshots.length === 0}
-          title="Clear all app state"
-        >
-          Clear All
-        </button>
-        <div className="divider" />
+        <div className="control-group">
+          <button
+            className="btn btn-primary"
+            onClick={autoPlace}
+            disabled={!hasStudents}
+            title="Auto-place unlocked students for the active grade"
+          >
+            Auto-Place Grade {state.activeGrade}
+          </button>
+          <button
+            className="btn btn-warning"
+            onClick={resetGrade}
+            disabled={!hasStudents}
+            title="Clear unlocked placements for active grade"
+          >
+            Reset Grade
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={sortClassroomsByLastName}
+            disabled={!hasStudents}
+            title="Sort each classroom by student last name (A-Z)"
+          >
+            Sort A-Z
+          </button>
+        </div>
 
-        <button
-          className="btn btn-ghost"
-          onClick={exportGrade}
-          disabled={!hasStudents}
-          title="Export current grade to CSV"
-        >
-          Export Grade {state.activeGrade}
-        </button>
-        <button
-          className="btn btn-ghost"
-          onClick={exportAll}
-          disabled={!hasStudents}
-          title="Export all grades to CSV"
-        >
-          Export All
-        </button>
-        <button
-          className="btn btn-ghost"
-          onClick={toggleTeacherNames}
-          title="Toggle teacher names in summary and classroom columns"
-        >
-          {state.showTeacherNames ? "Hide Teacher Names" : "Show Teacher Names"}
-        </button>
+        <div className="control-group">
+          <button
+            className="btn btn-ghost"
+            onClick={exportGrade}
+            disabled={!hasStudents}
+            title="Export current grade to CSV"
+          >
+            Export Grade {state.activeGrade}
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={exportAll}
+            disabled={!hasStudents}
+            title="Export all grades to CSV"
+          >
+            Export All
+          </button>
+        </div>
+
+        <div className="control-group control-group-secondary">
+          <button
+            className="btn btn-ghost"
+            onClick={toggleTeacherNames}
+            title="Toggle teacher names in summary and classroom columns"
+          >
+            {state.showTeacherNames ? "Hide Teacher Names" : "Show Teacher Names"}
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={clearAll}
+            disabled={!hasStudents && state.snapshots.length === 0}
+            title="Clear all app state"
+          >
+            Clear All
+          </button>
+        </div>
       </div>
 
       {showWarnings &&
