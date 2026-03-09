@@ -33,6 +33,7 @@ export const STUDENT_CSV_FIELD_OPTIONS = [
   { key: "ireadyReading", label: "i-Ready reading", required: false },
   { key: "ireadyMath", label: "i-Ready math", required: false },
   { key: "referrals", label: "Referrals", required: false },
+  { key: "assignedTeacher", label: "Assigned teacher", required: false },
   { key: "ell", label: "ELL", required: false },
   { key: "section504", label: "504 plan", required: false },
   { key: "raceEthnicity", label: "Race/ethnicity", required: false },
@@ -69,6 +70,7 @@ const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   ireadyReading: ["ireadyreading", "ireadingreading", "ireadyreadinglevel", "winter(november16-march1)|overallplacement"],
   ireadyMath: ["ireadymath", "ireadymathlevel", "winter(november16-march1)|overallplacement(diagnostic_results_math_confidential(1).csv)"],
   referrals: ["referrals", "referralcount", "disciplinereferrals", "disc.referrals"],
+  assignedTeacher: ["assignedteacher", "teacher", "homeroomteacher", "classteacher", "classteacher(s)"],
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   section504: ["section504", "plan504", "program504", "504"],
   raceEthnicity: ["raceethnicity", "race/ethnicity", "ethnicity", "race", "studentrace", "studentethnicity"],
@@ -390,6 +392,7 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       },
       behaviorTier: parseTier(get(values, "behaviorTier")),
       referrals: parseOptionalInt(get(values, "referrals")) ?? 0,
+      preassignedTeacher: parseOptionalString(get(values, "assignedTeacher")),
       briganceReadiness: parseOptionalFloat(get(values, "briganceReadiness")),
       mapReading: parseOptionalFloat(get(values, "mapReading")),
       mapMath: parseOptionalFloat(get(values, "mapMath")),
@@ -476,6 +479,7 @@ const STUDENT_TEMPLATE_HEADER = [
   "ireadyReading",
   "ireadyMath",
   "referrals",
+  "assignedTeacher",
   "ell",
   "section504",
   "raceEthnicity",
@@ -525,6 +529,7 @@ export function generateStudentSampleCSV(): string {
       const mapMath = grade === "K" ? "" : 158 + i * 3 + grades.indexOf(grade) * 2
       const ireadyReading = grade === "K" ? "" : ["Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2", "Early 3"][i]
       const ireadyMath = grade === "K" ? "" : ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2"][i]
+      const assignedTeacher = `Ms. ${grade}-${String.fromCharCode(65 + (i % 4))}`
       const ell = i % 4 === 0 ? "TRUE" : "FALSE"
       const section504 = i === 3 ? "TRUE" : "FALSE"
       const race = races[(i + grades.indexOf(grade)) % races.length]
@@ -554,6 +559,7 @@ export function generateStudentSampleCSV(): string {
         ireadyReading,
         ireadyMath,
         referrals,
+        assignedTeacher,
         ell,
         section504,
         race,

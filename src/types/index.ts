@@ -74,6 +74,7 @@ export interface Student {
   ireadyReading?: string
   ireadyMath?: string
   tags?: StudentTag[]
+  preassignedTeacher?: string
   noContactWith?: number[]
   preferredWith?: number[]
   locked?: boolean

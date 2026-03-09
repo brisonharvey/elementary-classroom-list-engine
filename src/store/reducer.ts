@@ -77,8 +77,43 @@ export function reducer(state: AppState, action: Action): AppState {
       const allStudents = action.payload.map((student) => ({
         ...student,
         coTeachMinutes: normalizeCoTeachMinutes(student.coTeachMinutes),
-        locked: false,
+        locked: student.preassignedTeacher ? true : false,
       }))
+
+      const teacherToClassroomId = new Map<string, string>()
+      for (const student of allStudents) {
+        const teacherName = student.preassignedTeacher?.trim()
+        if (!teacherName) continue
+
+        const key = `${student.grade}:${teacherName}`
+        if (teacherToClassroomId.has(key)) continue
+
+        const gradeRooms = getClassroomsForGrade(freshClassrooms, student.grade)
+        const existing = gradeRooms.find((classroom) => classroom.teacherName.trim().toLowerCase() === teacherName.toLowerCase())
+        if (existing) {
+          teacherToClassroomId.set(key, existing.id)
+          continue
+        }
+
+        const available = gradeRooms.find((classroom) => !classroom.teacherName.trim())
+        if (available) {
+          available.teacherName = teacherName
+          teacherToClassroomId.set(key, available.id)
+        }
+      }
+
+      for (const student of allStudents) {
+        const teacherName = student.preassignedTeacher?.trim()
+        if (!teacherName) continue
+
+        const classroomId = teacherToClassroomId.get(`${student.grade}:${teacherName}`)
+        if (!classroomId) continue
+
+        const classroom = freshClassrooms.find((entry) => entry.id === classroomId)
+        if (classroom && classroom.students.length < classroom.maxSize) {
+          classroom.students.push({ ...student })
+        }
+      }
 
       return {
         ...state,
@@ -272,4 +307,3 @@ export function reducer(state: AppState, action: Action): AppState {
       return state
   }
 }
-

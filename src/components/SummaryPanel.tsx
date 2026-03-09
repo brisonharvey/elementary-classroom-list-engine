@@ -26,14 +26,19 @@ export const SummaryPanel = memo(function SummaryPanel() {
   const { classrooms, activeGrade, allStudents, gradeSettings, showTeacherNames, teacherProfiles } = state
 
   const gradeClassrooms = useMemo(() => getClassroomsForGrade(classrooms, activeGrade), [classrooms, activeGrade])
-  const isKindergarten = activeGrade === "K"
+  const roomStats = useMemo(() => gradeClassrooms.map((classroom) => computeRoomStats(classroom)), [gradeClassrooms])
+  const tagSummary = useMemo(() => getGradeTagSupportLoadSummary(gradeClassrooms, activeGrade), [gradeClassrooms, activeGrade])
 
+  const isKindergarten = activeGrade === "K"
+  const settings = gradeSettings[activeGrade]
   const totalStudents = allStudents.filter((student) => student.grade === activeGrade).length
   const totalIEP = allStudents.filter((student) => student.grade === activeGrade && student.specialEd.status === "IEP").length
   const totalReferral = allStudents.filter((student) => student.grade === activeGrade && student.specialEd.status === "Referral").length
   const totalEL = allStudents.filter((student) => student.grade === activeGrade && student.ell).length
   const total504 = allStudents.filter((student) => student.grade === activeGrade && student.section504).length
   const totalPoorFit = gradeClassrooms.reduce((sum, classroom) => sum + getPoorFitStudentCount(classroom, teacherProfiles), 0)
+  const totalTagSupportLoad = roomStats.reduce((sum, stats) => sum + stats.tagSupportLoad, 0)
+
   const raceCounts = allStudents
     .filter((student) => student.grade === activeGrade)
     .reduce<Record<string, number>>((acc, student) => {
@@ -42,13 +47,6 @@ export const SummaryPanel = memo(function SummaryPanel() {
       return acc
     }, {})
 
-  const roomStats = useMemo(() => gradeClassrooms.map((classroom) => computeRoomStats(classroom)), [gradeClassrooms])
-  const tagSummary = useMemo(() => getGradeTagSupportLoadSummary(gradeClassrooms, activeGrade), [gradeClassrooms, activeGrade])
-  const totalTagSupportLoad = roomStats.reduce((sum, stats) => sum + stats.tagSupportLoad, 0)
-  const worstTagCategory = useMemo(() => {
-    const categories = Object.keys(tagSummary.rangeByCategory) as TagSupportLoadCategory[]
-    return categories.sort((a, b) => tagSummary.rangeByCategory[b] - tagSummary.rangeByCategory[a])[0] ?? "behavioral"
-  }, [tagSummary.rangeByCategory])
   const raceStyleByLabel = useMemo(() => {
     const labels = Object.keys(raceCounts).sort((a, b) => a.localeCompare(b))
     return labels.reduce<Record<string, { backgroundColor: string; borderColor: string; color: string }>>((acc, race, index) => {
@@ -57,36 +55,32 @@ export const SummaryPanel = memo(function SummaryPanel() {
     }, {})
   }, [raceCounts])
 
-  const settings = gradeSettings[activeGrade]
+  const genderWarningIds = gradeClassrooms
+    .filter((classroom) => {
+      const maleCount = classroom.students.filter((student) => student.gender === "M").length
+      const femaleCount = classroom.students.filter((student) => student.gender === "F").length
+      return Math.abs(maleCount - femaleCount) > settings.genderBalanceTolerance
+    })
+    .map((classroom) => classroom.id)
 
-  const genderWarningRooms = gradeClassrooms.filter((classroom) => {
-    const maleCount = classroom.students.filter((student) => student.gender === "M").length
-    const femaleCount = classroom.students.filter((student) => student.gender === "F").length
-    return Math.abs(maleCount - femaleCount) > settings.genderBalanceTolerance
-  })
-  const genderWarnings = genderWarningRooms.map((classroom) => classroom.id)
+  const worstTagCategory = useMemo(() => {
+    const categories = Object.keys(tagSummary.rangeByCategory) as TagSupportLoadCategory[]
+    return categories.sort((a, b) => tagSummary.rangeByCategory[b] - tagSummary.rangeByCategory[a])[0] ?? "behavioral"
+  }, [tagSummary.rangeByCategory])
 
   return (
     <div className="summary-panel">
       <div className="summary-header">
         <h3 className="summary-title">Grade {activeGrade} Summary</h3>
-                <div className="summary-room-metrics">
-                  <span className="summary-metric summary-metric-demographic">IEP: {stats.iepCount || "—"}</span>
-                  <span className="summary-metric summary-metric-demographic">Ref: {stats.referralCount || "—"}</span>
-                  <span className="summary-metric summary-metric-demographic">EL: {stats.ellCount || "—"}</span>
-                  <span className="summary-metric summary-metric-demographic">504: {stats.section504Count || "—"}</span>
-                  <span className={`summary-metric summary-metric-demographic ${genderWarn ? "cell-warn" : ""}`}>M/F: {stats.maleCount}/{stats.femaleCount}</span>
-                  {isKindergarten ? (
-                    <span className="summary-metric summary-metric-academic">Brigance: {briganceAvg !== null ? fmt(briganceAvg) : "—"}</span>
-                  ) : (
-                    <>
-                      <span className="summary-metric summary-metric-academic">MAP R: {mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</span>
-                      <span className="summary-metric summary-metric-academic">MAP M: {mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</span>
-                    </>
-                  )}
-                  <span className="summary-metric summary-metric-support">Support: {fmt(supportLoad)}</span>
-                  <span className={`summary-metric summary-metric-tag ${tagWarn ? "summary-metric-tag-warn" : ""}`}>Tag: {fmt(stats.tagSupportLoad)}</span>
-                  <span className="summary-metric" title={coTeachBreakdown || "No co-teach minutes"}>Co-teach: {stats.totalCoTeachMinutes} total / {fmt(stats.avgCoTeachMinutes)} avg</span>
+        <div className="summary-totals">
+          <span className="total-pill">{totalStudents} students</span>
+          <span className="total-pill pill-iep">{totalIEP} IEP</span>
+          <span className="total-pill pill-ref">{totalReferral} Referral</span>
+          <span className="total-pill">{totalEL} EL</span>
+          <span className="total-pill">{total504} 504</span>
+          <span className="total-pill">{fmt(totalTagSupportLoad)} tag load</span>
+          <span className="total-pill">{totalPoorFit} poor fit</span>
+        </div>
       </div>
 
       <div className="tag-support-overview">
@@ -103,23 +97,38 @@ export const SummaryPanel = memo(function SummaryPanel() {
         </div>
       </div>
 
+      <div className="race-totals">
+        {Object.entries(raceCounts).sort(([a], [b]) => a.localeCompare(b)).map(([race, count]) => (
+          <span key={race} className="total-pill race-pill" style={raceStyleByLabel[race]}>
+            {race}: {count}
+          </span>
+        ))}
+      </div>
+
+      <div className="support-load-help">
+        <strong>How Support Load is calculated:</strong> average of each student&apos;s
+        <code> academic tier + behavior tier + special education status bonus + referral count + normalized co-teach load</code>.
+        Co-teach minutes are summed across categories, normalized (minutes/60, clamped 0-2), and added to support load for balancing.
+      </div>
+
       <div className="summary-table-wrap">
         <div className="summary-room-list">
           {gradeClassrooms.map((classroom, index) => {
             const stats = roomStats[index]
             const supportLoad = getRoomSupportLoad(classroom)
             const poorFitCount = getPoorFitStudentCount(classroom, teacherProfiles)
+            const genderWarn = genderWarningIds.includes(classroom.id)
+            const tagWarn = stats.tagSupportLoad - tagSummary.averageTotal >= 3
+
             const getAverage = (kind: "mapReading" | "mapMath" | "briganceReadiness"): number | null => {
               const values = classroom.students.map((student) => student[kind]).filter((value): value is number => value !== undefined)
               if (values.length === 0) return null
               return values.reduce((sum, value) => sum + value, 0) / values.length
             }
+
             const briganceAvg = getAverage("briganceReadiness")
             const mapReadAvg = getAverage("mapReading")
             const mapMathAvg = getAverage("mapMath")
-
-            const genderWarn = genderWarnings.includes(classroom.id)
-            const tagWarn = stats.tagSupportLoad - tagSummary.averageTotal >= 3
             const coTeachBreakdown = Object.entries(stats.coTeachMinutesByCategory)
               .filter(([, minutes]) => minutes > 0)
               .map(([category, minutes]) => `${CO_TEACH_LABELS[category as keyof typeof CO_TEACH_LABELS]}: ${minutes}`)
@@ -133,32 +142,47 @@ export const SummaryPanel = memo(function SummaryPanel() {
             ).sort(([a], [b]) => a.localeCompare(b))
 
             return (
-              <article key={classroom.id} className={`summary-room-card ${genderWarn ? "summary-room-card-warn" : ""} ${tagWarn ? "summary-room-card-tag-warn" : ""}`}>
+              <article
+                key={classroom.id}
+                className={`summary-room-card ${genderWarn ? "summary-room-card-warn" : ""} ${tagWarn ? "summary-room-card-tag-warn" : ""}`}
+              >
                 <div className="summary-room-header">
                   <div className="summary-room-title">{classroom.grade}-{classroom.label}</div>
                   <div className="summary-room-teacher">{showTeacherNames ? classroom.teacherName || "-" : "Hidden"}</div>
-                  <span className="summary-room-size" style={{ color: stats.size >= classroom.maxSize ? "#ef4444" : stats.size / classroom.maxSize > 0.85 ? "#f59e0b" : "inherit" }}>
+                  <span
+                    className="summary-room-size"
+                    style={{
+                      color:
+                        stats.size >= classroom.maxSize
+                          ? "#ef4444"
+                          : stats.size / classroom.maxSize > 0.85
+                            ? "#f59e0b"
+                            : "inherit",
+                    }}
+                  >
                     {stats.size}/{classroom.maxSize}
                   </span>
                 </div>
 
                 <div className="summary-room-metrics">
-                  <span className="summary-metric summary-metric-demographic">IEP: {stats.iepCount || "—"}</span>
-                  <span className="summary-metric summary-metric-demographic">Ref: {stats.referralCount || "—"}</span>
-                  <span className="summary-metric summary-metric-demographic">EL: {stats.ellCount || "—"}</span>
-                  <span className="summary-metric summary-metric-demographic">504: {stats.section504Count || "—"}</span>
+                  <span className="summary-metric summary-metric-demographic">IEP: {stats.iepCount || "-"}</span>
+                  <span className="summary-metric summary-metric-demographic">Ref: {stats.referralCount || "-"}</span>
+                  <span className="summary-metric summary-metric-demographic">EL: {stats.ellCount || "-"}</span>
+                  <span className="summary-metric summary-metric-demographic">504: {stats.section504Count || "-"}</span>
                   <span className={`summary-metric summary-metric-demographic ${genderWarn ? "cell-warn" : ""}`}>M/F: {stats.maleCount}/{stats.femaleCount}</span>
                   {isKindergarten ? (
-                    <span className="summary-metric summary-metric-academic">Brigance: {briganceAvg !== null ? fmt(briganceAvg) : "—"}</span>
+                    <span className="summary-metric summary-metric-academic">Brigance: {briganceAvg !== null ? fmt(briganceAvg) : "-"}</span>
                   ) : (
                     <>
-                      <span className="summary-metric summary-metric-academic">MAP R: {mapReadAvg !== null ? fmt(mapReadAvg) : "—"}</span>
-                      <span className="summary-metric summary-metric-academic">MAP M: {mapMathAvg !== null ? fmt(mapMathAvg) : "—"}</span>
+                      <span className="summary-metric summary-metric-academic">MAP R: {mapReadAvg !== null ? fmt(mapReadAvg) : "-"}</span>
+                      <span className="summary-metric summary-metric-academic">MAP M: {mapMathAvg !== null ? fmt(mapMathAvg) : "-"}</span>
                     </>
                   )}
                   <span className="summary-metric summary-metric-support">Support: {fmt(supportLoad)}</span>
                   <span className={`summary-metric summary-metric-tag ${tagWarn ? "summary-metric-tag-warn" : ""}`}>Tag: {fmt(stats.tagSupportLoad)}</span>
-                  <span className="summary-metric" title={coTeachBreakdown || "No co-teach minutes"}>Co-teach: {stats.totalCoTeachMinutes} total / {fmt(stats.avgCoTeachMinutes)} avg</span>
+                  <span className="summary-metric" title={coTeachBreakdown || "No co-teach minutes"}>
+                    Co-teach: {stats.totalCoTeachMinutes} total / {fmt(stats.avgCoTeachMinutes)} avg
+                  </span>
                   {poorFitCount > 0 && <span className="summary-metric summary-metric-poor-fit">Poor fit: {poorFitCount}</span>}
                 </div>
 
@@ -176,7 +200,9 @@ export const SummaryPanel = memo(function SummaryPanel() {
 
                 <div className="summary-room-section">
                   <div className="summary-room-section-label">Race / Ethnicity</div>
-                  {raceBreakdown.length === 0 ? "-" : (
+                  {raceBreakdown.length === 0 ? (
+                    "-"
+                  ) : (
                     <div className="race-chip-list">
                       {raceBreakdown.map(([race, count]) => (
                         <span key={`${classroom.id}-${race}`} className="race-pill" style={raceStyleByLabel[race]}>
@@ -191,7 +217,11 @@ export const SummaryPanel = memo(function SummaryPanel() {
                   <div className="summary-room-section-label">Co-teach Coverage</div>
                   <div>
                     {classroom.coTeachCoverage.length
-                      ? classroom.coTeachCoverage.map((category) => <span key={category} className="coteach-chip">{CO_TEACH_LABELS[category]}</span>)
+                      ? classroom.coTeachCoverage.map((category) => (
+                          <span key={category} className="coteach-chip">
+                            {CO_TEACH_LABELS[category]}
+                          </span>
+                        ))
                       : "-"}
                   </div>
                 </div>
