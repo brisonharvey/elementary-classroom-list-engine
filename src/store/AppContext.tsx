@@ -1,5 +1,5 @@
 import React, { createContext, Dispatch, useContext, useEffect, useReducer } from "react"
-import { AppState, Classroom, Student } from "../types"
+import { AppState, Classroom, STUDENT_TAGS, Student, TeacherProfile } from "../types"
 import { createDefaultGradeSettingsMap, getRoomLabelFromIndex } from "../utils/classroomInit"
 import { normalizeCoTeachMinutes } from "../utils/coTeach"
 import { Action, initialState, reducer } from "./reducer"
@@ -11,7 +11,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-const STORAGE_KEY = "classroom-placement-state-v2"
+const STORAGE_KEY = "classroom-placement-state-v3"
 
 function normalizeIdList(value: unknown): number[] {
   if (Array.isArray(value)) {
@@ -23,11 +23,17 @@ function normalizeIdList(value: unknown): number[] {
   return []
 }
 
-function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown }>(student: T): T {
+function normalizeTagList(value: unknown): Student["tags"] {
+  if (!Array.isArray(value)) return []
+  return value.filter((entry): entry is (typeof STUDENT_TAGS)[number] => typeof entry === "string" && STUDENT_TAGS.includes(entry as (typeof STUDENT_TAGS)[number]))
+}
+
+function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown; tags?: unknown }>(student: T): T {
   return {
     ...student,
     noContactWith: normalizeIdList(student.noContactWith),
     preferredWith: normalizeIdList(student.preferredWith),
+    tags: normalizeTagList(student.tags),
   }
 }
 
@@ -43,6 +49,7 @@ function normalizeStudent(student: Student): Student {
   return {
     ...normalizeStudentLists(student),
     coTeachMinutes: normalizeCoTeachMinutes(migratedMinutes),
+    locked: Boolean(student.locked),
   }
 }
 
@@ -57,23 +64,50 @@ function normalizeClassroom(classroom: Classroom, index: number): Classroom {
     ...classroom,
     label: classroom.label ?? getRoomLabelFromIndex(index % 4),
     coTeachCoverage: Array.from(new Set([...(classroom.coTeachCoverage ?? []), ...legacyCoverage])),
-    students: (classroom.students ?? []).map((s) => normalizeStudent(s)),
+    students: (classroom.students ?? []).map((student) => normalizeStudent(student)),
+  }
+}
+
+function normalizeTeacherProfile(profile: TeacherProfile): TeacherProfile {
+  const normalizeRating = (value: unknown): 1 | 2 | 3 | 4 | 5 => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return 3
+    return Math.max(1, Math.min(5, Math.round(value))) as 1 | 2 | 3 | 4 | 5
+  }
+
+  return {
+    ...profile,
+    id: profile.id || `${profile.grade}:${profile.teacherName.trim().toLowerCase()}`,
+    teacherName: profile.teacherName?.trim() || "",
+    characteristics: {
+      classroomStructure: normalizeRating(profile.characteristics?.classroomStructure),
+      behaviorManagementStrength: normalizeRating(profile.characteristics?.behaviorManagementStrength),
+      emotionalSupportNurturing: normalizeRating(profile.characteristics?.emotionalSupportNurturing),
+      academicEnrichmentStrength: normalizeRating(profile.characteristics?.academicEnrichmentStrength),
+      independenceScaffolding: normalizeRating(profile.characteristics?.independenceScaffolding),
+      movementFlexibility: normalizeRating(profile.characteristics?.movementFlexibility),
+      peerSocialCoaching: normalizeRating(profile.characteristics?.peerSocialCoaching),
+      confidenceBuilding: normalizeRating(profile.characteristics?.confidenceBuilding),
+    },
   }
 }
 
 function loadPersistedState(): AppState {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem("classroom-placement-state-v1")
+    const raw =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem("classroom-placement-state-v2") ??
+      window.localStorage.getItem("classroom-placement-state-v1")
     if (!raw) return initialState
     const parsed = JSON.parse(raw) as Partial<AppState>
-    const allStudents = (parsed.allStudents ?? []).map((s) => normalizeStudent(s as Student))
+    const allStudents = (parsed.allStudents ?? []).map((student) => normalizeStudent(student as Student))
     const classroomSource = parsed.classrooms && parsed.classrooms.length > 0 ? parsed.classrooms : initialState.classrooms
     const classrooms = classroomSource.map((classroom, index) => normalizeClassroom(classroom, index))
+    const teacherProfiles = (parsed.teacherProfiles ?? []).map((profile) => normalizeTeacherProfile(profile as TeacherProfile))
 
     const hadLegacyStudentFlags = (parsed.allStudents ?? []).some(
-      (s) => (s as Student).specialEd?.requiresCoTeachReading || (s as Student).specialEd?.requiresCoTeachMath
+      (student) => (student as Student).specialEd?.requiresCoTeachReading || (student as Student).specialEd?.requiresCoTeachMath
     )
-    const hadLegacyRoomFlags = (parsed.classrooms ?? []).some((c) => (c as Classroom & { coTeach?: unknown }).coTeach)
+    const hadLegacyRoomFlags = (parsed.classrooms ?? []).some((classroom) => (classroom as Classroom & { coTeach?: unknown }).coTeach)
 
     const defaultSettings = createDefaultGradeSettingsMap()
     const migrationWarnings: string[] = []
@@ -88,6 +122,7 @@ function loadPersistedState(): AppState {
       ...initialState,
       ...parsed,
       allStudents,
+      teacherProfiles,
       classrooms,
       gradeSettings: { ...defaultSettings, ...(parsed.gradeSettings ?? {}) },
       unresolvedReasons: parsed.unresolvedReasons ?? {},

@@ -1,4 +1,4 @@
-import { Classroom, Grade, GRADES, GradeSettings, GradeSettingsMap } from "../types"
+import { Classroom, Grade, GRADES, GradeSettings, GradeSettingsMap, TeacherProfile } from "../types"
 
 const DEFAULT_ROOM_COUNT = 4
 
@@ -51,4 +51,31 @@ export function initializeClassrooms(): Classroom[] {
 
 export function getClassroomsForGrade(classrooms: Classroom[], grade: Grade): Classroom[] {
   return classrooms.filter((c) => c.grade === grade)
+}
+
+export function syncClassroomsWithTeacherProfiles(classrooms: Classroom[], teacherProfiles: TeacherProfile[]): Classroom[] {
+  let next = classrooms.map((classroom) => ({ ...classroom, students: [...classroom.students] }))
+
+  for (const grade of GRADES) {
+    const gradeProfiles = teacherProfiles.filter((profile) => profile.grade === grade)
+    if (gradeProfiles.length === 0) continue
+
+    let gradeRooms = getClassroomsForGrade(next, grade)
+    while (gradeRooms.length < gradeProfiles.length) {
+      next = [...next, createClassroom(grade, gradeRooms.length)]
+      gradeRooms = getClassroomsForGrade(next, grade)
+    }
+
+    next = next.map((classroom) => {
+      if (classroom.grade !== grade) return classroom
+      const index = gradeRooms.findIndex((room) => room.id === classroom.id)
+      const teacherProfile = gradeProfiles[index]
+      return {
+        ...classroom,
+        teacherName: teacherProfile?.teacherName ?? "",
+      }
+    })
+  }
+
+  return next
 }

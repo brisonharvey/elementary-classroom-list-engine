@@ -13,6 +13,7 @@ import { RelationshipManager } from "./components/RelationshipManager"
 import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 import { getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "./utils/scoring"
+import { getGradeTagSupportLoadSummary, TAG_SUPPORT_LOAD_CATEGORY_LABELS, TagSupportLoadCategory } from "./utils/tagSupportLoad"
 
 type SlidePanel = "none" | "rules" | "settings"
 
@@ -49,18 +50,26 @@ export default function App() {
   )
   const settings = state.gradeSettings[state.activeGrade]
   const range = (arr: number[]) => (arr.length < 2 ? 0 : Math.max(...arr) - Math.min(...arr))
-  const readingImbalance = range(gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomReadingAvg(c))) > 0.75
-  const mathImbalance = range(gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomMathAvg(c))) > 0.75
-  const supportImbalance = range(gradeClassrooms.filter((c) => c.students.length > 0).map((c) => getRoomSupportLoad(c))) > 4
+  const readingImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomReadingAvg(classroom))) > 0.75
+  const mathImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomMathAvg(classroom))) > 0.75
+  const supportImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomSupportLoad(classroom))) > 4
+  const tagSummary = useMemo(() => getGradeTagSupportLoadSummary(gradeClassrooms, state.activeGrade), [gradeClassrooms, state.activeGrade])
+  const tagSupportImbalance = tagSummary.rangeTotal >= 6
+  const worstTagCategory = useMemo(() => {
+    const categories = Object.keys(tagSummary.rangeByCategory) as TagSupportLoadCategory[]
+    return categories.sort((a, b) => tagSummary.rangeByCategory[b] - tagSummary.rangeByCategory[a])[0] ?? "behavioral"
+  }, [tagSummary.rangeByCategory])
+  const categoryTagImbalance = tagSummary.rangeByCategory[worstTagCategory] >= 4
+  const isKindergarten = state.activeGrade === "K"
   const genderWarningLabels = gradeClassrooms
-    .filter((c) => {
-      const m = c.students.filter((s) => s.gender === "M").length
-      const f = c.students.filter((s) => s.gender === "F").length
-      return Math.abs(m - f) > settings.genderBalanceTolerance
+    .filter((classroom) => {
+      const maleCount = classroom.students.filter((student) => student.gender === "M").length
+      const femaleCount = classroom.students.filter((student) => student.gender === "F").length
+      return Math.abs(maleCount - femaleCount) > settings.genderBalanceTolerance
     })
-    .map((c) => {
-      const fallback = `${c.grade}-${c.label}`
-      return state.showTeacherNames ? (c.teacherName?.trim() || fallback) : fallback
+    .map((classroom) => {
+      const fallback = `${classroom.grade}-${classroom.label}`
+      return state.showTeacherNames ? classroom.teacherName?.trim() || fallback : fallback
     })
 
   return (
@@ -68,7 +77,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-left">
           <h1 className="app-title">Classroom Placement Engine</h1>
-          <span className="app-subtitle">K–5 Elementary Placement Tool</span>
+          <span className="app-subtitle">K-5 Elementary Placement Tool</span>
         </div>
         <div className="header-right">
           <CSVUploader />
@@ -83,8 +92,8 @@ export default function App() {
           <button
             className="btn btn-warning btn-sm"
             onClick={() => {
-              const gradeRooms = state.classrooms.filter((c) => c.grade === state.activeGrade)
-              const room = gradeRooms[gradeRooms.length - 1]
+              const rooms = state.classrooms.filter((classroom) => classroom.grade === state.activeGrade)
+              const room = rooms[rooms.length - 1]
               if (!room) return
               const moveToUnassigned = room.students.length > 0 && window.confirm("Room has students. Move them to Unassigned and delete?")
               if (room.students.length === 0 || moveToUnassigned) {
@@ -92,8 +101,8 @@ export default function App() {
               }
             }}
           >Delete Classroom</button>
-          <button className={`btn btn-sm ${activePanel === "rules" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((v) => (v === "rules" ? "none" : "rules"))}>No-contact Manager</button>
-          <button className={`btn btn-sm ${activePanel === "settings" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((v) => (v === "settings" ? "none" : "settings"))}>Settings</button>
+          <button className={`btn btn-sm ${activePanel === "rules" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "rules" ? "none" : "rules"))}>No-contact Manager</button>
+          <button className={`btn btn-sm ${activePanel === "settings" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "settings" ? "none" : "settings"))}>Settings</button>
         </div>
       </div>
 
@@ -102,29 +111,39 @@ export default function App() {
         <WeightSliders />
       </div>
 
-      {(readingImbalance || mathImbalance || supportImbalance || genderWarningLabels.length > 0) && (
+      {(readingImbalance || mathImbalance || supportImbalance || tagSupportImbalance || categoryTagImbalance || genderWarningLabels.length > 0) && (
         <div className="main-warnings-row">
-          {genderWarningLabels.length > 0 && <div className="warning-chip">⚠ Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
-          {readingImbalance && <div className="warning-chip">⚠ Reading level spread across classrooms</div>}
-          {mathImbalance && <div className="warning-chip">⚠ Math level spread across classrooms</div>}
-          {supportImbalance && <div className="warning-chip">⚠ Support load imbalanced across classrooms</div>}
+          {genderWarningLabels.length > 0 && <div className="warning-chip">Gender imbalance beyond �{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
+          {isKindergarten ? (
+            readingImbalance && <div className="warning-chip">Brigance spread across classrooms</div>
+          ) : (
+            <>
+              {readingImbalance && <div className="warning-chip">Reading level spread across classrooms</div>}
+              {mathImbalance && <div className="warning-chip">Math level spread across classrooms</div>}
+            </>
+          )}
+          {supportImbalance && <div className="warning-chip">Support load imbalanced across classrooms</div>}
+          {tagSupportImbalance && <div className="warning-chip">Tag support load range is {tagSummary.rangeTotal.toFixed(1)} across classrooms</div>}
+          {categoryTagImbalance && (
+            <div className="warning-chip">
+              {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} tag load is concentrated in one room group ({tagSummary.rangeByCategory[worstTagCategory].toFixed(1)} spread)
+            </div>
+          )}
         </div>
       )}
 
       <PlacementWorkspace />
 
       {hasStudents && (
-        <>
-          <aside className={`summary-drawer ${summaryDrawerOpen ? "open" : ""}`} aria-hidden={!summaryDrawerOpen}>
-            <div className="summary-drawer-header">
-              <strong>Grade {state.activeGrade} Summary</strong>
-              <button className="btn btn-ghost btn-sm" onClick={() => setSummaryDrawerOpen(false)}>Hide</button>
-            </div>
-            <div className="summary-drawer-body">
-              <SummaryPanel />
-            </div>
-          </aside>
-        </>
+        <aside className={`summary-drawer ${summaryDrawerOpen ? "open" : ""}`} aria-hidden={!summaryDrawerOpen}>
+          <div className="summary-drawer-header">
+            <strong>Grade {state.activeGrade} Summary</strong>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSummaryDrawerOpen(false)}>Hide</button>
+          </div>
+          <div className="summary-drawer-body">
+            <SummaryPanel />
+          </div>
+        </aside>
       )}
 
       {hasStudents && bottomPanelState !== "hidden" && (

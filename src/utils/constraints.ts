@@ -1,5 +1,6 @@
 import { Classroom, CoTeachCategory, GradeSettings, RelationshipRule, Student } from "../types"
 import { CO_TEACH_LABELS, getStudentRequiredCoTeachCategories } from "./coTeach"
+import { getClassroomTagSupportLoadBreakdown, getProjectedClassroomTagSupportLoadBreakdown } from "./tagSupportLoad"
 
 export interface ConstraintResult {
   valid: boolean
@@ -9,6 +10,7 @@ export interface ConstraintResult {
 interface HardConstraintOptions {
   settings: GradeSettings
   relationshipRules: RelationshipRule[]
+  gradeRooms?: Classroom[]
 }
 
 function isPairMatch(rule: RelationshipRule, studentA: number, studentB: number): boolean {
@@ -23,6 +25,44 @@ function getMissingCoverage(student: Student, classroom: Classroom): CoTeachCate
 
 function formatMissingCoverageWithMinutes(student: Student, missing: CoTeachCategory[]): string {
   return missing.map((category) => `${CO_TEACH_LABELS[category]} (${student.coTeachMinutes[category] ?? 0} min)`).join(", ")
+}
+
+function getTagLoadWarnings(student: Student, classroom: Classroom, gradeRooms: Classroom[]): string[] {
+  if (gradeRooms.length === 0) return []
+
+  const projectedBreakdowns = gradeRooms.map((room) =>
+    room.id === classroom.id ? getProjectedClassroomTagSupportLoadBreakdown(room, student) : getClassroomTagSupportLoadBreakdown(room)
+  )
+  const roomIndex = gradeRooms.findIndex((room) => room.id === classroom.id)
+  const target = projectedBreakdowns[roomIndex]
+  if (!target) return []
+
+  const warnings: string[] = []
+  const averageTotal = projectedBreakdowns.reduce((sum, breakdown) => sum + breakdown.total, 0) / projectedBreakdowns.length
+  const otherTotals = projectedBreakdowns.filter((_, index) => index !== roomIndex).map((breakdown) => breakdown.total)
+  const highestOtherTotal = Math.max(0, ...otherTotals)
+  if (target.total > highestOtherTotal && target.total - averageTotal >= 3) {
+    warnings.push(`This move would create the highest total tag-support-load room in the grade (${target.total.toFixed(1)} vs avg ${averageTotal.toFixed(1)}).`)
+  }
+
+  const categoryConfigs = [
+    { key: "behavioral", label: "behavioral" },
+    { key: "emotional", label: "emotional" },
+    { key: "instructional", label: "instructional" },
+    { key: "energy", label: "energy" },
+  ] as const
+
+  for (const category of categoryConfigs) {
+    const projectedValue = target[category.key]
+    const averageValue = projectedBreakdowns.reduce((sum, breakdown) => sum + breakdown[category.key], 0) / projectedBreakdowns.length
+    const highestOtherValue = Math.max(0, ...projectedBreakdowns.filter((_, index) => index !== roomIndex).map((breakdown) => breakdown[category.key]))
+    if (projectedValue > highestOtherValue && projectedValue - averageValue >= 3) {
+      const prefix = category.key === "behavioral" ? "This move would create the highest behavioral tag-load room in the grade" : `This move significantly increases ${category.label} tag-load imbalance`
+      warnings.push(`${prefix} (${projectedValue.toFixed(1)} vs avg ${averageValue.toFixed(1)}).`)
+    }
+  }
+
+  return warnings
 }
 
 export function checkHardConstraints(
@@ -112,6 +152,10 @@ export function getManualMoveWarnings(
     if (noContactRule) {
       warnings.push(`No-contact rule conflict with ${roomStudent.firstName} ${roomStudent.lastName}`)
     }
+  }
+
+  if (options.gradeRooms) {
+    warnings.push(...getTagLoadWarnings(student, classroom, options.gradeRooms))
   }
 
   return warnings

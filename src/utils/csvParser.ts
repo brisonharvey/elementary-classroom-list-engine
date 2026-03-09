@@ -1,7 +1,13 @@
-import { CoTeachCategory, Grade, Student } from "../types"
+import { CoTeachCategory, Grade, STUDENT_TAGS, Student, StudentTag } from "../types"
 import { MAX_COTEACH_MINUTES, normalizeCoTeachMinutes } from "./coTeach"
 
-export const CSV_FIELD_OPTIONS = [
+export interface CsvFieldOption {
+  key: string
+  label: string
+  required: boolean
+}
+
+export const STUDENT_CSV_FIELD_OPTIONS = [
   { key: "id", label: "Student ID", required: true },
   { key: "grade", label: "Grade", required: true },
   { key: "firstName", label: "First name", required: true },
@@ -21,22 +27,23 @@ export const CSV_FIELD_OPTIONS = [
   { key: "behaviorTier", label: "Behavior tier", required: false },
   { key: "noContactWith", label: "No-contact IDs", required: false },
   { key: "preferredWith", label: "Prefer with IDs", required: false },
+  { key: "briganceReadiness", label: "Brigance readiness", required: false },
   { key: "mapReading", label: "MAP reading", required: false },
   { key: "mapMath", label: "MAP math", required: false },
   { key: "ireadyReading", label: "i-Ready reading", required: false },
   { key: "ireadyMath", label: "i-Ready math", required: false },
   { key: "referrals", label: "Referrals", required: false },
-  { key: "teacher", label: "Assigned teacher", required: false },
   { key: "ell", label: "ELL", required: false },
   { key: "section504", label: "504 plan", required: false },
   { key: "raceEthnicity", label: "Race/ethnicity", required: false },
+  { key: "studentTags", label: "Student tags", required: false },
   { key: "teacherNotes", label: "Teacher notes", required: false },
-] as const
+] as const satisfies readonly CsvFieldOption[]
 
-export type CsvFieldKey = (typeof CSV_FIELD_OPTIONS)[number]["key"]
-export type CsvFieldMapping = Partial<Record<CsvFieldKey, string>>
+export type StudentCsvFieldKey = (typeof STUDENT_CSV_FIELD_OPTIONS)[number]["key"]
+export type StudentCsvFieldMapping = Partial<Record<StudentCsvFieldKey, string>>
 
-const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
+const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   id: ["id", "studentid", "student.studentnumber", "studentnumber", "sisid", "localid", "student.personid", "personid"],
   grade: ["grade", "gradelevel", "studentgrade", "grd"],
   firstName: ["student.firstname", "firstname", "first", "givenname", "studentfirstname"],
@@ -56,15 +63,16 @@ const FIELD_ALIASES: Record<CsvFieldKey, string[]> = {
   behaviorTier: ["behaviortier", "behaviourtier", "behaviorsupporttier", "activeintervention|seb"],
   noContactWith: ["nocontactwith", "separatefrom", "donotpairwith"],
   preferredWith: ["preferredwith", "preferwith", "sameclasswith", "sameroomwith", "keepwith", "withstudents"],
+  briganceReadiness: ["brigance", "brigancereadiness", "brigancekindergartenreadiness", "brigancereadinessscore"],
   mapReading: ["mapreading", "readingmap", "mapreadingscore", "mapwinterreading|rit", "mapfallreading|rit"],
   mapMath: ["mapmath", "mathmap", "mapmathscore", "mapwintermath|rit", "mapfallmath|rit"],
   ireadyReading: ["ireadyreading", "ireadingreading", "ireadyreadinglevel", "winter(november16-march1)|overallplacement"],
   ireadyMath: ["ireadymath", "ireadymathlevel", "winter(november16-march1)|overallplacement(diagnostic_results_math_confidential(1).csv)"],
   referrals: ["referrals", "referralcount", "disciplinereferrals", "disc.referrals"],
-  teacher: ["teacher", "assignedteacher", "homeroomteacher", "schedulingteam", "classteacher(s)"],
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   section504: ["section504", "plan504", "program504", "504"],
   raceEthnicity: ["raceethnicity", "race/ethnicity", "ethnicity", "race", "studentrace", "studentethnicity"],
+  studentTags: ["studenttags", "tags", "placementtags", "supporttags"],
   teacherNotes: ["teachernotes", "notes", "comments", "placementnotes"],
 }
 
@@ -150,13 +158,13 @@ function parseGrade(val: string): Grade {
 function parseOptionalFloat(val: string): number | undefined {
   if (!val || !val.trim()) return undefined
   const n = parseFloat(val.trim())
-  return isNaN(n) ? undefined : n
+  return Number.isNaN(n) ? undefined : n
 }
 
 function parseOptionalInt(val: string): number | undefined {
   if (!val || !val.trim()) return undefined
   const n = parseInt(val.trim(), 10)
-  return isNaN(n) ? undefined : n
+  return Number.isNaN(n) ? undefined : n
 }
 
 function parseOptionalString(val: string): string | undefined {
@@ -215,31 +223,31 @@ export function parseCSVPreview(text: string): CSVPreview {
   return { headers, rows }
 }
 
-export function suggestFieldMapping(headers: string[]): CsvFieldMapping {
-  const normalized = headers.map(normalizeHeader)
-  const mapping: CsvFieldMapping = {}
-
-  for (const field of CSV_FIELD_OPTIONS) {
-    const aliases = FIELD_ALIASES[field.key]
-    const index = normalized.findIndex((h) => aliases.includes(h))
-    if (index >= 0) mapping[field.key] = headers[index]
-  }
-
-  return mapping
-}
-
 export function buildSampleValues(headers: string[], rows: string[][]): Record<string, string> {
   const samples: Record<string, string> = {}
   headers.forEach((header, idx) => {
     for (const row of rows) {
       const val = (row[idx] ?? "").trim()
       if (val) {
-        samples[header] = val.length > 24 ? val.slice(0, 22) + "…" : val
+        samples[header] = val.length > 24 ? `${val.slice(0, 21)}...` : val
         break
       }
     }
   })
   return samples
+}
+
+export function suggestStudentFieldMapping(headers: string[]): StudentCsvFieldMapping {
+  const normalized = headers.map(normalizeHeader)
+  const mapping: StudentCsvFieldMapping = {}
+
+  for (const field of STUDENT_CSV_FIELD_OPTIONS) {
+    const aliases = FIELD_ALIASES[field.key]
+    const index = normalized.findIndex((header) => aliases.includes(header))
+    if (index >= 0) mapping[field.key] = headers[index]
+  }
+
+  return mapping
 }
 
 function parseCoTeachMinutes(raw: string, rowIndex: number, label: string, errors: string[]): number {
@@ -257,7 +265,7 @@ function parseCoTeachMinutes(raw: string, rowIndex: number, label: string, error
   return parsed
 }
 
-function buildCoTeachMinutes(values: string[], rowIndex: number, get: (values: string[], field: CsvFieldKey) => string, errors: string[]) {
+function buildCoTeachMinutes(values: string[], rowIndex: number, get: (values: string[], field: StudentCsvFieldKey) => string, errors: string[]) {
   const coTeachMinutes: Partial<Record<CoTeachCategory, number>> = {
     reading: parseCoTeachMinutes(get(values, "coTeachReadingMinutes"), rowIndex, "CoTeach Reading Minutes", errors),
     writing: parseCoTeachMinutes(get(values, "coTeachWritingMinutes"), rowIndex, "CoTeach Writing Minutes", errors),
@@ -286,7 +294,28 @@ function buildCoTeachMinutes(values: string[], rowIndex: number, get: (values: s
   return normalizeCoTeachMinutes(coTeachMinutes)
 }
 
-export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): ParseResult {
+const TAG_LOOKUP = new Map(STUDENT_TAGS.map((tag) => [tag.trim().toLowerCase(), tag]))
+
+function parseStudentTags(raw: string): { tags: StudentTag[]; invalidTokens: string[] } {
+  if (!raw || !raw.trim()) return { tags: [], invalidTokens: [] }
+
+  const tags: StudentTag[] = []
+  const invalidTokens: string[] = []
+  for (const rawToken of raw.split(/[;,|]/)) {
+    const token = rawToken.trim()
+    if (!token) continue
+    const matched = TAG_LOOKUP.get(token.toLowerCase())
+    if (!matched) {
+      invalidTokens.push(token)
+      continue
+    }
+    if (!tags.includes(matched)) tags.push(matched)
+  }
+
+  return { tags, invalidTokens }
+}
+
+export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFieldMapping): ParseResult {
   const { headers, rows } = parseCSVPreview(text)
   if (headers.length === 0 || rows.length === 0) {
     return { students: [], errors: ["CSV must have a header row and at least one data row."], skipped: 0 }
@@ -298,15 +327,10 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
   const seenIds = new Set<number>()
   let skipped = 0
 
-  const get = (values: string[], field: CsvFieldKey): string => {
+  const get = (values: string[], field: StudentCsvFieldKey): string => {
     const mapped = mapping[field]
     if (!mapped) return ""
     const idx = headerLookup.get(normalizeHeader(mapped))
-    return idx === undefined ? "" : (values[idx] ?? "").trim()
-  }
-
-  const getByHeader = (values: string[], headerName: string): string => {
-    const idx = headerLookup.get(normalizeHeader(headerName))
     return idx === undefined ? "" : (values[idx] ?? "").trim()
   }
 
@@ -316,12 +340,12 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
     const id = parseStrictPositiveInt(idStr)
 
     if (id === undefined) {
-      errors.push(`Row ${rowIndex + 2}: Invalid or missing ID "${idStr}" — skipped.`)
+      errors.push(`Row ${rowIndex + 2}: Invalid or missing ID "${idStr}" - skipped.`)
       skipped++
       continue
     }
     if (seenIds.has(id)) {
-      errors.push(`Row ${rowIndex + 2}: Duplicate ID "${id}" — skipped. IDs must be unique.`)
+      errors.push(`Row ${rowIndex + 2}: Duplicate ID "${id}" - skipped. IDs must be unique.`)
       skipped++
       continue
     }
@@ -331,16 +355,23 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
     const preferredWithRaw = get(values, "preferredWith")
     const parsedNoContact = parseIdList(noContactRaw)
     const parsedPreferredWith = parseIdList(preferredWithRaw)
+    const parsedTags = parseStudentTags(get(values, "studentTags"))
 
     if (parsedNoContact.invalidTokens.length > 0) {
       errors.push(
-        `Row ${rowIndex + 2}: Invalid noContactWith token(s): ${parsedNoContact.invalidTokens.join(", ")} — expected positive whole-number IDs.`
+        `Row ${rowIndex + 2}: Invalid noContactWith token(s): ${parsedNoContact.invalidTokens.join(", ")} - expected positive whole-number IDs.`
       )
     }
 
     if (parsedPreferredWith.invalidTokens.length > 0) {
       errors.push(
-        `Row ${rowIndex + 2}: Invalid preferredWith token(s): ${parsedPreferredWith.invalidTokens.join(", ")} — expected positive whole-number IDs.`
+        `Row ${rowIndex + 2}: Invalid preferredWith token(s): ${parsedPreferredWith.invalidTokens.join(", ")} - expected positive whole-number IDs.`
+      )
+    }
+
+    if (parsedTags.invalidTokens.length > 0) {
+      errors.push(
+        `Row ${rowIndex + 2}: Unknown student tag(s): ${parsedTags.invalidTokens.join(", ")} - ignored.`
       )
     }
 
@@ -359,16 +390,14 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
       },
       behaviorTier: parseTier(get(values, "behaviorTier")),
       referrals: parseOptionalInt(get(values, "referrals")) ?? 0,
+      briganceReadiness: parseOptionalFloat(get(values, "briganceReadiness")),
       mapReading: parseOptionalFloat(get(values, "mapReading")),
       mapMath: parseOptionalFloat(get(values, "mapMath")),
       ireadyReading: parseOptionalString(get(values, "ireadyReading")),
       ireadyMath: parseOptionalString(get(values, "ireadyMath")),
+      tags: parsedTags.tags,
       noContactWith: parsedNoContact.ids,
       preferredWith: parsedPreferredWith.ids,
-      preassignedTeacher:
-        parseOptionalString(get(values, "teacher")) ||
-        parseOptionalString(getByHeader(values, "teacher")) ||
-        parseOptionalString(getByHeader(values, "assignedteacher")),
       ell: parseELL(get(values, "ell")),
       section504: parseBool(get(values, "section504")),
       raceEthnicity: parseOptionalString(get(values, "raceEthnicity")),
@@ -377,19 +406,19 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
     })
   }
 
-  const studentsById = new Map(students.map((s) => [s.id, s]))
+  const studentsById = new Map(students.map((student) => [student.id, student]))
   const idSet = new Set(studentsById.keys())
 
   for (const student of students) {
     student.coTeachMinutes = normalizeCoTeachMinutes(student.coTeachMinutes)
-    const invalidNoContact = (student.noContactWith ?? []).filter((nc) => !idSet.has(nc))
+    const invalidNoContact = (student.noContactWith ?? []).filter((entry) => !idSet.has(entry))
     if (invalidNoContact.length > 0) {
       errors.push(
         `Student ${student.id} (${student.firstName} ${student.lastName}): noContactWith references unknown IDs: ${invalidNoContact.join(", ")}`
       )
     }
 
-    student.noContactWith = (student.noContactWith ?? []).filter((nc) => nc !== student.id)
+    student.noContactWith = (student.noContactWith ?? []).filter((entry) => entry !== student.id)
 
     const invalidPreferred = (student.preferredWith ?? []).filter((peerId) => !idSet.has(peerId))
     if (invalidPreferred.length > 0) {
@@ -411,88 +440,124 @@ export function parseCSVWithMapping(text: string, mapping: CsvFieldMapping): Par
     student.preferredWith = (student.preferredWith ?? [])
       .filter((peerId) => peerId !== student.id && idSet.has(peerId))
       .filter((peerId) => studentsById.get(peerId)?.grade === student.grade)
-      .filter((peerId, idx, arr) => arr.indexOf(peerId) === idx)
+      .filter((peerId, idx, list) => list.indexOf(peerId) === idx)
   }
 
   return { students, errors, skipped }
 }
 
-export function parseCSV(text: string): ParseResult {
+export function parseStudentCSV(text: string): ParseResult {
   const preview = parseCSVPreview(text)
-  const mapping = suggestFieldMapping(preview.headers)
-  return parseCSVWithMapping(text, mapping)
+  const mapping = suggestStudentFieldMapping(preview.headers)
+  return parseStudentCSVWithMapping(text, mapping)
 }
 
-export function generateSampleCSV(): string {
-  const header =
-    "id,grade,firstName,lastName,gender,status,coTeachReadingMinutes,coTeachWritingMinutes,coTeachScienceSocialStudiesMinutes,coTeachMathMinutes,coTeachBehaviorMinutes,coTeachSocialMinutes,coTeachVocationalMinutes,academicTier,behaviorTier,noContactWith,preferredWith,mapReading,mapMath,ireadyReading,ireadyMath,referrals,teacher,ell,section504,raceEthnicity,teacherNotes"
+const STUDENT_TEMPLATE_HEADER = [
+  "id",
+  "grade",
+  "firstName",
+  "lastName",
+  "gender",
+  "status",
+  "coTeachReadingMinutes",
+  "coTeachWritingMinutes",
+  "coTeachScienceSocialStudiesMinutes",
+  "coTeachMathMinutes",
+  "coTeachBehaviorMinutes",
+  "coTeachSocialMinutes",
+  "coTeachVocationalMinutes",
+  "academicTier",
+  "behaviorTier",
+  "noContactWith",
+  "preferredWith",
+  "briganceReadiness",
+  "mapReading",
+  "mapMath",
+  "ireadyReading",
+  "ireadyMath",
+  "referrals",
+  "ell",
+  "section504",
+  "raceEthnicity",
+  "studentTags",
+  "teacherNotes",
+]
 
+export function generateStudentTemplateCSV(): string {
+  return STUDENT_TEMPLATE_HEADER.join(",")
+}
+
+export function generateStudentSampleCSV(): string {
   const grades: Grade[] = ["K", "1", "2", "3", "4", "5"]
-  const firstNames = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Avery", "Parker", "Quinn", "Skyler", "Harper", "Elliot"]
-  const lastNames = ["Anderson", "Brooks", "Carter", "Diaz", "Ellis", "Foster", "Garcia", "Hayes", "Ingram", "Jenkins", "Kim", "Lopez"]
+  const firstNames = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Avery", "Parker"]
+  const lastNames = ["Anderson", "Brooks", "Carter", "Diaz", "Ellis", "Foster", "Garcia", "Hayes"]
   const races = ["White", "Black", "Hispanic/Latino", "Asian", "Multiracial"]
+  const tagSets = [
+    "Needs strong routine;Needs reassurance",
+    "Needs frequent redirection;High energy",
+    "Needs enrichment;Independent worker",
+    "Sensitive to correction;Low academic confidence",
+    "Needs movement breaks;High energy",
+    "Needs positive peer models;Easily influenced by peers",
+    "Easily frustrated;Needs reassurance",
+    "Independent worker",
+  ]
 
   const rows: string[] = []
   let id = 1001
 
   for (const grade of grades) {
-    for (let i = 0; i < 40; i++) {
-      const isSped = i < 4
+    for (let i = 0; i < 8; i++) {
+      const isSped = i < 2
       const status = isSped ? (i % 2 === 0 ? "IEP" : "Referral") : "None"
       const gender = i % 2 === 0 ? "F" : "M"
-      const teacher = `Ms. Grade${grade}${String.fromCharCode(65 + (i % 4))}`
-      const ell = i % 6 === 0 ? "true" : "false"
-      const section504 = i % 10 === 0 ? "true" : "false"
-      const race = races[i % races.length]
-
-      const readingMinutes = isSped ? 30 + (i % 2) * 15 : 0
-      const writingMinutes = isSped && i % 3 === 0 ? 15 : 0
-      const scienceMinutes = isSped && i % 4 === 0 ? 15 : 0
+      const academicTier = isSped ? 3 : i % 4 === 0 ? 2 : 1
+      const behaviorTier = i % 3 === 0 ? 2 : 1
+      const referrals = i % 5 === 0 ? 1 : 0
+      const readingMinutes = isSped ? 30 : 0
       const mathMinutes = isSped ? 30 : 0
-      const behaviorMinutes = isSped && i % 3 === 1 ? 20 : 0
-      const socialMinutes = isSped && i % 4 === 2 ? 15 : 0
-      const vocationalMinutes = isSped && grade !== "K" && i % 5 === 0 ? 10 : 0
-
-      const academicTier = isSped ? 3 : i % 5 === 0 ? 2 : 1
-      const behaviorTier = isSped && i % 2 === 1 ? 3 : i % 7 === 0 ? 2 : 1
-      const noContact = i % 13 === 0 ? `${id + 1}` : ""
-      const preferredWith = i % 9 === 0 ? `${id + 2}` : ""
-      const mapReading = 155 + (i % 18) * 2 + (grade === "K" ? -20 : 0)
-      const mapMath = 158 + (i % 16) * 2 + (grade === "K" ? -18 : 0)
-      const ireadyReading = ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2"][i % 6]
-      const ireadyMath = ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2"][((i + 2) % 6)]
-      const referrals = isSped ? 1 + (i % 3) : i % 11 === 0 ? 1 : 0
-      const firstName = firstNames[i % firstNames.length]
-      const lastName = `${lastNames[(i + grades.indexOf(grade)) % lastNames.length]}${i + 1}`
-      const note = isSped ? "Requires co-teach support" : ""
+      const behaviorMinutes = i === 1 ? 20 : 0
+      const socialMinutes = i === 5 ? 15 : 0
+      const noContact = i === 0 ? `${id + 1}` : ""
+      const preferredWith = i === 2 ? `${id + 1}` : ""
+      const brigance = grade === "K" ? 48 + i * 5 : ""
+      const mapReading = grade === "K" ? "" : 155 + i * 3 + grades.indexOf(grade) * 2
+      const mapMath = grade === "K" ? "" : 158 + i * 3 + grades.indexOf(grade) * 2
+      const ireadyReading = grade === "K" ? "" : ["Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2", "Early 3"][i]
+      const ireadyMath = grade === "K" ? "" : ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2"][i]
+      const ell = i % 4 === 0 ? "TRUE" : "FALSE"
+      const section504 = i === 3 ? "TRUE" : "FALSE"
+      const race = races[(i + grades.indexOf(grade)) % races.length]
+      const note = isSped ? "Requires co-teach support" : i === 4 ? "Monitor confidence in whole group" : ""
 
       rows.push([
         id,
         grade,
-        firstName,
-        lastName,
+        firstNames[i],
+        `${lastNames[(i + grades.indexOf(grade)) % lastNames.length]}${grades.indexOf(grade) + 1}`,
         gender,
         status,
         readingMinutes,
-        writingMinutes,
-        scienceMinutes,
+        0,
+        0,
         mathMinutes,
         behaviorMinutes,
         socialMinutes,
-        vocationalMinutes,
+        0,
         academicTier,
         behaviorTier,
         noContact,
         preferredWith,
+        brigance,
         mapReading,
         mapMath,
         ireadyReading,
         ireadyMath,
         referrals,
-        teacher,
         ell,
         section504,
         race,
+        tagSets[i],
         note,
       ].join(","))
 
@@ -500,5 +565,5 @@ export function generateSampleCSV(): string {
     }
   }
 
-  return [header, ...rows].join("\n")
+  return [generateStudentTemplateCSV(), ...rows].join("\n")
 }

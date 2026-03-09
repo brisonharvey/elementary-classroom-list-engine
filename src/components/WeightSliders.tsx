@@ -81,6 +81,13 @@ export function WeightSliders() {
         onChange={update("demographic")}
         color="#8b5cf6"
       />
+      <Slider
+        label="Tag Support Load"
+        description="Higher values prioritize balancing the derived tag-based classroom support-load index and its behavioral, emotional, instructional, and energy subtotals."
+        value={weights.tagSupportLoad}
+        onChange={update("tagSupportLoad")}
+        color="#0f766e"
+      />
     </div>
   )
 }

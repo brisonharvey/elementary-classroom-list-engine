@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "tests/.compiled",
+    "rootDir": ".",
+    "noEmit": false,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "src/types/index.ts",
+    "src/utils/coTeach.ts",
+    "src/utils/csvParser.ts",
+    "src/utils/scoring.ts",
+    "src/utils/tagSupportLoad.ts"
+  ]
+}

@@ -1,7 +1,12 @@
 import { Classroom, CoTeachCategory, Grade, GradeSettings, RelationshipRule, RoomStats, Student } from "../types"
 import { CO_TEACH_CATEGORIES, getStudentCoTeachTotal } from "./coTeach"
+import {
+  getClassroomTagSupportLoadBreakdown,
+  getProjectedClassroomTagSupportLoadBreakdown,
+  TagSupportLoadBreakdown,
+} from "./tagSupportLoad"
 
-export function getMapBand(score: number | undefined): number {
+export function getAssessmentBand(score: number | undefined): number {
   if (score === undefined || score === null) return 2.5
   if (score < 25) return 1
   if (score < 50) return 2
@@ -12,7 +17,7 @@ export function getMapBand(score: number | undefined): number {
 export function gradeToNum(grade: Grade | string): number {
   if (grade === "K") return 0
   const n = parseInt(String(grade), 10)
-  return isNaN(n) ? 0 : n
+  return Number.isNaN(n) ? 0 : n
 }
 
 export function getIReadyRelative(label: string | undefined, studentGrade: Grade | undefined): number | null {
@@ -26,9 +31,9 @@ export function getIReadyRelative(label: string | undefined, studentGrade: Grade
   const studentGradeNum = gradeToNum(studentGrade)
 
   let base = labelGradeNum - studentGradeNum
-  const t = timing.toLowerCase()
-  if (t === "early") base -= 0.3
-  else if (t === "late") base += 0.3
+  const normalizedTiming = timing.toLowerCase()
+  if (normalizedTiming === "early") base -= 0.3
+  else if (normalizedTiming === "late") base += 0.3
 
   return base
 }
@@ -38,10 +43,14 @@ export function iReadyRelativeToScore(relative: number): number {
 }
 
 export function getStudentReadingScore(student: Student): number {
+  if (student.grade === "K" && student.briganceReadiness !== undefined) {
+    return getAssessmentBand(student.briganceReadiness)
+  }
+
   const parts: number[] = []
 
   if (student.mapReading !== undefined) {
-    parts.push(getMapBand(student.mapReading))
+    parts.push(getAssessmentBand(student.mapReading))
   }
 
   const rel = getIReadyRelative(student.ireadyReading, student.grade)
@@ -50,14 +59,18 @@ export function getStudentReadingScore(student: Student): number {
   }
 
   if (parts.length === 0) return 2.5
-  return parts.reduce((a, b) => a + b, 0) / parts.length
+  return parts.reduce((sum, part) => sum + part, 0) / parts.length
 }
 
 export function getStudentMathScore(student: Student): number {
+  if (student.grade === "K" && student.briganceReadiness !== undefined) {
+    return getAssessmentBand(student.briganceReadiness)
+  }
+
   const parts: number[] = []
 
   if (student.mapMath !== undefined) {
-    parts.push(getMapBand(student.mapMath))
+    parts.push(getAssessmentBand(student.mapMath))
   }
 
   const rel = getIReadyRelative(student.ireadyMath, student.grade)
@@ -66,7 +79,7 @@ export function getStudentMathScore(student: Student): number {
   }
 
   if (parts.length === 0) return 2.5
-  return parts.reduce((a, b) => a + b, 0) / parts.length
+  return parts.reduce((sum, part) => sum + part, 0) / parts.length
 }
 
 export function getStudentCoTeachLoadScore(student: Student): number {
@@ -96,47 +109,53 @@ function getStudentBehavioralNeed(student: Student): number {
 
 export function getRoomSupportLoad(classroom: Classroom): number {
   if (classroom.students.length === 0) return 0
-  const total = classroom.students.reduce((sum, s) => sum + getStudentSupportLoad(s), 0)
+  const total = classroom.students.reduce((sum, student) => sum + getStudentSupportLoad(student), 0)
   return total / classroom.students.length
 }
 
 export function getRoomReadingAvg(classroom: Classroom): number {
   if (classroom.students.length === 0) return 2.5
-  const total = classroom.students.reduce((sum, s) => sum + getStudentReadingScore(s), 0)
+  const total = classroom.students.reduce((sum, student) => sum + getStudentReadingScore(student), 0)
   return total / classroom.students.length
 }
 
 export function getRoomMathAvg(classroom: Classroom): number {
   if (classroom.students.length === 0) return 2.5
-  const total = classroom.students.reduce((sum, s) => sum + getStudentMathScore(s), 0)
+  const total = classroom.students.reduce((sum, student) => sum + getStudentMathScore(student), 0)
   return total / classroom.students.length
 }
 
 function getRoomCoTeachByCategory(classroom: Classroom): Record<CoTeachCategory, number> {
   return CO_TEACH_CATEGORIES.reduce((acc, category) => {
-    acc[category] = classroom.students.reduce((sum, s) => sum + (s.coTeachMinutes[category] ?? 0), 0)
+    acc[category] = classroom.students.reduce((sum, student) => sum + (student.coTeachMinutes[category] ?? 0), 0)
     return acc
   }, {} as Record<CoTeachCategory, number>)
 }
 
 export function computeRoomStats(classroom: Classroom): RoomStats {
   const coTeachMinutesByCategory = getRoomCoTeachByCategory(classroom)
-  const totalCoTeachMinutes = Object.values(coTeachMinutesByCategory).reduce((sum, val) => sum + val, 0)
+  const totalCoTeachMinutes = Object.values(coTeachMinutesByCategory).reduce((sum, value) => sum + value, 0)
+  const tagBreakdown = getClassroomTagSupportLoadBreakdown(classroom)
   return {
     id: classroom.id,
     size: classroom.students.length,
     supportLoad: getRoomSupportLoad(classroom),
     readingAvg: getRoomReadingAvg(classroom),
     mathAvg: getRoomMathAvg(classroom),
-    iepCount: classroom.students.filter((s) => s.specialEd.status === "IEP").length,
-    referralCount: classroom.students.filter((s) => s.specialEd.status === "Referral").length,
-    maleCount: classroom.students.filter((s) => s.gender === "M").length,
-    femaleCount: classroom.students.filter((s) => s.gender === "F").length,
-    ellCount: classroom.students.filter((s) => s.ell).length,
-    section504Count: classroom.students.filter((s) => s.section504).length,
+    iepCount: classroom.students.filter((student) => student.specialEd.status === "IEP").length,
+    referralCount: classroom.students.filter((student) => student.specialEd.status === "Referral").length,
+    maleCount: classroom.students.filter((student) => student.gender === "M").length,
+    femaleCount: classroom.students.filter((student) => student.gender === "F").length,
+    ellCount: classroom.students.filter((student) => student.ell).length,
+    section504Count: classroom.students.filter((student) => student.section504).length,
     totalCoTeachMinutes,
     avgCoTeachMinutes: classroom.students.length ? totalCoTeachMinutes / classroom.students.length : 0,
     coTeachMinutesByCategory,
+    tagSupportLoad: tagBreakdown.total,
+    behavioralTagSupportLoad: tagBreakdown.behavioral,
+    emotionalTagSupportLoad: tagBreakdown.emotional,
+    instructionalTagSupportLoad: tagBreakdown.instructional,
+    energyTagSupportLoad: tagBreakdown.energy,
   }
 }
 
@@ -144,6 +163,7 @@ export interface ScoreWeights {
   academic: number
   behavioral: number
   demographic: number
+  tagSupportLoad: number
 }
 
 function ratio(count: number, size: number): number {
@@ -173,12 +193,14 @@ export interface PlacementSoftContext {
 
 const SAME_ROOM_SUGGESTION_BONUS = 1.75
 const SPLIT_ROOM_SUGGESTION_PENALTY = 1.25
+const TAG_CATEGORY_PENALTY_MULTIPLIERS = {
+  behavioral: 0.65,
+  emotional: 0.55,
+  instructional: 0.4,
+  energy: 0.5,
+} as const
 
-function getPreferredTogetherAdjustment(
-  student: Student,
-  classroomId: string,
-  context: PlacementSoftContext
-): number {
+function getPreferredTogetherAdjustment(student: Student, classroomId: string, context: PlacementSoftContext): number {
   const assignedRoomByStudentId = context.assignedRoomByStudentId
   const preferredPeerIds = student.preferredWith ?? []
   if (!assignedRoomByStudentId || preferredPeerIds.length === 0) return 0
@@ -199,16 +221,16 @@ function getPreferredTogetherAdjustment(
 }
 
 function getDoNotSeparateAdjustment(student: Student, classroomId: string, context: PlacementSoftContext): number {
-  const assigned = context.assignedRoomByStudentId
+  const assignedRoomByStudentId = context.assignedRoomByStudentId
   const rules = context.relationshipRules ?? []
-  if (!assigned) return 0
+  if (!assignedRoomByStudentId) return 0
 
   let adjustment = 0
   for (const rule of rules) {
     if (rule.type !== "DO_NOT_SEPARATE" || rule.grade !== student.grade) continue
     if (!rule.studentIds.includes(student.id)) continue
     const peerId = rule.studentIds[0] === student.id ? rule.studentIds[1] : rule.studentIds[0]
-    const peerRoom = assigned.get(peerId)
+    const peerRoom = assignedRoomByStudentId.get(peerId)
     if (!peerRoom) continue
     adjustment += peerRoom === classroomId ? -2.25 : 1.5
   }
@@ -250,6 +272,46 @@ function getSettingsPenalty(student: Student, stats: RoomStats, context: Placeme
   return penalty
 }
 
+function getAverageProjectedCategory(
+  projectedBreakdowns: TagSupportLoadBreakdown[],
+  key: keyof Pick<TagSupportLoadBreakdown, "behavioral" | "emotional" | "instructional" | "energy">
+): number {
+  return projectedBreakdowns.reduce((sum, breakdown) => sum + breakdown[key], 0) / projectedBreakdowns.length
+}
+
+export function getTagSupportLoadPenalty(student: Student, classroom: Classroom, gradeRooms: Classroom[]): number {
+  if (gradeRooms.length === 0) return 0
+
+  const projectedBreakdowns = gradeRooms.map((room) =>
+    room.id === classroom.id ? getProjectedClassroomTagSupportLoadBreakdown(room, student) : getClassroomTagSupportLoadBreakdown(room)
+  )
+  const targetBreakdown = projectedBreakdowns[gradeRooms.findIndex((room) => room.id === classroom.id)]
+  if (!targetBreakdown) return 0
+
+  const projectedAverageTotal = projectedBreakdowns.reduce((sum, breakdown) => sum + breakdown.total, 0) / projectedBreakdowns.length
+  let penalty = Math.max(0, targetBreakdown.total - projectedAverageTotal)
+
+  const averageBehavioral = getAverageProjectedCategory(projectedBreakdowns, "behavioral")
+  const averageEmotional = getAverageProjectedCategory(projectedBreakdowns, "emotional")
+  const averageInstructional = getAverageProjectedCategory(projectedBreakdowns, "instructional")
+  const averageEnergy = getAverageProjectedCategory(projectedBreakdowns, "energy")
+
+  penalty += Math.max(0, targetBreakdown.behavioral - averageBehavioral) * TAG_CATEGORY_PENALTY_MULTIPLIERS.behavioral
+  penalty += Math.max(0, targetBreakdown.emotional - averageEmotional) * TAG_CATEGORY_PENALTY_MULTIPLIERS.emotional
+  penalty += Math.max(0, targetBreakdown.instructional - averageInstructional) * TAG_CATEGORY_PENALTY_MULTIPLIERS.instructional
+  penalty += Math.max(0, targetBreakdown.energy - averageEnergy) * TAG_CATEGORY_PENALTY_MULTIPLIERS.energy
+
+  const highestOtherTotal = Math.max(
+    0,
+    ...projectedBreakdowns.filter((_, index) => gradeRooms[index].id !== classroom.id).map((breakdown) => breakdown.total)
+  )
+  if (targetBreakdown.total > highestOtherTotal && targetBreakdown.total - projectedAverageTotal >= 3) {
+    penalty += 1.5
+  }
+
+  return penalty
+}
+
 export function scoreStudentForRoom(
   student: Student,
   classroom: Classroom,
@@ -261,18 +323,21 @@ export function scoreStudentForRoom(
 
   const roomAcademicAvg =
     classroom.students.length > 0
-      ? classroom.students.reduce((sum, s) => sum + getStudentAcademicNeed(s), 0) / classroom.students.length
+      ? classroom.students.reduce((sum, roomStudent) => sum + getStudentAcademicNeed(roomStudent), 0) / classroom.students.length
       : 0
   const academicPenalty = Math.abs(roomAcademicAvg - getStudentAcademicNeed(student)) * (weights.academic / 100) * 4
   const roomBehaviorAvg =
     classroom.students.length > 0
-      ? classroom.students.reduce((sum, s) => sum + getStudentBehavioralNeed(s), 0) / classroom.students.length
+      ? classroom.students.reduce((sum, roomStudent) => sum + getStudentBehavioralNeed(roomStudent), 0) / classroom.students.length
       : 0
   const behavioralPenalty = Math.abs(getStudentBehavioralNeed(student) - roomBehaviorAvg) * (weights.behavioral / 100) * 4
   const demographicPenalty = getDemographicPenalty(student, stats) * (weights.demographic / 100) * 3
   const preferredTogetherAdjustment = getPreferredTogetherAdjustment(student, classroom.id, context)
   const doNotSeparateAdjustment = getDoNotSeparateAdjustment(student, classroom.id, context)
   const settingsPenalty = getSettingsPenalty(student, stats, context) * (weights.demographic / 100)
+  const tagSupportLoadPenalty = context.gradeRooms
+    ? getTagSupportLoadPenalty(student, classroom, context.gradeRooms) * (weights.tagSupportLoad / 100)
+    : 0
 
   return (
     loadScore +
@@ -281,6 +346,7 @@ export function scoreStudentForRoom(
     demographicPenalty +
     preferredTogetherAdjustment +
     doNotSeparateAdjustment +
-    settingsPenalty
+    settingsPenalty +
+    tagSupportLoadPenalty
   )
 }

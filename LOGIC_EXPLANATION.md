@@ -1,24 +1,46 @@
 # Classroom Placement Engine: Logic Definition
 
-This document describes the current placement and UI behavior implemented in the app.
+This document reflects the current app behavior, including separate teacher import, kindergarten Brigance scoring, and the additive tag-based Classroom Support Load Index.
 
-## 1. Data model
+## 1. State model
 
 ### Student
 
-Each student includes:
+Each student record includes:
 
-- Identity and grade: `id`, `firstName`, `lastName`, `grade`
-- Demographics/context: `gender`, `ell`, `section504`, `raceEthnicity`
+- Identity: `id`, `firstName`, `lastName`, `grade`
+- Demographics/context: `gender`, `ell`, `section504`, `raceEthnicity`, `teacherNotes`
 - Support profile:
   - `specialEd.status` (`None`, `IEP`, `Referral`)
-  - `intervention.academicTier` (1-3)
-  - `behaviorTier` (1-3)
+  - `intervention.academicTier` (`1-3`)
+  - `behaviorTier` (`1-3`)
   - `referrals`
   - `coTeachMinutes` by category
-- Assessment inputs: `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
+  - `tags`
+- Assessment inputs:
+  - `briganceReadiness`
+  - `mapReading`
+  - `mapMath`
+  - `ireadyReading`
+  - `ireadyMath`
 - Relationship inputs: `noContactWith`, `preferredWith`
-- Placement controls: `locked`, `preassignedTeacher`
+- Placement control: `locked`
+
+### Teacher profile
+
+Each teacher profile includes:
+
+- `grade`
+- `teacherName`
+- eight `1-5` characteristic ratings:
+  - `classroomStructure`
+  - `behaviorManagementStrength`
+  - `emotionalSupportNurturing`
+  - `academicEnrichmentStrength`
+  - `independenceScaffolding`
+  - `movementFlexibility`
+  - `peerSocialCoaching`
+  - `confidenceBuilding`
 
 ### Classroom
 
@@ -26,168 +48,409 @@ Each room includes:
 
 - `id`, `grade`, `label`, `teacherName`
 - `maxSize`
-- `coTeachCoverage` (supported co-teach categories)
+- `coTeachCoverage`
 - `students`
 
-### Grade settings
+### App state
 
-Per grade, settings are:
+Top-level state stores:
 
-- `maxIEPPerRoom` (hard)
-- `maxReferralsPerRoom` (hard)
-- `ellConcentrationSoftCap` (soft)
-- `genderBalanceTolerance` (soft)
-- `classSizeVarianceLimit` (soft)
+- `allStudents`
+- `teacherProfiles`
+- `classrooms`
+- `activeGrade`
+- `showTeacherNames`
+- `weights`
+- `snapshots`
+- `relationshipRules`
+- `gradeSettings`
+- `unresolvedReasons`
+- `placementWarnings`
 
-## 2. Import and normalization
+Derived tag-load values are recomputed from `student.tags`; they are not persisted separately.
 
-CSV import runs in two stages: preview/mapping, then parse with mapping.
+## 2. Defaults
 
-### Parsing behavior
+On a clean load, the app creates:
 
-- Required mapped fields: `id`, `grade`, `firstName`, `lastName`.
-- Invalid IDs skip rows.
-- Grade parser supports `K`, `0`, `KG`, `Kind...`, `01-05`, ordinal strings (for 1-5).
-- Tier parsing defaults to `1` unless explicit `2/3` (or yes/y => 2).
-- Co-teach minutes are numeric, clamped to `0..999`.
-- Legacy boolean co-teach flags can be converted to 30-minute defaults.
-- `noContactWith` and `preferredWith` parse from `, ; |` separated ID tokens.
+- grades `K` through `5`
+- four classrooms per grade
+- default room size `28`
+- default room labels `A`, `B`, `C`, `D`
+- default co-teach coverage of `reading` for the first room in each grade, and none for the others
 
-### Relationship normalization at import
+Default grade settings per grade:
 
-- Unknown IDs in relationship lists generate warnings.
-- Self references are removed.
-- `preferredWith` is restricted to same-grade peers only.
-- Duplicates are removed.
+- `maxIEPPerRoom = 6`
+- `maxReferralsPerRoom = 6`
+- `ellConcentrationSoftCap = 0.35`
+- `genderBalanceTolerance = 2`
+- `classSizeVarianceLimit = 3`
 
-### Pre-assignment on load
+Default weights:
 
-When students are loaded into app state:
+- `academic = 50`
+- `behavioral = 50`
+- `demographic = 50`
+- `tagSupportLoad = 50`
 
-- Unique `(grade, preassignedTeacher)` combinations are mapped to rooms.
-- Existing matching teacher rooms are reused.
-- Empty rooms are reused first; new rooms are added if needed.
-- Preassigned students are inserted into those rooms (up to room capacity) and marked locked.
+## 3. Import flow
 
-## 3. Placement execution flow
+The app has two separate CSV imports:
 
-Auto-place runs for the active grade only.
+1. student import
+2. teacher import
 
-1. Clone classrooms.
-2. In active-grade rooms, keep only locked students.
-3. Build unplaced list from active-grade students not already locked in a room.
-4. Sort by priority:
-   - has co-teach need first
-   - higher total co-teach minutes first
-   - IEP before Referral before None
-   - higher support load first
-5. For each student, evaluate each active-grade room:
-   - run hard constraints first
-   - if valid, compute soft score
-   - choose room with lowest score
-6. If no valid room exists, mark student unresolved and capture reasons.
-7. Return updated classrooms, unresolved reason map, and warnings.
+Both use upload, header mapping, and import confirmation.
 
-## 4. Hard constraints (blocking)
+### Student import
 
-A candidate room is rejected if any condition fails:
+Required mapped columns:
 
-- Room is already at or above `maxSize`.
-- Student requires co-teach categories not covered by room `coTeachCoverage`.
-- Student with `IEP` would exceed `maxIEPPerRoom`.
-- Student with `Referral` status or `referrals > 0` would exceed `maxReferralsPerRoom`.
-- No-contact conflict exists via:
-  - student CSV `noContactWith` list (either direction), or
-  - grade-level `NO_CONTACT` relationship rule.
+- `id`
+- `grade`
+- `firstName`
+- `lastName`
 
-## 5. Soft scoring (minimize)
+Key parsing behavior:
 
-For each valid room, final score is:
+- IDs must be unique positive integers.
+- Invalid or duplicate IDs are skipped.
+- Grades accept `K`, `0`, `KG`, kindergarten-like strings, numeric grades, and ordinal strings like `1st`.
+- Gender defaults to `M` unless the mapped value is exactly `F`.
+- Academic and behavior tiers default to `1`.
+- Co-teach minutes are parsed per category and clamped.
+- Legacy `requiresCoTeachReading` and `requiresCoTeachMath` still convert to 30 minutes.
+- `ell` accepts `el`, `ell`, `true`, `1`, `yes`, or `y`.
+- `section504` accepts standard truthy boolean strings.
+- `studentTags` accepts semicolon, comma, or pipe separators inside the field and normalizes to the supported exact labels.
+- Unknown tags are warned and ignored.
 
-`load + academicPenalty + behavioralPenalty + demographicPenalty + preferredAdjustment + doNotSeparateAdjustment + settingsPenalty`
+Relationship normalization:
 
-### Components
+- `noContactWith` and `preferredWith` accept `,`, `;`, or `|`
+- unknown IDs generate warnings
+- self-references are removed
+- `preferredWith` is limited to same-grade peers and deduplicated
 
-- `load`: `(roomSize / maxSize) * 10`
-- `academicPenalty`: mismatch between student academic need and room average, scaled by academic weight
-- `behavioralPenalty`: mismatch between student behavioral need and room average, scaled by behavioral weight
-- `demographicPenalty`: concentration pressure for gender/ELL/504/IEP/Referral, scaled by demographic weight
-- `preferredAdjustment`:
-  - peer already in same room: bonus (`-1.75`)
-  - peer assigned to different room: penalty (`+1.25`)
-- `doNotSeparateAdjustment`:
-  - paired peer in same room: bonus (`-2.25`)
-  - paired peer in different room: penalty (`+1.5`)
-- `settingsPenalty` (scaled by demographic weight):
-  - ELL ratio over soft cap
-  - gender delta over tolerance
-  - class-size variance over limit
+Student load behavior:
 
-## 6. Academic and support derivations
+- classrooms are rebuilt from the default grade structure
+- imported teacher profiles are re-applied if teacher data already exists
+- imported students start unlocked
+- snapshots, relationship rules, unresolved reasons, and placement warnings are cleared
+
+### Teacher import
+
+Required mapped columns:
+
+- `grade`
+- `teacherName`
+- all eight characteristic ratings
+
+Teacher parsing behavior:
+
+- duplicate teacher names within the same grade are skipped
+- invalid or missing ratings default to `3` with warnings
+- ratings are clamped to `1..5`
+
+Teacher load behavior:
+
+- teacher rows are assigned to classrooms in CSV order within each grade
+- if a grade imports more teachers than existing rooms, rooms are added
+- imported teacher names overwrite room teacher names for grades present in the import
+- students remain where they are when teacher data is loaded later
+- placement warnings and unresolved reasons are cleared because teacher-fit outcomes may change
+
+## 4. Persistence
+
+State is persisted to `classroom-placement-state-v3` with fallback reads from older keys.
+
+Persisted-state normalization still handles:
+
+- relationship ID lists
+- legacy student co-teach flags
+- legacy classroom co-teach toggles
+- missing classroom labels
+- missing grade settings
+- missing teacher profile rating normalization
+- missing `tagSupportLoad` weight by merging with current defaults
+
+## 5. Placement execution order
+
+Auto-placement runs for the active grade only.
+
+For each student candidate:
+
+1. reject rooms that fail hard constraints
+2. compare teacher-fit penalty across surviving rooms
+3. if teacher-fit ties, compare the weighted soft score
+4. place into the lowest-ranked room
+5. leave the student unassigned if no room survives hard constraints
+
+The teacher-fit comparison order is unchanged.
+
+### Student priority sort
+
+Students are sorted by:
+
+1. any co-teach need before none
+2. higher total co-teach minutes first
+3. `IEP` before `Referral` before `None`
+4. higher existing support load first
+
+## 6. Hard constraints
+
+A room is rejected when any of these checks fail:
+
+- room size is already at or above `maxSize`
+- room lacks required co-teach coverage for the student
+- placing an `IEP` student would exceed `maxIEPPerRoom`
+- placing a `Referral` student, or a student with `referrals > 0`, would exceed `maxReferralsPerRoom`
+- a no-contact conflict exists through:
+  - the student’s `noContactWith`
+  - another student’s `noContactWith`
+  - a grade `NO_CONTACT` relationship rule
+
+Hard-constraint messages are reused in unresolved placement warnings and manual-move warnings.
+
+## 7. Teacher fit
+
+Teacher fit is evaluated after hard constraints and before the weighted score.
+
+Teacher-fit inputs:
+
+- student tags
+- matching teacher profile for the room’s `grade + teacherName`
+
+If no teacher profiles are loaded, teacher fit is neutral.
+
+If teacher profiles exist but a room’s teacher name does not match an imported profile, the engine applies a neutral-but-not-best fallback penalty so rooms with imported matching profiles are preferred.
+
+### Tag-to-teacher alignment
+
+- `Needs strong routine` -> `classroomStructure`, `behaviorManagementStrength`
+- `Needs frequent redirection` -> `behaviorManagementStrength`, `classroomStructure`
+- `Easily frustrated` -> `emotionalSupportNurturing`, `confidenceBuilding`
+- `Needs reassurance` -> `emotionalSupportNurturing`, `confidenceBuilding`
+- `Sensitive to correction` -> `emotionalSupportNurturing`, `confidenceBuilding`
+- `Easily influenced by peers` -> `peerSocialCoaching`, `classroomStructure`
+- `Needs positive peer models` -> `peerSocialCoaching`, `classroomStructure`
+- `High energy` -> `movementFlexibility`, `behaviorManagementStrength`
+- `Needs movement breaks` -> `movementFlexibility`
+- `Needs enrichment` -> `academicEnrichmentStrength`
+- `Independent worker` -> `independenceScaffolding`
+- `Low academic confidence` -> `confidenceBuilding`, `emotionalSupportNurturing`
+
+### Poor-fit marking
+
+A placement is marked poor-fit when the teacher-fit penalty crosses the current poor-fit threshold.
+
+Poor fits are surfaced by:
+
+- purple student name text
+- a `Poor Fit` badge on the student card
+- tooltip teacher-fit status
+- room/grade poor-fit counts
+- placement warning count after auto-place
+
+## 8. Existing support load
+
+The original support-load model remains:
+
+`academicTier + behaviorTier + statusBonus + referrals + coTeachLoad`
+
+Where:
+
+- `statusBonus = 2` for `IEP`
+- `statusBonus = 1` for `Referral`
+- `statusBonus = 0` for `None`
+- `coTeachLoad = totalCoTeachMinutes / 60`, clamped to `0..2`
+
+This existing support load is still used for student sort priority and existing room summaries.
+
+## 9. Tag-based Classroom Support Load Index
+
+The new tag-based model is additive and derived only from `student.tags`.
+
+### Per-tag weights
+
+- `Needs strong routine = 2`
+- `Needs frequent redirection = 4`
+- `Easily frustrated = 3`
+- `Needs reassurance = 2`
+- `Sensitive to correction = 2`
+- `Easily influenced by peers = 2`
+- `Needs positive peer models = 1`
+- `High energy = 2`
+- `Needs movement breaks = 2`
+- `Needs enrichment = 1`
+- `Independent worker = -1`
+- `Low academic confidence = 2`
+
+### Per-student derived value
+
+- `studentTagSupportLoad`
+
+### Per-room derived values
+
+- `classroomTagSupportLoad`
+- `behavioralTagSupportLoad`
+- `emotionalTagSupportLoad`
+- `instructionalTagSupportLoad`
+- `energyTagSupportLoad`
+
+### Category grouping
+
+Behavioral:
+
+- `Needs frequent redirection`
+- `Easily influenced by peers`
+
+Emotional:
+
+- `Easily frustrated`
+- `Needs reassurance`
+- `Sensitive to correction`
+- `Low academic confidence`
+
+Instructional:
+
+- `Needs strong routine`
+- `Needs positive peer models`
+- `Needs enrichment`
+- `Independent worker`
+
+Energy:
+
+- `High energy`
+- `Needs movement breaks`
+
+## 10. Weighted soft balancing
+
+If rooms tie on teacher-fit penalty, the engine falls through to the weighted room score.
+
+Current formula:
+
+`loadScore + academicPenalty + behavioralPenalty + demographicPenalty + preferredTogetherAdjustment + doNotSeparateAdjustment + settingsPenalty + tagSupportLoadPenalty`
+
+Existing components are unchanged.
+
+### New additive term: `tagSupportLoadPenalty`
+
+`tagSupportLoadPenalty` evaluates the projected room after placing the candidate student.
+
+It adds pressure when the projected room:
+
+- rises farther above the grade-level average total tag load
+- becomes behaviorally, emotionally, instructionally, or energy-heavy relative to the grade average
+- becomes the highest total tag-load room by a meaningful margin
+
+This term is weighted by the new `tagSupportLoad` slider and is only used inside the post-teacher-fit soft score.
+
+## 11. Reading, math, and Brigance derivations
 
 ### MAP band conversion
 
-- `<25 => 1`, `<50 => 2`, `<75 => 3`, otherwise `4`
-- missing => neutral `2.5`
+The engine converts numeric assessment values into four bands:
 
-### i-Ready relative conversion
+- missing -> `2.5`
+- `< 25 -> 1`
+- `< 50 -> 2`
+- `< 75 -> 3`
+- otherwise `4`
 
-- Parse labels like `Early|Mid|Late K|1|2|3|4|5`
-- Convert to relative offset from student grade
-- Apply timing offsets: `Early -0.3`, `Late +0.3`
-- Convert with `relative + 2.5`, clamped to `1..4`
+### i-Ready conversion
 
-### Student reading/math score
+Supported labels match `Early|Mid|Late` plus `K|1|2|3|4|5`.
 
-- Average of available MAP band and i-Ready converted score
-- If no inputs, defaults to `2.5`
+The engine:
 
-### Student support load
+1. converts the label grade to a numeric level
+2. subtracts the student’s grade level
+3. applies timing offset (`Early -0.3`, `Mid 0`, `Late +0.3`)
+4. converts to a `1..4` score with `relative + 2.5`
 
-`academicTier + behaviorTier + specialEdBonus + referrals + coTeachLoad`
+### Kindergarten Brigance rule
 
-- `specialEdBonus`: IEP `+2`, Referral `+1`
-- `coTeachLoad`: total co-teach minutes / 60, clamped `0..2`
+For grade `K` only:
 
-## 7. Warnings and unresolved handling
+- `briganceReadiness` is used for both reading and math balancing
+- MAP and i-Ready are ignored for placement scoring
 
-Warnings include:
+For grades `1-5`:
 
-- Missing grade-level co-teach coverage for needed categories.
-- Count of unresolved students.
-- Grouped unresolved reasons by category (capacity, coverage, no-contact, IEP cap, referral cap, other).
+- reading score uses MAP reading and i-Ready reading
+- math score uses MAP math and i-Ready math
 
-Unresolved reasons are stored per student and shown in the unassigned panel.
+## 12. Warnings and unresolved students
 
-## 8. Manual placement behavior
+Placement warnings include:
 
-Drag-and-drop supports:
+- missing grade-level co-teach coverage
+- unresolved student count
+- grouped unresolved hard-constraint reasons
+- poor teacher-fit count when applicable
 
-- Unassigned -> room
-- Room -> room
-- Room -> unassigned
+Top-level workspace warning chips include:
 
-Before dropping into a room, manual move warnings are computed with the same constraint checks. Users can proceed anyway after confirmation.
+- gender imbalance beyond tolerance
+- reading spread across rooms
+- math spread across rooms
+- original support-load imbalance
+- total tag-support-load imbalance
+- largest tag-load category imbalance when it becomes meaningful
 
-## 9. Snapshots and settings
+For kindergarten, the reading chip uses Brigance wording.
 
-Snapshots are grade-specific and include:
+## 13. Manual placement behavior
 
-- Grade classrooms
-- Grade settings at save time
-- Name, optional note, created timestamp
+Drag-and-drop still supports:
 
-Restore replaces only that grade's classrooms/settings and switches active grade to the snapshot grade.
+- unassigned -> room
+- room -> room
+- room -> unassigned
 
-## 10. Persistence and migration
+Before a manual move into a room, the app still warns about hard constraints.
 
-State is persisted to `localStorage` key `classroom-placement-state-v2` (with fallback read from `-v1`).
+Additional non-blocking warnings now surface when a move would:
 
-Migration/normalization includes:
+- create the highest total tag-load room in the grade
+- create the highest behavioral tag-load room in the grade
+- significantly increase emotional, instructional, or energy imbalance
 
-- Legacy co-teach booleans -> minute/category representation
-- Student relationship list normalization
-- Classroom co-teach coverage normalization
-- Default grade settings backfill
+Users can still override the warning and proceed.
 
-Migration warnings are appended to placement warnings so users can review converted data.
+## 14. UI surfaces
+
+The UI now surfaces tag-load explainability in existing placement views:
+
+- student cards show per-student tag load badges when tags are present
+- student tooltips show contributing tags, room total tag load, grade average, and the student’s room impact
+- classroom columns show total and category tag-load quick stats
+- summary cards show total and category tag-load metrics and highlight rooms materially above grade average
+- top-level warning chips summarize total and worst-category tag-load imbalance
+
+## 15. Snapshots and export
+
+Snapshots remain grade-specific and store:
+
+- grade classrooms only
+- grade settings only
+- snapshot metadata
+
+Teacher profiles are still not versioned separately in snapshots.
+
+Exports remain reporting-oriented.
+
+They still include student reporting fields plus `assignedTeacher`.
+Derived tag-load values are not currently exported as additional columns.
+
+## 16. Lightweight tests
+
+The repo includes lightweight logic tests for:
+
+- student tag-load derivation
+- room total/category tag-load derivation
+- projected tag-load penalty behavior
+- backward-compatible `studentTags` parsing
