@@ -1,4 +1,5 @@
 import { Classroom, CoTeachCategory, Grade, GradeSettings, RelationshipRule, RoomStats, Student } from "../types"
+import { getDefaultGradeSettings } from "./classroomInit"
 import { CO_TEACH_CATEGORIES, getStudentCoTeachTotal } from "./coTeach"
 import {
   getClassroomTagSupportLoadBreakdown,
@@ -191,29 +192,25 @@ export interface PlacementSoftContext {
   gradeRooms?: Classroom[]
 }
 
-const SAME_ROOM_SUGGESTION_BONUS = 1.75
-const SPLIT_ROOM_SUGGESTION_PENALTY = 1.25
-const TAG_CATEGORY_PENALTY_MULTIPLIERS = {
-  behavioral: 0.65,
-  emotional: 0.55,
-  instructional: 0.4,
-  energy: 0.5,
-} as const
+function getPlacementSettings(settings: GradeSettings | undefined): GradeSettings {
+  return settings ?? getDefaultGradeSettings()
+}
 
 function getPreferredTogetherAdjustment(student: Student, classroomId: string, context: PlacementSoftContext): number {
   const assignedRoomByStudentId = context.assignedRoomByStudentId
   const preferredPeerIds = student.preferredWith ?? []
   if (!assignedRoomByStudentId || preferredPeerIds.length === 0) return 0
 
+  const settings = getPlacementSettings(context.gradeSettings)
   let adjustment = 0
   for (const peerId of preferredPeerIds) {
     const assignedRoomId = assignedRoomByStudentId.get(peerId)
     if (!assignedRoomId) continue
 
     if (assignedRoomId === classroomId) {
-      adjustment -= SAME_ROOM_SUGGESTION_BONUS
+      adjustment -= settings.preferredPeerBonus
     } else {
-      adjustment += SPLIT_ROOM_SUGGESTION_PENALTY
+      adjustment += settings.preferredPeerSplitPenalty
     }
   }
 
@@ -225,6 +222,7 @@ function getDoNotSeparateAdjustment(student: Student, classroomId: string, conte
   const rules = context.relationshipRules ?? []
   if (!assignedRoomByStudentId) return 0
 
+  const settings = getPlacementSettings(context.gradeSettings)
   let adjustment = 0
   for (const rule of rules) {
     if (rule.type !== "DO_NOT_SEPARATE" || rule.grade !== student.grade) continue
@@ -232,27 +230,25 @@ function getDoNotSeparateAdjustment(student: Student, classroomId: string, conte
     const peerId = rule.studentIds[0] === student.id ? rule.studentIds[1] : rule.studentIds[0]
     const peerRoom = assignedRoomByStudentId.get(peerId)
     if (!peerRoom) continue
-    adjustment += peerRoom === classroomId ? -2.25 : 1.5
+    adjustment += peerRoom === classroomId ? -settings.keepTogetherBonus : settings.keepTogetherSplitPenalty
   }
   return adjustment
 }
 
-function getSettingsPenalty(student: Student, stats: RoomStats, context: PlacementSoftContext): number {
-  const settings = context.gradeSettings
-  const gradeRooms = context.gradeRooms
-  if (!settings || !gradeRooms) return 0
+function getSettingsPenalty(student: Student, stats: RoomStats, settings: GradeSettings, gradeRooms: Classroom[] | undefined): number {
+  if (!gradeRooms) return 0
 
   let penalty = 0
   const newSize = stats.size + 1
   const nextEllRatio = student.ell ? (stats.ellCount + 1) / newSize : stats.ellCount / newSize
   if (nextEllRatio > settings.ellConcentrationSoftCap) {
-    penalty += (nextEllRatio - settings.ellConcentrationSoftCap) * 10
+    penalty += (nextEllRatio - settings.ellConcentrationSoftCap) * settings.ellOverCapPenaltyWeight
   }
 
   const nextMale = stats.maleCount + (student.gender === "M" ? 1 : 0)
   const nextFemale = stats.femaleCount + (student.gender === "F" ? 1 : 0)
   if (Math.abs(nextMale - nextFemale) > settings.genderBalanceTolerance) {
-    penalty += 2
+    penalty += settings.genderImbalancePenaltyWeight
   }
 
   const sizes = gradeRooms.map((room) => room.students.length)
@@ -266,7 +262,7 @@ function getSettingsPenalty(student: Student, stats: RoomStats, context: Placeme
       : currentMin
   const variance = simulatedMax - simulatedMin
   if (variance > settings.classSizeVarianceLimit) {
-    penalty += variance - settings.classSizeVarianceLimit
+    penalty += (variance - settings.classSizeVarianceLimit) * settings.classSizeVariancePenaltyWeight
   }
 
   return penalty
@@ -279,9 +275,15 @@ function getAverageProjectedCategory(
   return projectedBreakdowns.reduce((sum, breakdown) => sum + breakdown[key], 0) / projectedBreakdowns.length
 }
 
-export function getTagSupportLoadPenalty(student: Student, classroom: Classroom, gradeRooms: Classroom[]): number {
+export function getTagSupportLoadPenalty(
+  student: Student,
+  classroom: Classroom,
+  gradeRooms: Classroom[],
+  gradeSettings?: GradeSettings
+): number {
   if (gradeRooms.length === 0) return 0
 
+  const settings = getPlacementSettings(gradeSettings)
   const projectedBreakdowns = gradeRooms.map((room) =>
     room.id === classroom.id ? getProjectedClassroomTagSupportLoadBreakdown(room, student) : getClassroomTagSupportLoadBreakdown(room)
   )
@@ -289,24 +291,24 @@ export function getTagSupportLoadPenalty(student: Student, classroom: Classroom,
   if (!targetBreakdown) return 0
 
   const projectedAverageTotal = projectedBreakdowns.reduce((sum, breakdown) => sum + breakdown.total, 0) / projectedBreakdowns.length
-  let penalty = Math.max(0, targetBreakdown.total - projectedAverageTotal)
+  let penalty = Math.max(0, targetBreakdown.total - projectedAverageTotal) * settings.tagTotalBalancePenaltyWeight
 
   const averageBehavioral = getAverageProjectedCategory(projectedBreakdowns, "behavioral")
   const averageEmotional = getAverageProjectedCategory(projectedBreakdowns, "emotional")
   const averageInstructional = getAverageProjectedCategory(projectedBreakdowns, "instructional")
   const averageEnergy = getAverageProjectedCategory(projectedBreakdowns, "energy")
 
-  penalty += Math.max(0, targetBreakdown.behavioral - averageBehavioral) * TAG_CATEGORY_PENALTY_MULTIPLIERS.behavioral
-  penalty += Math.max(0, targetBreakdown.emotional - averageEmotional) * TAG_CATEGORY_PENALTY_MULTIPLIERS.emotional
-  penalty += Math.max(0, targetBreakdown.instructional - averageInstructional) * TAG_CATEGORY_PENALTY_MULTIPLIERS.instructional
-  penalty += Math.max(0, targetBreakdown.energy - averageEnergy) * TAG_CATEGORY_PENALTY_MULTIPLIERS.energy
+  penalty += Math.max(0, targetBreakdown.behavioral - averageBehavioral) * settings.tagBehavioralPenaltyWeight
+  penalty += Math.max(0, targetBreakdown.emotional - averageEmotional) * settings.tagEmotionalPenaltyWeight
+  penalty += Math.max(0, targetBreakdown.instructional - averageInstructional) * settings.tagInstructionalPenaltyWeight
+  penalty += Math.max(0, targetBreakdown.energy - averageEnergy) * settings.tagEnergyPenaltyWeight
 
   const highestOtherTotal = Math.max(
     0,
     ...projectedBreakdowns.filter((_, index) => gradeRooms[index].id !== classroom.id).map((breakdown) => breakdown.total)
   )
-  if (targetBreakdown.total > highestOtherTotal && targetBreakdown.total - projectedAverageTotal >= 3) {
-    penalty += 1.5
+  if (targetBreakdown.total > highestOtherTotal && targetBreakdown.total - projectedAverageTotal >= settings.tagHotspotThreshold) {
+    penalty += settings.tagHotspotPenaltyWeight
   }
 
   return penalty
@@ -319,24 +321,27 @@ export function scoreStudentForRoom(
   weights: ScoreWeights,
   context: PlacementSoftContext = {}
 ): number {
-  const loadScore = (stats.size / classroom.maxSize) * 10
+  const settings = getPlacementSettings(context.gradeSettings)
+  const loadScore = (stats.size / classroom.maxSize) * settings.roomFillPenaltyWeight
 
   const roomAcademicAvg =
     classroom.students.length > 0
       ? classroom.students.reduce((sum, roomStudent) => sum + getStudentAcademicNeed(roomStudent), 0) / classroom.students.length
       : 0
-  const academicPenalty = Math.abs(roomAcademicAvg - getStudentAcademicNeed(student)) * (weights.academic / 100) * 4
+  const academicPenalty =
+    Math.abs(roomAcademicAvg - getStudentAcademicNeed(student)) * (weights.academic / 100) * settings.academicBalancePenaltyWeight
   const roomBehaviorAvg =
     classroom.students.length > 0
       ? classroom.students.reduce((sum, roomStudent) => sum + getStudentBehavioralNeed(roomStudent), 0) / classroom.students.length
       : 0
-  const behavioralPenalty = Math.abs(getStudentBehavioralNeed(student) - roomBehaviorAvg) * (weights.behavioral / 100) * 4
-  const demographicPenalty = getDemographicPenalty(student, stats) * (weights.demographic / 100) * 3
+  const behavioralPenalty =
+    Math.abs(getStudentBehavioralNeed(student) - roomBehaviorAvg) * (weights.behavioral / 100) * settings.behavioralBalancePenaltyWeight
+  const demographicPenalty = getDemographicPenalty(student, stats) * (weights.demographic / 100) * settings.demographicBalancePenaltyWeight
   const preferredTogetherAdjustment = getPreferredTogetherAdjustment(student, classroom.id, context)
   const doNotSeparateAdjustment = getDoNotSeparateAdjustment(student, classroom.id, context)
-  const settingsPenalty = getSettingsPenalty(student, stats, context) * (weights.demographic / 100)
+  const settingsPenalty = getSettingsPenalty(student, stats, settings, context.gradeRooms) * (weights.demographic / 100)
   const tagSupportLoadPenalty = context.gradeRooms
-    ? getTagSupportLoadPenalty(student, classroom, context.gradeRooms) * (weights.tagSupportLoad / 100)
+    ? getTagSupportLoadPenalty(student, classroom, context.gradeRooms, settings) * (weights.tagSupportLoad / 100)
     : 0
 
   return (

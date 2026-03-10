@@ -6,6 +6,7 @@ const {
   getClassroomTagSupportLoadBreakdown,
 } = require("./.compiled/src/utils/tagSupportLoad.js")
 const { getTagSupportLoadPenalty } = require("./.compiled/src/utils/scoring.js")
+const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
 const { parseStudentCSVWithMapping } = require("./.compiled/src/utils/csvParser.js")
 
 function createStudent(overrides = {}) {
@@ -138,6 +139,35 @@ const tests = [
       assert.deepEqual(result.students[1].tags, ["Needs movement breaks", "Independent worker"])
     },
   },
+  {
+    name: "tag formula settings can reduce hotspot scoring pressure",
+    run: () => {
+      const candidate = createStudent({
+        id: 20,
+        tags: ["Needs frequent redirection", "High energy"],
+      })
+      const roomA = createClassroom("1-A", [
+        createStudent({ id: 1, tags: ["Needs frequent redirection", "Needs movement breaks"] }),
+      ])
+      const roomB = createClassroom("1-B", [
+        createStudent({ id: 2, tags: ["Independent worker"] }),
+      ])
+      const defaults = createDefaultGradeSettingsMap()["1"]
+
+      const baselinePenalty = getTagSupportLoadPenalty(candidate, roomA, [roomA, roomB], defaults)
+      const softenedPenalty = getTagSupportLoadPenalty(candidate, roomA, [roomA, roomB], {
+        ...defaults,
+        tagTotalBalancePenaltyWeight: 0,
+        tagBehavioralPenaltyWeight: 0,
+        tagEnergyPenaltyWeight: 0,
+        tagInstructionalPenaltyWeight: 0,
+        tagHotspotPenaltyWeight: 0,
+      })
+
+      assert.ok(baselinePenalty > 0)
+      assert.equal(softenedPenalty, 0)
+    },
+  },
 ]
 
 let passed = 0
@@ -148,3 +178,4 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
+

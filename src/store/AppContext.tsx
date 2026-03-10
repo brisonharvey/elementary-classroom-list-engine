@@ -1,6 +1,11 @@
 import React, { createContext, Dispatch, useContext, useEffect, useReducer } from "react"
-import { AppState, Classroom, STUDENT_TAGS, Student, TeacherProfile } from "../types"
-import { createDefaultGradeSettingsMap, getRoomLabelFromIndex } from "../utils/classroomInit"
+import { AppState, Classroom, Snapshot, STUDENT_TAGS, Student, TeacherProfile } from "../types"
+import {
+  createDefaultGradeSettingsMap,
+  getRoomLabelFromIndex,
+  normalizeGradeSettings,
+  normalizeGradeSettingsMap,
+} from "../utils/classroomInit"
 import { normalizeCoTeachMinutes } from "../utils/coTeach"
 import { Action, initialState, reducer } from "./reducer"
 
@@ -11,7 +16,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-const STORAGE_KEY = "classroom-placement-state-v3"
+const STORAGE_KEY = "classroom-placement-state-v4"
 
 function normalizeIdList(value: unknown): number[] {
   if (Array.isArray(value)) {
@@ -25,7 +30,10 @@ function normalizeIdList(value: unknown): number[] {
 
 function normalizeTagList(value: unknown): Student["tags"] {
   if (!Array.isArray(value)) return []
-  return value.filter((entry): entry is (typeof STUDENT_TAGS)[number] => typeof entry === "string" && STUDENT_TAGS.includes(entry as (typeof STUDENT_TAGS)[number]))
+  return value.filter(
+    (entry): entry is (typeof STUDENT_TAGS)[number] =>
+      typeof entry === "string" && STUDENT_TAGS.includes(entry as (typeof STUDENT_TAGS)[number])
+  )
 }
 
 function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown; tags?: unknown }>(student: T): T {
@@ -91,10 +99,21 @@ function normalizeTeacherProfile(profile: TeacherProfile): TeacherProfile {
   }
 }
 
+function normalizeSnapshot(snapshot: Snapshot): Snapshot {
+  return {
+    ...snapshot,
+    payload: {
+      classrooms: (snapshot.payload?.classrooms ?? []).map((classroom, index) => normalizeClassroom(classroom, index)),
+      settings: normalizeGradeSettings(snapshot.payload?.settings),
+    },
+  }
+}
+
 function loadPersistedState(): AppState {
   try {
     const raw =
       window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem("classroom-placement-state-v3") ??
       window.localStorage.getItem("classroom-placement-state-v2") ??
       window.localStorage.getItem("classroom-placement-state-v1")
     if (!raw) return initialState
@@ -103,6 +122,7 @@ function loadPersistedState(): AppState {
     const classroomSource = parsed.classrooms && parsed.classrooms.length > 0 ? parsed.classrooms : initialState.classrooms
     const classrooms = classroomSource.map((classroom, index) => normalizeClassroom(classroom, index))
     const teacherProfiles = (parsed.teacherProfiles ?? []).map((profile) => normalizeTeacherProfile(profile as TeacherProfile))
+    const snapshots = (parsed.snapshots ?? []).map((snapshot) => normalizeSnapshot(snapshot as Snapshot))
 
     const hadLegacyStudentFlags = (parsed.allStudents ?? []).some(
       (student) => (student as Student).specialEd?.requiresCoTeachReading || (student as Student).specialEd?.requiresCoTeachMath
@@ -124,7 +144,8 @@ function loadPersistedState(): AppState {
       allStudents,
       teacherProfiles,
       classrooms,
-      gradeSettings: { ...defaultSettings, ...(parsed.gradeSettings ?? {}) },
+      snapshots,
+      gradeSettings: parsed.gradeSettings ? normalizeGradeSettingsMap(parsed.gradeSettings) : defaultSettings,
       unresolvedReasons: parsed.unresolvedReasons ?? {},
       relationshipRules: parsed.relationshipRules ?? [],
       weights: { ...initialState.weights, ...(parsed.weights ?? {}) },

@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict")
 
 const { reducer, initialState } = require("./.compiled/src/store/reducer.js")
+const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
 const { buildPlacementCSV } = require("./.compiled/src/utils/exportUtils.js")
 
 function clone(value) {
@@ -176,6 +177,33 @@ const tests = [
       assert.equal(next.classrooms.some((classroom) => classroom.students.some((student) => student.id === 303)), false)
     },
   },
+  {
+    name: "grade settings updates keep new formula fields and reset restores defaults",
+    run: () => {
+      const state = createState()
+      const defaults = createDefaultGradeSettingsMap()["1"]
+
+      const next = reducer(state, {
+        type: "UPDATE_GRADE_SETTINGS",
+        payload: {
+          grade: "1",
+          updates: {
+            maxIEPPerRoom: 4,
+            roomFillPenaltyWeight: 22,
+            tagHotspotThreshold: 5.5,
+          },
+        },
+      })
+
+      assert.equal(next.gradeSettings["1"].maxIEPPerRoom, 4)
+      assert.equal(next.gradeSettings["1"].roomFillPenaltyWeight, 22)
+      assert.equal(next.gradeSettings["1"].tagHotspotThreshold, 5.5)
+      assert.equal(next.gradeSettings["1"].preferredPeerBonus, defaults.preferredPeerBonus)
+
+      const reset = reducer(next, { type: "RESET_GRADE_SETTINGS", payload: "1" })
+      assert.deepEqual(reset.gradeSettings["1"], defaults)
+    },
+  },
 ]
 
 let passed = 0
@@ -186,3 +214,4 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
+

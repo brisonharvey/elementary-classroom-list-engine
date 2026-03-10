@@ -13,6 +13,7 @@ import {
   createClassroom,
   getClassroomsForGrade,
   initializeClassrooms,
+  normalizeGradeSettings,
   syncClassroomsWithTeacherProfiles,
 } from "../utils/classroomInit"
 import { runPlacement } from "../engine/placementEngine"
@@ -427,7 +428,7 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         activeGrade: snapshot.grade,
         classrooms,
-        gradeSettings: { ...state.gradeSettings, [snapshot.grade]: deepClone(snapshot.payload.settings) },
+        gradeSettings: { ...state.gradeSettings, [snapshot.grade]: normalizeGradeSettings(snapshot.payload.settings) },
       }
     }
     case "DELETE_SNAPSHOT":
@@ -471,10 +472,10 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         gradeSettings: {
           ...state.gradeSettings,
-          [action.payload.grade]: {
+          [action.payload.grade]: normalizeGradeSettings({
             ...state.gradeSettings[action.payload.grade],
             ...action.payload.updates,
-          },
+          }),
         },
       }
     case "RESET_GRADE_SETTINGS":

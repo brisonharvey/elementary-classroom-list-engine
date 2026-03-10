@@ -2,19 +2,89 @@ import { Classroom, Grade, GRADES, GradeSettings, GradeSettingsMap, TeacherProfi
 
 const DEFAULT_ROOM_COUNT = 4
 
+const DEFAULT_GRADE_SETTINGS: GradeSettings = {
+  maxIEPPerRoom: 6,
+  maxReferralsPerRoom: 6,
+  ellConcentrationSoftCap: 0.35,
+  genderBalanceTolerance: 2,
+  classSizeVarianceLimit: 3,
+  roomFillPenaltyWeight: 10,
+  academicBalancePenaltyWeight: 4,
+  behavioralBalancePenaltyWeight: 4,
+  demographicBalancePenaltyWeight: 3,
+  preferredPeerBonus: 1.75,
+  preferredPeerSplitPenalty: 1.25,
+  keepTogetherBonus: 2.25,
+  keepTogetherSplitPenalty: 1.5,
+  ellOverCapPenaltyWeight: 10,
+  genderImbalancePenaltyWeight: 2,
+  classSizeVariancePenaltyWeight: 1,
+  tagTotalBalancePenaltyWeight: 1,
+  tagBehavioralPenaltyWeight: 0.65,
+  tagEmotionalPenaltyWeight: 0.55,
+  tagInstructionalPenaltyWeight: 0.4,
+  tagEnergyPenaltyWeight: 0.5,
+  tagHotspotPenaltyWeight: 1.5,
+  tagHotspotThreshold: 3,
+}
+
+function readNumber(value: unknown, fallback: number, minimum = 0, maximum?: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback
+  const clampedMinimum = Math.max(minimum, value)
+  const clamped = maximum === undefined ? clampedMinimum : Math.min(clampedMinimum, maximum)
+  return clamped
+}
+
+function readWholeNumber(value: unknown, fallback: number, minimum = 0): number {
+  return Math.round(readNumber(value, fallback, minimum))
+}
+
 export function getDefaultGradeSettings(): GradeSettings {
+  return { ...DEFAULT_GRADE_SETTINGS }
+}
+
+export function normalizeGradeSettings(settings: Partial<GradeSettings> | null | undefined): GradeSettings {
+  const defaults = getDefaultGradeSettings()
+
   return {
-    maxIEPPerRoom: 6,
-    maxReferralsPerRoom: 6,
-    ellConcentrationSoftCap: 0.35,
-    genderBalanceTolerance: 2,
-    classSizeVarianceLimit: 3,
+    maxIEPPerRoom: readWholeNumber(settings?.maxIEPPerRoom, defaults.maxIEPPerRoom),
+    maxReferralsPerRoom: readWholeNumber(settings?.maxReferralsPerRoom, defaults.maxReferralsPerRoom),
+    ellConcentrationSoftCap: readNumber(settings?.ellConcentrationSoftCap, defaults.ellConcentrationSoftCap, 0),
+    genderBalanceTolerance: readWholeNumber(settings?.genderBalanceTolerance, defaults.genderBalanceTolerance),
+    classSizeVarianceLimit: readWholeNumber(settings?.classSizeVarianceLimit, defaults.classSizeVarianceLimit),
+    roomFillPenaltyWeight: readNumber(settings?.roomFillPenaltyWeight, defaults.roomFillPenaltyWeight),
+    academicBalancePenaltyWeight: readNumber(settings?.academicBalancePenaltyWeight, defaults.academicBalancePenaltyWeight),
+    behavioralBalancePenaltyWeight: readNumber(settings?.behavioralBalancePenaltyWeight, defaults.behavioralBalancePenaltyWeight),
+    demographicBalancePenaltyWeight: readNumber(settings?.demographicBalancePenaltyWeight, defaults.demographicBalancePenaltyWeight),
+    preferredPeerBonus: readNumber(settings?.preferredPeerBonus, defaults.preferredPeerBonus),
+    preferredPeerSplitPenalty: readNumber(settings?.preferredPeerSplitPenalty, defaults.preferredPeerSplitPenalty),
+    keepTogetherBonus: readNumber(settings?.keepTogetherBonus, defaults.keepTogetherBonus),
+    keepTogetherSplitPenalty: readNumber(settings?.keepTogetherSplitPenalty, defaults.keepTogetherSplitPenalty),
+    ellOverCapPenaltyWeight: readNumber(settings?.ellOverCapPenaltyWeight, defaults.ellOverCapPenaltyWeight),
+    genderImbalancePenaltyWeight: readNumber(settings?.genderImbalancePenaltyWeight, defaults.genderImbalancePenaltyWeight),
+    classSizeVariancePenaltyWeight: readNumber(settings?.classSizeVariancePenaltyWeight, defaults.classSizeVariancePenaltyWeight),
+    tagTotalBalancePenaltyWeight: readNumber(settings?.tagTotalBalancePenaltyWeight, defaults.tagTotalBalancePenaltyWeight),
+    tagBehavioralPenaltyWeight: readNumber(settings?.tagBehavioralPenaltyWeight, defaults.tagBehavioralPenaltyWeight),
+    tagEmotionalPenaltyWeight: readNumber(settings?.tagEmotionalPenaltyWeight, defaults.tagEmotionalPenaltyWeight),
+    tagInstructionalPenaltyWeight: readNumber(settings?.tagInstructionalPenaltyWeight, defaults.tagInstructionalPenaltyWeight),
+    tagEnergyPenaltyWeight: readNumber(settings?.tagEnergyPenaltyWeight, defaults.tagEnergyPenaltyWeight),
+    tagHotspotPenaltyWeight: readNumber(settings?.tagHotspotPenaltyWeight, defaults.tagHotspotPenaltyWeight),
+    tagHotspotThreshold: readNumber(settings?.tagHotspotThreshold, defaults.tagHotspotThreshold),
   }
 }
 
 export function createDefaultGradeSettingsMap(): GradeSettingsMap {
   return GRADES.reduce((acc, grade) => {
     acc[grade] = getDefaultGradeSettings()
+    return acc
+  }, {} as GradeSettingsMap)
+}
+
+export function normalizeGradeSettingsMap(
+  settingsMap: Partial<Record<Grade, Partial<GradeSettings>>> | null | undefined
+): GradeSettingsMap {
+  return GRADES.reduce((acc, grade) => {
+    acc[grade] = normalizeGradeSettings(settingsMap?.[grade])
     return acc
   }, {} as GradeSettingsMap)
 }

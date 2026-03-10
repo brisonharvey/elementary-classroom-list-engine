@@ -128,6 +128,24 @@ export interface GradeSettings {
   ellConcentrationSoftCap: number
   genderBalanceTolerance: number
   classSizeVarianceLimit: number
+  roomFillPenaltyWeight: number
+  academicBalancePenaltyWeight: number
+  behavioralBalancePenaltyWeight: number
+  demographicBalancePenaltyWeight: number
+  preferredPeerBonus: number
+  preferredPeerSplitPenalty: number
+  keepTogetherBonus: number
+  keepTogetherSplitPenalty: number
+  ellOverCapPenaltyWeight: number
+  genderImbalancePenaltyWeight: number
+  classSizeVariancePenaltyWeight: number
+  tagTotalBalancePenaltyWeight: number
+  tagBehavioralPenaltyWeight: number
+  tagEmotionalPenaltyWeight: number
+  tagInstructionalPenaltyWeight: number
+  tagEnergyPenaltyWeight: number
+  tagHotspotPenaltyWeight: number
+  tagHotspotThreshold: number
 }
 
 export type GradeSettingsMap = Record<Grade, GradeSettings>
@@ -167,3 +185,4 @@ export interface RoomStats {
   instructionalTagSupportLoad: number
   energyTagSupportLoad: number
 }
+
