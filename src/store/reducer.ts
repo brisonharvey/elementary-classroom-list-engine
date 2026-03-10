@@ -21,6 +21,8 @@ import { normalizeCoTeachMinutes } from "../utils/coTeach"
 export type Action =
   | { type: "LOAD_STUDENTS"; payload: Student[] }
   | { type: "LOAD_TEACHERS"; payload: TeacherProfile[] }
+  | { type: "UPSERT_STUDENT"; payload: { student: Student; previousId?: number } }
+  | { type: "DELETE_STUDENT"; payload: number }
   | { type: "SET_ACTIVE_GRADE"; payload: Grade }
   | { type: "SET_SHOW_TEACHER_NAMES"; payload: boolean }
   | { type: "SET_WEIGHTS"; payload: Partial<Weights> }
@@ -68,6 +70,78 @@ function compareStudentsByName(a: Student, b: Student): number {
   const byFirst = a.firstName.localeCompare(b.firstName, undefined, { sensitivity: "base" })
   if (byFirst !== 0) return byFirst
   return a.id - b.id
+}
+
+function uniqueStudentIds(ids: number[] | undefined, selfId: number): number[] {
+  return Array.from(new Set((ids ?? []).filter((id) => Number.isFinite(id) && id > 0 && id !== selfId)))
+}
+
+function normalizeStudentRecord(student: Student): Student {
+  return {
+    ...student,
+    firstName: student.firstName.trim() || "Student",
+    lastName: student.lastName.trim() || `${student.id}`,
+    preassignedTeacher: student.preassignedTeacher?.trim() || undefined,
+    raceEthnicity: student.raceEthnicity?.trim() || undefined,
+    teacherNotes: student.teacherNotes?.trim() || undefined,
+    ireadyReading: student.ireadyReading?.trim() || undefined,
+    ireadyMath: student.ireadyMath?.trim() || undefined,
+    tags: student.tags ? Array.from(new Set(student.tags)) : [],
+    coTeachMinutes: normalizeCoTeachMinutes(student.coTeachMinutes),
+    noContactWith: uniqueStudentIds(student.noContactWith, student.id),
+    preferredWith: uniqueStudentIds(student.preferredWith, student.id),
+    locked: Boolean(student.locked),
+  }
+}
+
+function normalizeStudentRelationships(students: Student[]): Student[] {
+  const studentsById = new Map(students.map((student) => [student.id, student]))
+
+  return students.map((student) => ({
+    ...student,
+    noContactWith: uniqueStudentIds(student.noContactWith, student.id).filter((peerId) => studentsById.has(peerId)),
+    preferredWith: uniqueStudentIds(student.preferredWith, student.id).filter((peerId) => {
+      const peer = studentsById.get(peerId)
+      return peer != null && peer.grade === student.grade
+    }),
+  }))
+}
+
+function replaceStudentId(ids: number[] | undefined, previousId: number, nextId: number, selfId: number): number[] {
+  return Array.from(
+    new Set((ids ?? []).map((id) => (id === previousId ? nextId : id)).filter((id) => Number.isFinite(id) && id > 0 && id !== selfId))
+  )
+}
+
+function cloneClassrooms(classrooms: Classroom[]): Classroom[] {
+  return classrooms.map((classroom) => ({ ...classroom, students: [...classroom.students] }))
+}
+
+function assignStudentToTeacherClassroom(classrooms: Classroom[], student: Student, previousId: number): Classroom[] {
+  const next = cloneClassrooms(classrooms).map((classroom) => ({
+    ...classroom,
+    students: classroom.students.filter((entry) => entry.id !== previousId && entry.id !== student.id),
+  }))
+
+  const teacherName = student.preassignedTeacher?.trim()
+  if (!teacherName) return next
+
+  let target = next.find(
+    (classroom) => classroom.grade === student.grade && classroom.teacherName.trim().toLowerCase() === teacherName.toLowerCase()
+  )
+
+  if (!target) {
+    target = next.find((classroom) => classroom.grade === student.grade && !classroom.teacherName.trim())
+    if (target) {
+      target.teacherName = teacherName
+    }
+  }
+
+  if (target && target.students.length < target.maxSize) {
+    target.students = [...target.students, student]
+  }
+
+  return next
 }
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -131,6 +205,119 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         teacherProfiles: action.payload,
         classrooms,
+        unresolvedReasons: {},
+        placementWarnings: [],
+      }
+    }
+    case "UPSERT_STUDENT": {
+      const previousId = action.payload.previousId ?? action.payload.student.id
+      const existing = state.allStudents.find((student) => student.id === previousId)
+      const currentPlacement = state.classrooms.find((classroom) => classroom.students.some((student) => student.id === previousId))
+      const nextStudent = normalizeStudentRecord({
+        ...action.payload.student,
+        locked: action.payload.student.preassignedTeacher?.trim()
+          ? true
+          : action.payload.student.locked ?? existing?.locked ?? false,
+      })
+
+      if (state.allStudents.some((student) => student.id === nextStudent.id && student.id !== previousId)) {
+        return state
+      }
+
+      let allStudents = existing
+        ? state.allStudents.map((student) => (student.id === previousId ? nextStudent : student))
+        : [...state.allStudents, nextStudent]
+
+      if (existing && previousId !== nextStudent.id) {
+        allStudents = allStudents.map((student) =>
+          student.id === nextStudent.id
+            ? student
+            : {
+                ...student,
+                noContactWith: replaceStudentId(student.noContactWith, previousId, nextStudent.id, student.id),
+                preferredWith: replaceStudentId(student.preferredWith, previousId, nextStudent.id, student.id),
+              }
+        )
+      }
+
+      allStudents = normalizeStudentRelationships(allStudents.map((student) => normalizeStudentRecord(student)))
+
+      let relationshipRules = state.relationshipRules
+      if (existing && existing.grade !== nextStudent.grade) {
+        relationshipRules = relationshipRules.filter((rule) => !rule.studentIds.includes(previousId))
+      } else if (existing && previousId !== nextStudent.id) {
+        relationshipRules = relationshipRules
+          .map((rule) => ({
+            ...rule,
+            studentIds: rule.studentIds.map((id) => (id === previousId ? nextStudent.id : id)) as [number, number],
+          }))
+          .filter((rule) => rule.studentIds[0] !== rule.studentIds[1])
+      }
+
+      let classrooms: Classroom[]
+      if (nextStudent.preassignedTeacher) {
+        classrooms = assignStudentToTeacherClassroom(state.classrooms, nextStudent, previousId)
+      } else {
+        classrooms = state.classrooms.map((classroom) => {
+          const roomStudent = classroom.students.find((student) => student.id === previousId)
+          if (!roomStudent) return classroom
+          if (classroom.grade !== nextStudent.grade) {
+            return { ...classroom, students: classroom.students.filter((student) => student.id !== previousId) }
+          }
+
+          return {
+            ...classroom,
+            students: classroom.students.map((student) =>
+              student.id === previousId
+                ? normalizeStudentRecord({
+                    ...nextStudent,
+                    locked: roomStudent.locked,
+                  })
+                : student
+            ),
+          }
+        })
+
+        if (!existing && currentPlacement == null) {
+          classrooms = cloneClassrooms(classrooms)
+        }
+      }
+
+      return {
+        ...state,
+        allStudents,
+        classrooms,
+        relationshipRules,
+        unresolvedReasons: {},
+        placementWarnings: [],
+      }
+    }
+    case "DELETE_STUDENT": {
+      const studentId = action.payload
+      if (!state.allStudents.some((student) => student.id === studentId)) return state
+
+      const allStudents = normalizeStudentRelationships(
+        state.allStudents
+          .filter((student) => student.id !== studentId)
+          .map((student) => ({
+            ...student,
+            noContactWith: (student.noContactWith ?? []).filter((peerId) => peerId !== studentId),
+            preferredWith: (student.preferredWith ?? []).filter((peerId) => peerId !== studentId),
+          }))
+      )
+
+      const classrooms = state.classrooms.map((classroom) => ({
+        ...classroom,
+        students: classroom.students.filter((student) => student.id !== studentId),
+      }))
+
+      const relationshipRules = state.relationshipRules.filter((rule) => !rule.studentIds.includes(studentId))
+
+      return {
+        ...state,
+        allStudents,
+        classrooms,
+        relationshipRules,
         unresolvedReasons: {},
         placementWarnings: [],
       }
@@ -307,3 +494,4 @@ export function reducer(state: AppState, action: Action): AppState {
       return state
   }
 }
+

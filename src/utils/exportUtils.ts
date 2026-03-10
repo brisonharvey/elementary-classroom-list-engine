@@ -97,7 +97,7 @@ function buildStudentExportRow(student: Student, assignedTeacherByStudentId: Map
     student.raceEthnicity,
     (student.tags ?? []).join(";"),
     student.teacherNotes,
-    assignedTeacherByStudentId.get(student.id) || "",
+    assignedTeacherByStudentId.get(student.id) || student.preassignedTeacher || "",
   ]
 }
 
@@ -134,3 +134,4 @@ export function buildGoogleSheetsExport(classrooms: Classroom[], allStudents: St
 
   return [EXPORT_HEADER.join("\t"), ...rows].join("\n")
 }
+

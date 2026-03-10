@@ -3,6 +3,7 @@ import React, { memo, useState } from "react"
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
 import { StudentCard } from "./StudentCard"
+import { StudentEditorModal } from "./StudentEditorModal"
 import { getUnassignedStudents } from "../engine/placementEngine"
 
 export const UnassignedPanel = memo(function UnassignedPanel() {
@@ -10,6 +11,7 @@ export const UnassignedPanel = memo(function UnassignedPanel() {
   const { drag, clearDrag } = useDrag()
   const [isOver, setIsOver] = useState(false)
   const [filter, setFilter] = useState<"all" | "IEP" | "Referral" | "coteach">("all")
+  const [addingStudent, setAddingStudent] = useState(false)
 
   const unassigned = getUnassignedStudents(state.allStudents, state.classrooms, state.activeGrade)
 
@@ -43,48 +45,55 @@ export const UnassignedPanel = memo(function UnassignedPanel() {
   }
 
   return (
-    <div
-      className={`unassigned-panel ${isOver ? "drop-over" : ""}`}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-    >
-      <div className="panel-header">
-        <div className="panel-title">
-          Unassigned
-          <span className="panel-count">{unassigned.length}</span>
+    <>
+      <div
+        className={`unassigned-panel ${isOver ? "drop-over" : ""}`}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        <div className="panel-header panel-header-stacked">
+          <div className="panel-title-row">
+            <div className="panel-title">
+              Unassigned
+              <span className="panel-count">{unassigned.length}</span>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={() => setAddingStudent(true)}>Add Student</button>
+          </div>
+          <select
+            className="filter-select"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as typeof filter)}
+            aria-label="Filter unassigned students"
+          >
+            <option value="all">All ({unassigned.length})</option>
+            <option value="IEP">IEP ({unassigned.filter((s) => s.specialEd.status === "IEP").length})</option>
+            <option value="Referral">Referral ({unassigned.filter((s) => s.specialEd.status === "Referral").length})</option>
+            <option value="coteach">CoTeach Needed ({unassigned.filter((s) => getStudentCoTeachTotal(s) > 0).length})</option>
+          </select>
         </div>
-        <select
-          className="filter-select"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as typeof filter)}
-          aria-label="Filter unassigned students"
-        >
-          <option value="all">All ({unassigned.length})</option>
-          <option value="IEP">IEP ({unassigned.filter((s) => s.specialEd.status === "IEP").length})</option>
-          <option value="Referral">Referral ({unassigned.filter((s) => s.specialEd.status === "Referral").length})</option>
-          <option value="coteach">CoTeach Needed ({unassigned.filter((s) => getStudentCoTeachTotal(s) > 0).length})</option>
-        </select>
+
+        <div className="student-list">
+          {state.allStudents.length === 0 ? (
+            <div className="empty-placeholder">Upload a CSV or add a student manually to begin.</div>
+          ) : filtered.length === 0 ? (
+            <div className="empty-placeholder">
+              {unassigned.length === 0 ? "All students placed!" : "No students match this filter"}
+            </div>
+          ) : (
+            filtered.map((s) => (
+              <div key={s.id}>
+                <StudentCard student={s} classroomId={null} />
+                {(state.unresolvedReasons[s.id] ?? []).length > 0 && (
+                  <div className="unresolved-reasons">Reason: {(state.unresolvedReasons[s.id] ?? []).join("; ")}</div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      <div className="student-list">
-        {state.allStudents.length === 0 ? (
-          <div className="empty-placeholder">Upload a CSV to begin</div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-placeholder">
-            {unassigned.length === 0 ? "All students placed!" : "No students match this filter"}
-          </div>
-        ) : (
-          filtered.map((s) => (
-            <div key={s.id}>
-              <StudentCard student={s} classroomId={null} />
-              {(state.unresolvedReasons[s.id] ?? []).length > 0 && (
-                <div className="unresolved-reasons">Reason: {(state.unresolvedReasons[s.id] ?? []).join("; ")}</div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+      {addingStudent && <StudentEditorModal defaultGrade={state.activeGrade} onClose={() => setAddingStudent(false)} />}
+    </>
   )
 })

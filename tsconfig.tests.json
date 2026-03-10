@@ -15,9 +15,15 @@
   },
   "include": [
     "src/types/index.ts",
+    "src/utils/classroomInit.ts",
     "src/utils/coTeach.ts",
+    "src/utils/constraints.ts",
     "src/utils/csvParser.ts",
+    "src/utils/exportUtils.ts",
     "src/utils/scoring.ts",
-    "src/utils/tagSupportLoad.ts"
+    "src/utils/tagSupportLoad.ts",
+    "src/utils/teacherFit.ts",
+    "src/engine/placementEngine.ts",
+    "src/store/reducer.ts"
   ]
 }

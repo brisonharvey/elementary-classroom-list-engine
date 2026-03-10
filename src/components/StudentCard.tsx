@@ -12,6 +12,7 @@ import {
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
 import { getStudentTeacherFitForClassroom } from "../utils/teacherFit"
+import { StudentEditorModal } from "./StudentEditorModal"
 
 interface StudentCardProps {
   student: Student
@@ -36,6 +37,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
   const cardRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
+  const [editingStudent, setEditingStudent] = useState(false)
 
   useEffect(() => {
     return () => clearTimeout(timerRef.current)
@@ -94,6 +96,13 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     clearDrag()
   }
 
+  const suppressCardDrag = (e: React.MouseEvent | React.PointerEvent | React.DragEvent) => {
+    e.stopPropagation()
+    if ("preventDefault" in e) {
+      e.preventDefault()
+    }
+  }
+
   const toggleLock = (e: React.MouseEvent) => {
     e.stopPropagation()
     dispatch({ type: "TOGGLE_LOCK", payload: student.id })
@@ -117,7 +126,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
         onDragEnd={onDragEnd}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        title={`${student.firstName} ${student.lastName} - Drag to move. Click lock to pin.`}
+        title={`${student.firstName} ${student.lastName} - Drag to move. Use Edit to update student data.`}
       >
         <span className="drag-handle" aria-hidden>...</span>
 
@@ -187,15 +196,38 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
           </div>
         </div>
 
-        <button
-          className={`lock-btn ${locked ? "locked" : ""}`}
-          onClick={toggleLock}
-          title={locked ? "Unlock student (allow auto-placement)" : "Lock student (preserve placement)"}
-          aria-label={locked ? "Unlock" : "Lock"}
-        >
-          {locked ? "\uD83D\uDD12" : "\uD83D\uDD13"}
-        </button>
+        <div className="student-card-actions">
+          <button
+            className="card-action-btn"
+            draggable={false}
+            onMouseDown={suppressCardDrag}
+            onPointerDown={suppressCardDrag}
+            onDragStart={suppressCardDrag}
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditingStudent(true)
+            }}
+            title="Edit student data"
+            aria-label="Edit student"
+          >
+            Edit
+          </button>
+          <button
+            className={`lock-btn ${locked ? "locked" : ""}`}
+            draggable={false}
+            onMouseDown={suppressCardDrag}
+            onPointerDown={suppressCardDrag}
+            onDragStart={suppressCardDrag}
+            onClick={toggleLock}
+            title={locked ? "Unlock student (allow auto-placement)" : "Lock student (preserve placement)"}
+            aria-label={locked ? "Unlock" : "Lock"}
+          >
+            {locked ? "\uD83D\uDD12" : "\uD83D\uDD13"}
+          </button>
+        </div>
       </div>
+
+      {editingStudent && <StudentEditorModal student={student} defaultGrade={student.grade} onClose={() => setEditingStudent(false)} />}
 
       {tooltip &&
         createPortal(
@@ -383,3 +415,4 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     </>
   )
 })
+
