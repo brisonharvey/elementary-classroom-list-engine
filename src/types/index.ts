@@ -64,9 +64,11 @@ export interface Student {
   }
   coTeachMinutes: Partial<Record<CoTeachCategory, number>>
   intervention: {
-    academicTier: 1 | 2 | 3
+    academicTier: number
   }
-  behaviorTier: 1 | 2 | 3
+  behaviorTier: number
+  academicTierNotes?: string
+  behaviorTierNotes?: string
   referrals?: number
   briganceReadiness?: number
   mapReading?: number

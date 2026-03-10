@@ -84,6 +84,8 @@ Notes:
 - `assignedTeacher` is optional on student import and can seed a student into a matching teacher room.
 - Students are only locked or fixed to rooms inside the app.
 - For kindergarten, use `briganceReadiness` and leave MAP/i-Ready blank if you do not need them for reporting.
+- `academicTier` and `behaviorTier` can be plain numbers or note text that includes tier values like `Reading - Tier 2; Math - Tier 3`. The app keeps the note text on the student summary and sums the tier values for support load.
+- `ell` accepts `EL`, `ELL`, `RFEP 1-4`, and standard truthy values.
 - `studentCharacteristics` must use the exact human-readable labels documented in `TEMPLATE_USAGE.md`.
 - The parser still accepts legacy `studentTags` headers and retired characteristic labels for backward compatibility, but all exports and docs now use `studentCharacteristics`.
 
@@ -217,7 +219,7 @@ Exports include:
 - `studentCharacteristics`
 - `assignedTeacher`
 
-Derived support-load values are not exported as additional columns.
+Derived support-load values are not exported as additional columns. When tier note text was imported, exports keep that original `academicTier` / `behaviorTier` text instead of flattening it to the summed number.
 
 ## Project structure
 

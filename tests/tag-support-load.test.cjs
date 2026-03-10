@@ -6,8 +6,9 @@ const {
   getStudentTagSupportLoadBreakdown,
   getClassroomTagSupportLoadBreakdown,
 } = require("./.compiled/src/utils/tagSupportLoad.js")
-const { getTagSupportLoadPenalty } = require("./.compiled/src/utils/scoring.js")
+const { getTagSupportLoadPenalty, getStudentSupportLoad } = require("./.compiled/src/utils/scoring.js")
 const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
+const { buildPlacementCSV } = require("./.compiled/src/utils/exportUtils.js")
 const {
   parseStudentCSVWithMapping,
   generateStudentTemplateCSV,
@@ -24,6 +25,8 @@ function createStudent(overrides = {}) {
     coTeachMinutes: {},
     intervention: { academicTier: 1 },
     behaviorTier: 1,
+    academicTierNotes: undefined,
+    behaviorTierNotes: undefined,
     referrals: 0,
     briganceReadiness: undefined,
     mapReading: undefined,
@@ -141,6 +144,71 @@ const tests = [
       assert.equal(result.errors.length, 0)
       assert.deepEqual(result.students[0].tags, ["Needs strong routine", "Needs reassurance"])
       assert.deepEqual(result.students[1].tags, ["Struggles with peer conflict"])
+    },
+  },
+  {
+    name: "student import treats EL and RFEP labels as ell true",
+    run: () => {
+      const csv = [
+        "id,grade,firstName,lastName,ell",
+        "101,1,Ada,Stone,EL",
+        "102,1,Ben,Reed,RFEP 1-4",
+        "103,1,Cam,Jones,false",
+      ].join("\n")
+
+      const result = parseStudentCSVWithMapping(csv, {
+        id: "id",
+        grade: "grade",
+        firstName: "firstName",
+        lastName: "lastName",
+        ell: "ell",
+      })
+
+      assert.equal(result.errors.length, 0)
+      assert.equal(result.students[0].ell, true)
+      assert.equal(result.students[1].ell, true)
+      assert.equal(result.students[2].ell, false)
+    },
+  },
+  {
+    name: "student import sums tier notes for support load and preserves the original text",
+    run: () => {
+      const csv = [
+        "id,grade,firstName,lastName,academicTier,behaviorTier",
+        '101,1,Ada,Stone,"Reading - Tier 2; Math - Tier 3","Check-In - Tier 2"',
+      ].join("\n")
+
+      const result = parseStudentCSVWithMapping(csv, {
+        id: "id",
+        grade: "grade",
+        firstName: "firstName",
+        lastName: "lastName",
+        academicTier: "academicTier",
+        behaviorTier: "behaviorTier",
+      })
+
+      assert.equal(result.errors.length, 0)
+      assert.equal(result.students[0].intervention.academicTier, 5)
+      assert.equal(result.students[0].behaviorTier, 2)
+      assert.equal(result.students[0].academicTierNotes, "Reading - Tier 2; Math - Tier 3")
+      assert.equal(result.students[0].behaviorTierNotes, "Check-In - Tier 2")
+      assert.equal(getStudentSupportLoad(result.students[0]), 7)
+    },
+  },
+  {
+    name: "student export keeps tier note text when present",
+    run: () => {
+      const student = createStudent({
+        intervention: { academicTier: 5 },
+        behaviorTier: 2,
+        academicTierNotes: "Reading - Tier 2; Math - Tier 3",
+        behaviorTierNotes: "Check-In - Tier 2",
+      })
+
+      const csv = buildPlacementCSV([createClassroom("1-A", [student])], [student], "1")
+      const row = csv.split("\n")[1].split(",")
+      assert.equal(row[13], "Reading - Tier 2; Math - Tier 3")
+      assert.equal(row[14], "Check-In - Tier 2")
     },
   },
   {

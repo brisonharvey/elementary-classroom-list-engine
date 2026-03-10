@@ -19,9 +19,9 @@ interface StudentCardProps {
   classroomId: string | null
 }
 
-function tierClass(tier: 1 | 2 | 3): string {
-  if (tier === 3) return "tier-3"
-  if (tier === 2) return "tier-2"
+function tierClass(tier: number): string {
+  if (tier >= 3) return "tier-3"
+  if (tier >= 2) return "tier-2"
   return "tier-1"
 }
 
@@ -259,12 +259,24 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
               )}
               <div className="tt-row">
                 <span className="tt-label">Acad. Tier</span>
-                <span className={intervention.academicTier === 3 ? "tt-flag" : ""}>{intervention.academicTier}</span>
+                <span className={intervention.academicTier >= 3 ? "tt-flag" : ""}>{intervention.academicTier}</span>
               </div>
               <div className="tt-row">
                 <span className="tt-label">Behavior Tier</span>
-                <span className={behaviorTier === 3 ? "tt-flag" : ""}>{behaviorTier}</span>
+                <span className={behaviorTier >= 3 ? "tt-flag" : ""}>{behaviorTier}</span>
               </div>
+              {student.academicTierNotes && (
+                <div className="tt-row">
+                  <span className="tt-label">Academic Notes</span>
+                  <span className="tt-no-contact">{student.academicTierNotes}</span>
+                </div>
+              )}
+              {student.behaviorTierNotes && (
+                <div className="tt-row">
+                  <span className="tt-label">Behavior Notes</span>
+                  <span className="tt-no-contact">{student.behaviorTierNotes}</span>
+                </div>
+              )}
               {(student.referrals ?? 0) > 0 && (
                 <div className="tt-row">
                   <span className="tt-label">Referrals</span>

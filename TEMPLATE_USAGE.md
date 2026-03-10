@@ -30,6 +30,10 @@ Common optional columns:
 - `teacherNotes`
 - `assignedTeacher`
 
+Tier columns can be entered either as plain numbers or as notes that contain tier values, such as `Reading - Tier 2; Math - Tier 3`. The app preserves that text on the student summary and sums the tier values into the support score.
+
+`ell` accepts `EL`, `ELL`, `RFEP 1-4`, and standard truthy values.
+
 Assessment columns:
 
 - `briganceReadiness`
@@ -184,7 +188,7 @@ If you want a specific teacher order across rooms, order the teacher rows that w
 Student row:
 
 ```csv
-1001,K,Amaya,Brooks,F,IEP,30,0,0,30,0,0,0,3,2,1002,1003,62,,,,,1,TRUE,FALSE,Black,Needs strong routine;Needs reassurance,Needs a calm predictable start to the day
+1001,K,Amaya,Brooks,F,IEP,30,0,0,30,0,0,0,"Reading - Tier 2; Math - Tier 3","Check-In - Tier 2",1002,1003,62,,,,,1,RFEP 1-4,FALSE,Black,Needs strong routine;Needs reassurance,Needs a calm predictable start to the day
 ```
 
 Teacher row:

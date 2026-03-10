@@ -17,8 +17,10 @@ interface StudentFormState {
   lastName: string
   gender: "M" | "F"
   specialEdStatus: Student["specialEd"]["status"]
-  academicTier: "1" | "2" | "3"
-  behaviorTier: "1" | "2" | "3"
+  academicTier: string
+  behaviorTier: string
+  academicTierNotes: string
+  behaviorTierNotes: string
   referrals: string
   briganceReadiness: string
   mapReading: string
@@ -59,8 +61,10 @@ function buildInitialFormState(student: Student | undefined, defaultGrade: Grade
     lastName: student?.lastName ?? "",
     gender: student?.gender ?? "M",
     specialEdStatus: student?.specialEd.status ?? "None",
-    academicTier: String(student?.intervention.academicTier ?? 1) as "1" | "2" | "3",
-    behaviorTier: String(student?.behaviorTier ?? 1) as "1" | "2" | "3",
+    academicTier: String(student?.intervention.academicTier ?? 1),
+    behaviorTier: String(student?.behaviorTier ?? 1),
+    academicTierNotes: student?.academicTierNotes ?? "",
+    behaviorTierNotes: student?.behaviorTierNotes ?? "",
     referrals: student?.referrals ? String(student.referrals) : "",
     briganceReadiness: student?.briganceReadiness !== undefined ? String(student.briganceReadiness) : "",
     mapReading: student?.mapReading !== undefined ? String(student.mapReading) : "",
@@ -188,6 +192,13 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
       return
     }
 
+    const academicTier = parseInteger(form.academicTier)
+    const behaviorTier = parseInteger(form.behaviorTier)
+    if (academicTier === undefined || academicTier <= 0 || behaviorTier === undefined || behaviorTier <= 0) {
+      setError("Academic and behavior tiers must be positive whole numbers.")
+      return
+    }
+
     const parsedNoContact = parseIdInput(form.noContactWith)
     const parsedPreferred = parseIdInput(form.preferredWith)
     if (parsedNoContact.invalidTokens.length > 0 || parsedPreferred.invalidTokens.length > 0) {
@@ -228,8 +239,10 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
       gender: form.gender,
       specialEd: { status: form.specialEdStatus },
       coTeachMinutes,
-      intervention: { academicTier: Number(form.academicTier) as 1 | 2 | 3 },
-      behaviorTier: Number(form.behaviorTier) as 1 | 2 | 3,
+      intervention: { academicTier },
+      behaviorTier,
+      academicTierNotes: form.academicTierNotes.trim() || undefined,
+      behaviorTierNotes: form.behaviorTierNotes.trim() || undefined,
       referrals: parseInteger(form.referrals) ?? 0,
       briganceReadiness: parseOptionalNumber(form.briganceReadiness),
       mapReading: parseOptionalNumber(form.mapReading),
@@ -338,23 +351,25 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
               </label>
               <label className="student-field">
                 <span>Academic Tier</span>
-                <select className="snapshot-input" value={form.academicTier} onChange={(e) => setField("academicTier", e.target.value as "1" | "2" | "3")}>
-                  <option value="1">Tier 1</option>
-                  <option value="2">Tier 2</option>
-                  <option value="3">Tier 3</option>
-                </select>
+                <small className="student-field-hint">Use the summed support score. Imports can create values above 3.</small>
+                <input className="snapshot-input" value={form.academicTier} onChange={(e) => setField("academicTier", e.target.value)} placeholder="1" />
               </label>
               <label className="student-field">
                 <span>Behavior Tier</span>
-                <select className="snapshot-input" value={form.behaviorTier} onChange={(e) => setField("behaviorTier", e.target.value as "1" | "2" | "3")}>
-                  <option value="1">Tier 1</option>
-                  <option value="2">Tier 2</option>
-                  <option value="3">Tier 3</option>
-                </select>
+                <small className="student-field-hint">Use the summed support score. Imports can create values above 3.</small>
+                <input className="snapshot-input" value={form.behaviorTier} onChange={(e) => setField("behaviorTier", e.target.value)} placeholder="1" />
               </label>
               <label className="student-field">
                 <span>Referrals</span>
                 <input className="snapshot-input" value={form.referrals} onChange={(e) => setField("referrals", e.target.value)} placeholder="0" />
+              </label>
+              <label className="student-field student-field-wide">
+                <span>Academic Tier Notes</span>
+                <textarea className="snapshot-input student-notes" value={form.academicTierNotes} onChange={(e) => setField("academicTierNotes", e.target.value)} />
+              </label>
+              <label className="student-field student-field-wide">
+                <span>Behavior Tier Notes</span>
+                <textarea className="snapshot-input student-notes" value={form.behaviorTierNotes} onChange={(e) => setField("behaviorTierNotes", e.target.value)} />
               </label>
               <label className="student-check student-check-inline">
                 <input type="checkbox" checked={form.ell} onChange={(e) => setField("ell", e.target.checked)} />

@@ -85,16 +85,35 @@ function parseBool(val: string): boolean {
 
 function parseELL(val: string): boolean {
   const v = val.trim().toLowerCase()
-  return v === "el" || v === "ell" || v === "true" || v === "1" || v === "yes" || v === "y"
+  return v === "el" || v === "ell" || v.startsWith("rfep") || v === "true" || v === "1" || v === "yes" || v === "y"
 }
 
-function parseTier(val: string): 1 | 2 | 3 {
-  const v = val.trim()
-  if (v.toLowerCase() === "yes" || v.toLowerCase() === "y") return 2
-  const n = parseInt(v, 10)
-  if (n === 2) return 2
-  if (n === 3) return 3
-  return 1
+interface ParsedTier {
+  score: number
+  notes?: string
+}
+
+function parseTier(val: string): ParsedTier {
+  const raw = val.trim()
+  if (!raw) return { score: 1 }
+
+  const normalized = raw.toLowerCase()
+  if (normalized === "yes" || normalized === "y") return { score: 2 }
+
+  const tierMatches = [...raw.matchAll(/tier\s*[-:]?\s*([1-3])/gi)]
+  if (tierMatches.length > 0) {
+    return {
+      score: tierMatches.reduce((sum, match) => sum + Number(match[1]), 0),
+      notes: raw,
+    }
+  }
+
+  if (/^\d+$/.test(raw)) {
+    const parsed = Number(raw)
+    return { score: Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1 }
+  }
+
+  return { score: 1, notes: raw }
 }
 
 function parseStrictPositiveInt(val: string): number | undefined {
@@ -361,6 +380,8 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
     const parsedNoContact = parseIdList(noContactRaw)
     const parsedPreferredWith = parseIdList(preferredWithRaw)
     const parsedTags = parseStudentTags(get(values, "studentTags"))
+    const parsedAcademicTier = parseTier(get(values, "academicTier"))
+    const parsedBehaviorTier = parseTier(get(values, "behaviorTier"))
 
     if (parsedNoContact.invalidTokens.length > 0) {
       errors.push(
@@ -391,9 +412,11 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       },
       coTeachMinutes: buildCoTeachMinutes(values, rowIndex, get, errors),
       intervention: {
-        academicTier: parseTier(get(values, "academicTier")),
+        academicTier: parsedAcademicTier.score,
       },
-      behaviorTier: parseTier(get(values, "behaviorTier")),
+      behaviorTier: parsedBehaviorTier.score,
+      academicTierNotes: parsedAcademicTier.notes,
+      behaviorTierNotes: parsedBehaviorTier.notes,
       referrals: parseOptionalInt(get(values, "referrals")) ?? 0,
       preassignedTeacher: parseOptionalString(get(values, "assignedTeacher")),
       briganceReadiness: parseOptionalFloat(get(values, "briganceReadiness")),

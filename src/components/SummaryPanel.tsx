@@ -108,6 +108,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
       <div className="support-load-help">
         <strong>How Support Load is calculated:</strong> average of each student&apos;s
         <code> academic tier + behavior tier + special education status bonus + referral count + normalized co-teach load</code>.
+        Imported academic and behavior cells can include notes like <code>Reading - Tier 2; Math - Tier 3</code>; the app preserves that text and sums the tier values for support load.
         Co-teach minutes are summed across categories, normalized (minutes/60, clamped 0-2), and added to support load for balancing.
       </div>
 
