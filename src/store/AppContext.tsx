@@ -73,6 +73,13 @@ function normalizeStudent(student: Student): Student {
 
   return {
     ...normalizeStudentLists(student),
+    academicTierNotes: student.academicTierNotes?.trim() || undefined,
+    behaviorTierNotes: student.behaviorTierNotes?.trim() || undefined,
+    teacherNotes: student.teacherNotes?.trim() || undefined,
+    ireadyReading: student.ireadyReading?.trim() || undefined,
+    ireadyMath: student.ireadyMath?.trim() || undefined,
+    preassignedTeacher: student.preassignedTeacher?.trim() || undefined,
+    raceEthnicity: student.raceEthnicity?.trim() || undefined,
     coTeachMinutes: normalizeCoTeachMinutes(migratedMinutes),
     locked: Boolean(student.locked),
   }

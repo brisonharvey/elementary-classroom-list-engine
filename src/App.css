@@ -50,7 +50,7 @@ html, body, #root {
   font-size: 13px;
   color: var(--text);
   background: var(--bg);
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ── Scrollbars ── */
@@ -893,7 +893,7 @@ html, body, #root {
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
   transition: border-color .15s, box-shadow .15s;
   box-shadow: var(--shadow);
@@ -941,6 +941,13 @@ html, body, #root {
 }
 
 .teacher-name em { color: var(--text-light); font-style: italic; }
+
+.classroom-actions-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
 
 .edit-hint {
   font-size: 10px;
@@ -1060,6 +1067,7 @@ html, body, #root {
 .qs-iep { background: var(--danger-light); color: #b91c1c; }
 .qs-ref { background: var(--warning-light); color: #92400e; }
 .qs-gender { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
+.qs-support { background: #e0f2fe; color: #0f4c81; border: 1px solid #7dd3fc; }
 
 /* ══════════════════════════════════════════
    STUDENT LIST (shared)
@@ -1154,6 +1162,20 @@ html, body, #root {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
+}
+
+.card-tier-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-tier-note {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Badges ── */

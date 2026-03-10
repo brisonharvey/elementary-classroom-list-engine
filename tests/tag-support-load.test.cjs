@@ -6,7 +6,7 @@ const {
   getStudentTagSupportLoadBreakdown,
   getClassroomTagSupportLoadBreakdown,
 } = require("./.compiled/src/utils/tagSupportLoad.js")
-const { getTagSupportLoadPenalty, getStudentSupportLoad } = require("./.compiled/src/utils/scoring.js")
+const { getTagSupportLoadPenalty, getStudentSupportLoad, scoreStudentForRoom, computeRoomStats } = require("./.compiled/src/utils/scoring.js")
 const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
 const { buildPlacementCSV } = require("./.compiled/src/utils/exportUtils.js")
 const {
@@ -256,6 +256,36 @@ const tests = [
       for (const teacherName of assignedTeachers) {
         assert.equal(teacherNames.has(teacherName), true)
       }
+    },
+  },
+  {
+    name: "room fill penalty grows when a placement would widen the class-size gap",
+    run: () => {
+      const candidate = createStudent({ id: 50 })
+      const fullerRoom = createClassroom("1-A", [
+        createStudent({ id: 1 }),
+        createStudent({ id: 2 }),
+        createStudent({ id: 3 }),
+        createStudent({ id: 4 }),
+        createStudent({ id: 5 }),
+      ])
+      const smallerRoom = createClassroom("1-B", [
+        createStudent({ id: 6 }),
+      ])
+      const gradeRooms = [fullerRoom, smallerRoom]
+      const weights = { academic: 0, behavioral: 0, demographic: 0, tagSupportLoad: 0 }
+      const settings = createDefaultGradeSettingsMap()["1"]
+
+      const fullerScore = scoreStudentForRoom(candidate, fullerRoom, computeRoomStats(fullerRoom), weights, {
+        gradeSettings: settings,
+        gradeRooms,
+      })
+      const smallerScore = scoreStudentForRoom(candidate, smallerRoom, computeRoomStats(smallerRoom), weights, {
+        gradeSettings: settings,
+        gradeRooms,
+      })
+
+      assert.ok(smallerScore < fullerScore)
     },
   },
   {

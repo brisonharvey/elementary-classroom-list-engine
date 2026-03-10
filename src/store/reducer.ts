@@ -88,6 +88,8 @@ function normalizeStudentRecord(student: Student): Student {
     preassignedTeacher: student.preassignedTeacher?.trim() || undefined,
     raceEthnicity: student.raceEthnicity?.trim() || undefined,
     teacherNotes: student.teacherNotes?.trim() || undefined,
+    academicTierNotes: student.academicTierNotes?.trim() || undefined,
+    behaviorTierNotes: student.behaviorTierNotes?.trim() || undefined,
     ireadyReading: student.ireadyReading?.trim() || undefined,
     ireadyMath: student.ireadyMath?.trim() || undefined,
     tags: student.tags ? Array.from(new Set(student.tags)) : [],

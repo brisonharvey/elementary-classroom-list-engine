@@ -268,6 +268,20 @@ function getSettingsPenalty(student: Student, stats: RoomStats, settings: GradeS
   return penalty
 }
 
+function getRoomFillPenalty(classroom: Classroom, stats: RoomStats, gradeRooms: Classroom[] | undefined, settings: GradeSettings): number {
+  const projectedOccupancy = (stats.size + 1) / classroom.maxSize
+  if (!gradeRooms || gradeRooms.length === 0) {
+    return projectedOccupancy * settings.roomFillPenaltyWeight
+  }
+
+  const projectedSizes = gradeRooms.map((room) => (room.id === classroom.id ? room.students.length + 1 : room.students.length))
+  const smallestProjectedSize = Math.min(...projectedSizes)
+  const targetProjectedSize = stats.size + 1
+  const sizeGapPenalty = targetProjectedSize - smallestProjectedSize
+
+  return (projectedOccupancy + sizeGapPenalty) * settings.roomFillPenaltyWeight
+}
+
 function getAverageProjectedCategory(
   projectedBreakdowns: TagSupportLoadBreakdown[],
   key: keyof Pick<TagSupportLoadBreakdown, "behavioral" | "emotional" | "instructional" | "energy">
@@ -322,7 +336,7 @@ export function scoreStudentForRoom(
   context: PlacementSoftContext = {}
 ): number {
   const settings = getPlacementSettings(context.gradeSettings)
-  const loadScore = (stats.size / classroom.maxSize) * settings.roomFillPenaltyWeight
+  const loadScore = getRoomFillPenalty(classroom, stats, context.gradeRooms, settings)
 
   const roomAcademicAvg =
     classroom.students.length > 0
