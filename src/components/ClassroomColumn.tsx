@@ -82,7 +82,7 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     { label: "Read", value: Math.min(1, stats.readingAvg / 4), text: stats.readingAvg.toFixed(2) },
     { label: "Math", value: Math.min(1, stats.mathAvg / 4), text: stats.mathAvg.toFixed(2) },
     { label: "Support", value: Math.min(1, stats.supportLoad / 8), text: stats.supportLoad.toFixed(2) },
-    { label: "Tag", value: Math.min(1, Math.max(0, stats.tagSupportLoad) / 12), text: `${stats.tagSupportLoad.toFixed(1)} total` },
+    { label: "Char", value: Math.min(1, Math.max(0, stats.tagSupportLoad) / 12), text: `${stats.tagSupportLoad.toFixed(1)} total` },
     { label: "CoT", value: Math.min(1, stats.avgCoTeachMinutes / 60), text: `${stats.avgCoTeachMinutes.toFixed(1)} avg min` },
   ]
 
@@ -169,7 +169,7 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
         </div>
 
         <div className="room-quick-stats">
-          <span className={`qs-badge ${tagLoadWarn ? "qs-tag-warn" : "qs-tag"}`}>Tag Load: {stats.tagSupportLoad.toFixed(1)}</span>
+          <span className={`qs-badge ${tagLoadWarn ? "qs-tag-warn" : "qs-tag"}`}>Characteristic Load: {stats.tagSupportLoad.toFixed(1)}</span>
           <span className="qs-badge qs-tag">Beh: {stats.behavioralTagSupportLoad.toFixed(1)}</span>
           <span className="qs-badge qs-tag">Emo: {stats.emotionalTagSupportLoad.toFixed(1)}</span>
           <span className="qs-badge qs-tag">Inst: {stats.instructionalTagSupportLoad.toFixed(1)}</span>
@@ -194,3 +194,4 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     </div>
   )
 })
+

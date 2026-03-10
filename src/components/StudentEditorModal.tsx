@@ -239,7 +239,7 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
       tags: form.tags,
       noContactWith: parsedNoContact.ids,
       preferredWith: parsedPreferred.ids,
-      locked: student?.locked ?? false,
+      locked: form.preassignedTeacher.trim() ? true : (student?.preassignedTeacher ? false : (student?.locked ?? false)),
       ell: form.ell,
       section504: form.section504,
       raceEthnicity: form.raceEthnicity.trim() || undefined,
@@ -313,7 +313,8 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
                 </select>
               </label>
               <label className="student-field">
-                <span>Assigned Teacher</span>`r`n                <small className="student-field-hint">Attempts placement into a matching classroom and exports this teacher if still unassigned.</small>
+                <span>Assigned Teacher</span>
+                <small className="student-field-hint">Attempts placement into a matching classroom and exports this teacher if still unassigned.</small>
                 <input
                   className="snapshot-input"
                   value={form.preassignedTeacher}
@@ -445,7 +446,7 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
           </section>
 
           <section className="student-form-section">
-            <div className="student-form-section-title">Student Tags</div>
+            <div className="student-form-section-title">Student Characteristics</div>
             <div className="student-tags-grid">
               {STUDENT_TAGS.map((tag) => (
                 <label key={tag} className="student-check">
@@ -472,5 +473,7 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
     document.body
   )
 }
+
+
 
 

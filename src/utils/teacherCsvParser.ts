@@ -4,14 +4,10 @@ import { CsvFieldOption, CSVPreview, parseCSVPreview } from "./csvParser"
 export const TEACHER_CSV_FIELD_OPTIONS = [
   { key: "grade", label: "Grade", required: true },
   { key: "teacherName", label: "Teacher name", required: true },
-  { key: "classroomStructure", label: "Classroom structure", required: true },
-  { key: "behaviorManagementStrength", label: "Behavior management strength", required: true },
-  { key: "emotionalSupportNurturing", label: "Emotional support/nurturing", required: true },
-  { key: "academicEnrichmentStrength", label: "Academic enrichment strength", required: true },
-  { key: "independenceScaffolding", label: "Independence scaffolding", required: true },
-  { key: "movementFlexibility", label: "Movement flexibility", required: true },
-  { key: "peerSocialCoaching", label: "Peer social coaching", required: true },
-  { key: "confidenceBuilding", label: "Confidence building", required: true },
+  { key: "structure", label: "Structure", required: true },
+  { key: "regulationBehaviorSupport", label: "Regulation/Behavior Support", required: true },
+  { key: "socialEmotionalSupport", label: "Social/Emotional Support", required: true },
+  { key: "instructionalExpertise", label: "Instructional Expertise", required: true },
 ] as const satisfies readonly CsvFieldOption[]
 
 export type TeacherCsvFieldKey = (typeof TEACHER_CSV_FIELD_OPTIONS)[number]["key"]
@@ -20,14 +16,39 @@ export type TeacherCsvFieldMapping = Partial<Record<TeacherCsvFieldKey, string>>
 const FIELD_ALIASES: Record<TeacherCsvFieldKey, string[]> = {
   grade: ["grade", "gradelevel", "teachergrade"],
   teacherName: ["teacher", "teachername", "name", "homeroomteacher"],
-  classroomStructure: ["classroomstructure", "routine", "structure"],
-  behaviorManagementStrength: ["behaviormanagementstrength", "behaviorstrength", "classroommanagement"],
-  emotionalSupportNurturing: ["emotionalsupportnurturing", "emotionalsupport", "nurturing"],
-  academicEnrichmentStrength: ["academicenrichmentstrength", "academicenrichment", "enrichment"],
-  independenceScaffolding: ["independencescaffolding", "independence", "scaffolding"],
-  movementFlexibility: ["movementflexibility", "movement", "movementbreaks"],
-  peerSocialCoaching: ["peersocialcoaching", "peercoaching", "socialcoaching"],
-  confidenceBuilding: ["confidencebuilding", "confidence", "academicconfidence"],
+  structure: ["structure", "classroomstructure", "routine"],
+  regulationBehaviorSupport: [
+    "regulation/behaviorsupport",
+    "regulationbehaviorsupport",
+    "behaviorsupport",
+    "regulationsupport",
+    "behaviormanagementstrength",
+    "behaviorstrength",
+    "classroommanagement",
+    "movementflexibility",
+  ],
+  socialEmotionalSupport: [
+    "social/emotionalsupport",
+    "socialemotionalsupport",
+    "socialemotionalsupport",
+    "emotionalsupportnurturing",
+    "emotionalsupport",
+    "nurturing",
+    "peersocialcoaching",
+    "peercoaching",
+    "socialcoaching",
+    "confidencebuilding",
+    "confidence",
+  ],
+  instructionalExpertise: [
+    "instructionalexpertise",
+    "academicenrichmentstrength",
+    "academicenrichment",
+    "enrichment",
+    "independencescaffolding",
+    "independence",
+    "scaffolding",
+  ],
 }
 
 export interface TeacherParseResult {
@@ -126,14 +147,20 @@ export function parseTeacherCSVWithMapping(text: string, mapping: TeacherCsvFiel
       grade,
       teacherName,
       characteristics: {
-        classroomStructure: parseRating(get(values, "classroomStructure"), rowIndex, "Classroom structure", errors),
-        behaviorManagementStrength: parseRating(get(values, "behaviorManagementStrength"), rowIndex, "Behavior management strength", errors),
-        emotionalSupportNurturing: parseRating(get(values, "emotionalSupportNurturing"), rowIndex, "Emotional support/nurturing", errors),
-        academicEnrichmentStrength: parseRating(get(values, "academicEnrichmentStrength"), rowIndex, "Academic enrichment strength", errors),
-        independenceScaffolding: parseRating(get(values, "independenceScaffolding"), rowIndex, "Independence scaffolding", errors),
-        movementFlexibility: parseRating(get(values, "movementFlexibility"), rowIndex, "Movement flexibility", errors),
-        peerSocialCoaching: parseRating(get(values, "peerSocialCoaching"), rowIndex, "Peer social coaching", errors),
-        confidenceBuilding: parseRating(get(values, "confidenceBuilding"), rowIndex, "Confidence building", errors),
+        structure: parseRating(get(values, "structure"), rowIndex, "Structure", errors),
+        regulationBehaviorSupport: parseRating(
+          get(values, "regulationBehaviorSupport"),
+          rowIndex,
+          "Regulation/Behavior Support",
+          errors
+        ),
+        socialEmotionalSupport: parseRating(
+          get(values, "socialEmotionalSupport"),
+          rowIndex,
+          "Social/Emotional Support",
+          errors
+        ),
+        instructionalExpertise: parseRating(get(values, "instructionalExpertise"), rowIndex, "Instructional Expertise", errors),
       },
     })
   }
@@ -165,10 +192,6 @@ export function generateTeacherSampleCSV(): string {
         4 + (index % 2),
         5 - (index === 3 ? 1 : 0),
         3 + (index % 3),
-        3 + ((index + 1) % 3),
-        2 + index,
-        4 - (index % 2),
-        4 + ((index + 2) % 2),
       ].join(","))
     })
   }

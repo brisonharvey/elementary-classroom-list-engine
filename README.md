@@ -6,11 +6,11 @@ Desktop and web app for building balanced K-5 classroom rosters from separate st
 
 - Separate student and teacher CSV imports with header mapping.
 - Hard constraints first, teacher-fit comparison second, and weighted soft balancing after that.
-- Existing weighted balancing still includes class size, academic need, behavioral need, demographic balance, preferred-peer adjustment, do-not-separate adjustment, and grade settings pressure.
-- New additive tag-based Classroom Support Load Index derived from `studentTags`.
+- Weighted balancing includes class size, academic need, behavioral need, demographic balance, preferred-peer adjustment, do-not-separate adjustment, and grade settings pressure.
+- Additive characteristic-based Classroom Support Load derived from student characteristics.
 - Kindergarten placement uses `briganceReadiness` instead of MAP/i-Ready for academic scoring.
 - Manual drag/drop, locks, snapshots, exports, and local persistence.
-- Poor teacher-fit students remain marked with purple name text.
+- Teacher profile scores are used internally for fit and are not shown in the app UI.
 
 ## Tech stack
 
@@ -77,15 +77,15 @@ Common optional columns:
 - Co-teach minutes: `coTeachReadingMinutes`, `coTeachWritingMinutes`, `coTeachScienceSocialStudiesMinutes`, `coTeachMathMinutes`, `coTeachBehaviorMinutes`, `coTeachSocialMinutes`, `coTeachVocationalMinutes`
 - Relationships: `noContactWith`, `preferredWith`
 - Assessments: `briganceReadiness`, `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
-- Demographics/context: `ell`, `section504`, `raceEthnicity`, `studentTags`, `teacherNotes`
+- Demographics/context: `ell`, `section504`, `raceEthnicity`, `studentCharacteristics`, `teacherNotes`, `assignedTeacher`
 
 Notes:
 
-- Student imports do not accept pre-assigned teachers.
+- `assignedTeacher` is optional on student import and can seed a student into a matching teacher room.
 - Students are only locked or fixed to rooms inside the app.
 - For kindergarten, use `briganceReadiness` and leave MAP/i-Ready blank if you do not need them for reporting.
-- `studentTags` must use the exact human-readable labels documented in [TEMPLATE_USAGE.md](/C:/Users/briso/GitHub/elementary-classroom-list-engine/TEMPLATE_USAGE.md).
-- `studentTags` now drive both teacher-fit comparison and the tag-based classroom support-load balancing signal.
+- `studentCharacteristics` must use the exact human-readable labels documented in `TEMPLATE_USAGE.md`.
+- The parser still accepts legacy `studentTags` headers and retired characteristic labels for backward compatibility, but all exports and docs now use `studentCharacteristics`.
 
 ## Teacher import schema
 
@@ -93,16 +93,10 @@ Required columns:
 
 - `grade`
 - `teacherName`
-- `classroomStructure`
-- `behaviorManagementStrength`
-- `emotionalSupportNurturing`
-- `academicEnrichmentStrength`
-- `independenceScaffolding`
-- `movementFlexibility`
-- `peerSocialCoaching`
-- `confidenceBuilding`
-
-Teacher ratings are `1-5`.
+- `structure`
+- `regulationBehaviorSupport`
+- `socialEmotionalSupport`
+- `instructionalExpertise`
 
 Teacher import behavior:
 
@@ -110,6 +104,48 @@ Teacher import behavior:
 - If a grade has more imported teachers than existing rooms, the app adds rooms.
 - Loading teachers later updates teacher names and profiles without clearing student placements.
 - Teacher-fit scoring matches the room using `grade + teacherName`.
+- Imported teacher scores are hidden in the app UI after import and only drive internal fit comparisons.
+
+## Student characteristics
+
+Supported student characteristics:
+
+- `Needs strong routine`
+- `Needs frequent redirection`
+- `Easily frustrated`
+- `Needs reassurance`
+- `Sensitive to correction`
+- `Struggles with peer conflict`
+- `High energy`
+- `Needs movement breaks`
+- `Needs enrichment`
+- `Independent worker`
+- `Low academic confidence`
+
+## Teacher characteristics
+
+Supported teacher characteristics:
+
+- `Structure`
+- `Regulation/Behavior Support`
+- `Social/Emotional Support`
+- `Instructional Expertise`
+
+## Characteristic-to-teacher alignment
+
+The engine compares student characteristics to teacher characteristics like this:
+
+- `Needs strong routine` -> `Structure`, `Regulation/Behavior Support`
+- `Needs frequent redirection` -> `Regulation/Behavior Support`, `Structure`
+- `Easily frustrated` -> `Social/Emotional Support`, `Regulation/Behavior Support`
+- `Needs reassurance` -> `Social/Emotional Support`, `Instructional Expertise`
+- `Sensitive to correction` -> `Social/Emotional Support`, `Instructional Expertise`
+- `Struggles with peer conflict` -> `Social/Emotional Support`, `Regulation/Behavior Support`
+- `High energy` -> `Regulation/Behavior Support`, `Structure`
+- `Needs movement breaks` -> `Regulation/Behavior Support`, `Structure`
+- `Needs enrichment` -> `Instructional Expertise`, `Structure`
+- `Independent worker` -> `Instructional Expertise`, `Structure`
+- `Low academic confidence` -> `Social/Emotional Support`, `Instructional Expertise`
 
 ## Placement workflow
 
@@ -117,7 +153,7 @@ Teacher import behavior:
 2. Import teachers.
 3. Review teacher names, co-teach coverage, rules, settings, and weights.
 4. Run auto-place for the active grade.
-5. Review warnings, poor-fit cards, room tag-load summaries, and the summary drawer.
+5. Review warnings, poor-fit cards, room characteristic-load summaries, and the summary drawer.
 6. Drag students manually as needed.
 7. Lock placements that should be preserved.
 8. Export the active grade or all grades.
@@ -128,39 +164,24 @@ Per candidate room, the engine evaluates in this order:
 
 1. Hard constraints.
 2. Teacher-fit penalty.
-3. Existing weighted soft balancing, now with an additional tag-support-load penalty.
+3. Weighted soft balancing, including characteristic-support-load pressure.
 
-The weighted soft score remains:
+The weighted soft score is:
 
 `loadScore + academicPenalty + behavioralPenalty + demographicPenalty + preferredTogetherAdjustment + doNotSeparateAdjustment + settingsPenalty + tagSupportLoadPenalty`
 
-`tagSupportLoadPenalty` is additive only. It does not replace teacher-fit comparison, academic balancing, behavioral balancing, or demographic balancing.
+## Characteristic-based Classroom Support Load
 
-## Tag-based Classroom Support Load Index
+The app derives a second support signal from `studentCharacteristics`.
 
-The app derives a second support signal from `studentTags`.
-
-Per-student derived value:
-
-- `studentTagSupportLoad`
-
-Per-room derived values:
-
-- `classroomTagSupportLoad`
-- `behavioralTagSupportLoad`
-- `emotionalTagSupportLoad`
-- `instructionalTagSupportLoad`
-- `energyTagSupportLoad`
-
-Current tag weights:
+Current characteristic weights:
 
 - `Needs strong routine = 2`
 - `Needs frequent redirection = 4`
 - `Easily frustrated = 3`
 - `Needs reassurance = 2`
 - `Sensitive to correction = 2`
-- `Easily influenced by peers = 2`
-- `Needs positive peer models = 1`
+- `Struggles with peer conflict = 3`
 - `High energy = 2`
 - `Needs movement breaks = 2`
 - `Needs enrichment = 1`
@@ -190,27 +211,31 @@ Grades `1-5` continue using MAP and i-Ready for academic balancing.
 
 Exports are reporting-oriented, not round-trip import templates.
 
-Exports currently include:
+Exports include:
 
 - the student reporting fields already in the app
+- `studentCharacteristics`
 - `assignedTeacher`
 
-Derived tag-support-load values are not exported as additional columns.
+Derived support-load values are not exported as additional columns.
 
 ## Project structure
 
 - `src/components/`: uploader, controls, room columns, summary, snapshots, settings, and relationship management
 - `src/engine/`: placement engine
 - `src/store/`: reducer, app context, drag context
-- `src/utils/`: CSV parsing, teacher fit, tag-load derivation, scoring, constraints, exports, and classroom initialization
+- `src/utils/`: CSV parsing, teacher fit, characteristic-load derivation, scoring, constraints, exports, and classroom initialization
 - `src/types/`: shared domain types
 - `public/`: shipped CSV templates and samples
 - `tests/`: lightweight logic tests
+- `SETTINGS_PAGE_EXPLANATION.md`: guide to the Grade Settings panel and each setting
 - `electron/`: desktop shell and notarization hook
 
 ## Verification notes
 
-- `npm run test` validates tag-load derivation, projected penalty behavior, and backward-compatible `studentTags` parsing.
+- `npm run test` validates characteristic-load derivation, projected penalty behavior, and backward-compatible student characteristic parsing.
 - `node_modules/.bin/tsc -b` verifies the TypeScript projects.
 - `npm run build` may still fail in a restricted sandbox if Vite/esbuild cannot spawn its subprocess.
 - `npm run lint` requires `eslint` to be installed in the environment.
+
+

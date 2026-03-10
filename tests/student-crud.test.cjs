@@ -83,7 +83,7 @@ const tests = [
         lastName: "Edited",
         noContactWith: [102],
         preferredWith: [102],
-        locked: false,
+        locked: true,
       })
 
       const next = reducer(state, {
@@ -138,6 +138,28 @@ const tests = [
       assert.equal(next.classrooms[1].students[0].id, 301)
       assert.equal(next.classrooms[1].students[0].locked, true)
       assert.equal(next.allStudents[0].locked, true)
+    },
+  },
+  {
+    name: "clearing assigned teacher in the student editor unlocks a previously teacher-fixed student",
+    run: () => {
+      const state = createState()
+      state.allStudents = [createStudent(501, { firstName: "Echo", preassignedTeacher: "Ms. Rivera", locked: true })]
+      state.classrooms = [
+        createClassroom("1-A", [createStudent(501, { firstName: "Echo", preassignedTeacher: "Ms. Rivera", locked: true })], { teacherName: "Ms. Rivera" }),
+        createClassroom("1-B", []),
+      ]
+
+      const next = reducer(state, {
+        type: "UPSERT_STUDENT",
+        payload: {
+          student: createStudent(501, { firstName: "Echo", preassignedTeacher: undefined, locked: false }),
+        },
+      })
+
+      assert.equal(next.allStudents[0].locked, false)
+      assert.equal(next.allStudents[0].preassignedTeacher, undefined)
+      assert.equal(next.classrooms[0].students[0].locked, false)
     },
   },
   {
@@ -204,6 +226,27 @@ const tests = [
       assert.deepEqual(reset.gradeSettings["1"], defaults)
     },
   },
+  {
+    name: "grade settings can be copied to every grade level at once",
+    run: () => {
+      const state = createState()
+      const next = reducer(state, {
+        type: "APPLY_GRADE_SETTINGS_TO_ALL",
+        payload: {
+          maxIEPPerRoom: 3,
+          roomFillPenaltyWeight: 18,
+          tagHotspotThreshold: 4.5,
+        },
+      })
+
+      for (const grade of ["K", "1", "2", "3", "4", "5"]) {
+        assert.equal(next.gradeSettings[grade].maxIEPPerRoom, 3)
+        assert.equal(next.gradeSettings[grade].roomFillPenaltyWeight, 18)
+        assert.equal(next.gradeSettings[grade].tagHotspotThreshold, 4.5)
+        assert.equal(next.gradeSettings[grade].preferredPeerBonus, state.gradeSettings["1"].preferredPeerBonus)
+      }
+    },
+  },
 ]
 
 let passed = 0
@@ -214,4 +257,9 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
+
+
+
+
+
 

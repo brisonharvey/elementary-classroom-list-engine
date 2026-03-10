@@ -28,6 +28,7 @@ Common optional columns:
 - `section504`
 - `raceEthnicity`
 - `teacherNotes`
+- `assignedTeacher`
 
 Assessment columns:
 
@@ -56,22 +57,21 @@ Example:
 1001;1004;1012
 ```
 
-### Student tags
+## Student characteristics
 
-Use the `studentTags` column for both:
+Use the `studentCharacteristics` column for both:
 
 - teacher-fit comparison
-- tag-based Classroom Support Load Index derivation
+- characteristic-based Classroom Support Load derivation
 
-Enter one or more of these exact tag names, separated by semicolons, commas, or pipes inside the field:
+Enter one or more of these exact labels, separated by semicolons, commas, or pipes inside the field:
 
 - `Needs strong routine`
 - `Needs frequent redirection`
 - `Easily frustrated`
 - `Needs reassurance`
 - `Sensitive to correction`
-- `Easily influenced by peers`
-- `Needs positive peer models`
+- `Struggles with peer conflict`
 - `High energy`
 - `Needs movement breaks`
 - `Needs enrichment`
@@ -84,7 +84,7 @@ Example:
 Needs strong routine;Needs reassurance
 ```
 
-### Tag support-load weights
+### Characteristic support-load weights
 
 These weights are derived automatically in the app. Do not add extra columns for them.
 
@@ -93,20 +93,20 @@ These weights are derived automatically in the app. Do not add extra columns for
 - `Easily frustrated = 3`
 - `Needs reassurance = 2`
 - `Sensitive to correction = 2`
-- `Easily influenced by peers = 2`
-- `Needs positive peer models = 1`
+- `Struggles with peer conflict = 3`
 - `High energy = 2`
 - `Needs movement breaks = 2`
 - `Needs enrichment = 1`
 - `Independent worker = -1`
 - `Low academic confidence = 2`
 
-### Tag categories used in room balancing
+### Characteristic categories used in room balancing
 
 Behavioral:
 
+- `Needs strong routine`
 - `Needs frequent redirection`
-- `Easily influenced by peers`
+- `Struggles with peer conflict`
 
 Emotional:
 
@@ -117,8 +117,6 @@ Emotional:
 
 Instructional:
 
-- `Needs strong routine`
-- `Needs positive peer models`
 - `Needs enrichment`
 - `Independent worker`
 
@@ -137,43 +135,37 @@ Required columns:
 
 - `grade`
 - `teacherName`
-- `classroomStructure`
-- `behaviorManagementStrength`
-- `emotionalSupportNurturing`
-- `academicEnrichmentStrength`
-- `independenceScaffolding`
-- `movementFlexibility`
-- `peerSocialCoaching`
-- `confidenceBuilding`
+- `structure`
+- `regulationBehaviorSupport`
+- `socialEmotionalSupport`
+- `instructionalExpertise`
 
-### Teacher rating scale
+Teacher profile scores are entered in the CSV as `1-5`, but those numbers are hidden in the app UI after import.
 
-Every teacher characteristic must be rated from `1` to `5`.
+### Teacher characteristics
 
-Use this scale consistently:
+The teacher columns mean:
 
-- `1` = low strength / rarely a strong match for that need
-- `2` = below average support for that need
-- `3` = neutral/default support
-- `4` = strong support for that need
-- `5` = standout strength for that need
+- `structure`
+- `regulationBehaviorSupport`
+- `socialEmotionalSupport`
+- `instructionalExpertise`
 
-## How tags align to teacher ratings
+## How characteristics align to teacher characteristics
 
-The engine compares student tags to these teacher characteristics:
+The engine compares student characteristics to teacher characteristics like this:
 
-- `Needs strong routine` -> `classroomStructure`, `behaviorManagementStrength`
-- `Needs frequent redirection` -> `behaviorManagementStrength`, `classroomStructure`
-- `Easily frustrated` -> `emotionalSupportNurturing`, `confidenceBuilding`
-- `Needs reassurance` -> `emotionalSupportNurturing`, `confidenceBuilding`
-- `Sensitive to correction` -> `emotionalSupportNurturing`, `confidenceBuilding`
-- `Easily influenced by peers` -> `peerSocialCoaching`, `classroomStructure`
-- `Needs positive peer models` -> `peerSocialCoaching`, `classroomStructure`
-- `High energy` -> `movementFlexibility`, `behaviorManagementStrength`
-- `Needs movement breaks` -> `movementFlexibility`
-- `Needs enrichment` -> `academicEnrichmentStrength`
-- `Independent worker` -> `independenceScaffolding`
-- `Low academic confidence` -> `confidenceBuilding`, `emotionalSupportNurturing`
+- `Needs strong routine` -> `Structure`, `Regulation/Behavior Support`
+- `Needs frequent redirection` -> `Regulation/Behavior Support`, `Structure`
+- `Easily frustrated` -> `Social/Emotional Support`, `Regulation/Behavior Support`
+- `Needs reassurance` -> `Social/Emotional Support`, `Instructional Expertise`
+- `Sensitive to correction` -> `Social/Emotional Support`, `Instructional Expertise`
+- `Struggles with peer conflict` -> `Social/Emotional Support`, `Regulation/Behavior Support`
+- `High energy` -> `Regulation/Behavior Support`, `Structure`
+- `Needs movement breaks` -> `Regulation/Behavior Support`, `Structure`
+- `Needs enrichment` -> `Instructional Expertise`, `Structure`
+- `Independent worker` -> `Instructional Expertise`, `Structure`
+- `Low academic confidence` -> `Social/Emotional Support`, `Instructional Expertise`
 
 ## Teacher import ordering
 
@@ -198,20 +190,23 @@ Student row:
 Teacher row:
 
 ```csv
-K,Ms. GradeKA,5,4,5,3,3,4,4,5
+K,Ms. GradeKA,5,4,5,3
 ```
 
-That student contributes `4` points of tag support load from:
+That student contributes `4` points of characteristic support load from:
 
 - `Needs strong routine = 2`
 - `Needs reassurance = 2`
 
-That teacher profile is also a strong fit for those same tags.
+That teacher profile is also a strong fit for those same characteristics.
 
 ## Notes
 
-- Student imports do not assign students to teachers.
+- Student imports can include `assignedTeacher` if you want to seed a student into a matching teacher room.
 - Teacher imports do not lock students.
 - Locking happens only inside the app.
-- Poor teacher fits are highlighted with purple student name text after placement.
-- The templates do not include extra columns for derived tag-load totals because the app computes them from `studentTags`.
+- Poor teacher fits are highlighted after placement, but the underlying teacher profile scores remain hidden in the app.
+- The templates do not include extra columns for derived support-load totals because the app computes them from `studentCharacteristics`.
+- The parser still accepts legacy `studentTags` headers and retired characteristic labels for backward compatibility.
+
+

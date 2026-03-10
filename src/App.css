@@ -1920,10 +1920,19 @@ input { font-family: inherit; }
 }
 
 .setting-card-help {
-  min-height: 32px;
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1.45;
+}
+
+.setting-card-example {
+  color: #1e3a8a;
+  font-size: 10px;
+  line-height: 1.45;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
 }
 
 .setting-card-input {
@@ -2391,5 +2400,6 @@ input { font-family: inherit; }
   color: var(--text-light);
   line-height: 1.4;
 }
+
 
 

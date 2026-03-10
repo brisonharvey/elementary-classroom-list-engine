@@ -27,7 +27,7 @@ const EXPORT_HEADER = [
   "ell",
   "section504",
   "raceEthnicity",
-  "studentTags",
+  "studentCharacteristics",
   "teacherNotes",
   "assignedTeacher",
 ]
@@ -134,4 +134,3 @@ export function buildGoogleSheetsExport(classrooms: Classroom[], allStudents: St
 
   return [EXPORT_HEADER.join("\t"), ...rows].join("\n")
 }
-

@@ -13,18 +13,17 @@ export const STUDENT_TAG_TEACHER_CHARACTERISTIC_REQUIREMENTS: Record<
   StudentTag,
   Partial<Record<TeacherCharacteristicKey, number>>
 > = {
-  "Needs strong routine": { classroomStructure: 1.4, behaviorManagementStrength: 0.6 },
-  "Needs frequent redirection": { behaviorManagementStrength: 1.5, classroomStructure: 0.5 },
-  "Easily frustrated": { emotionalSupportNurturing: 1.2, confidenceBuilding: 0.8 },
-  "Needs reassurance": { emotionalSupportNurturing: 1, confidenceBuilding: 1 },
-  "Sensitive to correction": { emotionalSupportNurturing: 1.3, confidenceBuilding: 0.7 },
-  "Easily influenced by peers": { peerSocialCoaching: 1.2, classroomStructure: 0.4 },
-  "Needs positive peer models": { peerSocialCoaching: 1.4, classroomStructure: 0.3 },
-  "High energy": { movementFlexibility: 1, behaviorManagementStrength: 1 },
-  "Needs movement breaks": { movementFlexibility: 1.5 },
-  "Needs enrichment": { academicEnrichmentStrength: 1.5 },
-  "Independent worker": { independenceScaffolding: 1.5 },
-  "Low academic confidence": { confidenceBuilding: 1.2, emotionalSupportNurturing: 0.6 },
+  "Needs strong routine": { structure: 1.5, regulationBehaviorSupport: 0.5 },
+  "Needs frequent redirection": { regulationBehaviorSupport: 1.5, structure: 0.5 },
+  "Easily frustrated": { socialEmotionalSupport: 1.5, regulationBehaviorSupport: 0.5 },
+  "Needs reassurance": { socialEmotionalSupport: 1.7, instructionalExpertise: 0.3 },
+  "Sensitive to correction": { socialEmotionalSupport: 1.7, instructionalExpertise: 0.3 },
+  "Struggles with peer conflict": { socialEmotionalSupport: 1.2, regulationBehaviorSupport: 0.8 },
+  "High energy": { regulationBehaviorSupport: 1.4, structure: 0.6 },
+  "Needs movement breaks": { regulationBehaviorSupport: 1.5, structure: 0.5 },
+  "Needs enrichment": { instructionalExpertise: 1.7, structure: 0.3 },
+  "Independent worker": { instructionalExpertise: 1.1, structure: 0.9 },
+  "Low academic confidence": { socialEmotionalSupport: 1.2, instructionalExpertise: 0.8 },
 }
 
 export const STUDENT_TAG_SUPPORT_WEIGHTS: Record<StudentTag, number> = {
@@ -33,8 +32,7 @@ export const STUDENT_TAG_SUPPORT_WEIGHTS: Record<StudentTag, number> = {
   "Easily frustrated": 3,
   "Needs reassurance": 2,
   "Sensitive to correction": 2,
-  "Easily influenced by peers": 2,
-  "Needs positive peer models": 1,
+  "Struggles with peer conflict": 3,
   "High energy": 2,
   "Needs movement breaks": 2,
   "Needs enrichment": 1,
@@ -43,9 +41,9 @@ export const STUDENT_TAG_SUPPORT_WEIGHTS: Record<StudentTag, number> = {
 }
 
 export const TAG_SUPPORT_LOAD_CATEGORIES: Record<TagSupportLoadCategory, StudentTag[]> = {
-  behavioral: ["Needs frequent redirection", "Easily influenced by peers"],
+  behavioral: ["Needs strong routine", "Needs frequent redirection", "Struggles with peer conflict"],
   emotional: ["Easily frustrated", "Needs reassurance", "Sensitive to correction", "Low academic confidence"],
-  instructional: ["Needs strong routine", "Needs positive peer models", "Needs enrichment", "Independent worker"],
+  instructional: ["Needs enrichment", "Independent worker"],
   energy: ["High energy", "Needs movement breaks"],
 }
 

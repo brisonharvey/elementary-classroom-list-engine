@@ -18,8 +18,7 @@ export const STUDENT_TAGS = [
   "Easily frustrated",
   "Needs reassurance",
   "Sensitive to correction",
-  "Easily influenced by peers",
-  "Needs positive peer models",
+  "Struggles with peer conflict",
   "High energy",
   "Needs movement breaks",
   "Needs enrichment",
@@ -29,15 +28,16 @@ export const STUDENT_TAGS = [
 
 export type StudentTag = (typeof STUDENT_TAGS)[number]
 
+export const LEGACY_STUDENT_TAG_ALIASES: Record<string, StudentTag> = {
+  "Easily influenced by peers": "Struggles with peer conflict",
+  "Needs positive peer models": "Struggles with peer conflict",
+}
+
 export const TEACHER_CHARACTERISTIC_KEYS = [
-  "classroomStructure",
-  "behaviorManagementStrength",
-  "emotionalSupportNurturing",
-  "academicEnrichmentStrength",
-  "independenceScaffolding",
-  "movementFlexibility",
-  "peerSocialCoaching",
-  "confidenceBuilding",
+  "structure",
+  "regulationBehaviorSupport",
+  "socialEmotionalSupport",
+  "instructionalExpertise",
 ] as const
 
 export type TeacherCharacteristicKey = (typeof TEACHER_CHARACTERISTIC_KEYS)[number]
@@ -185,4 +185,3 @@ export interface RoomStats {
   instructionalTagSupportLoad: number
   energyTagSupportLoad: number
 }
-

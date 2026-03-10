@@ -8,14 +8,10 @@ import {
 import { STUDENT_TAG_TEACHER_CHARACTERISTIC_REQUIREMENTS } from "./tagSupportLoad"
 
 export const TEACHER_CHARACTERISTIC_LABELS: Record<TeacherCharacteristicKey, string> = {
-  classroomStructure: "Classroom structure",
-  behaviorManagementStrength: "Behavior management strength",
-  emotionalSupportNurturing: "Emotional support/nurturing",
-  academicEnrichmentStrength: "Academic enrichment strength",
-  independenceScaffolding: "Independence scaffolding",
-  movementFlexibility: "Movement flexibility",
-  peerSocialCoaching: "Peer social coaching",
-  confidenceBuilding: "Confidence building",
+  structure: "Structure",
+  regulationBehaviorSupport: "Regulation/Behavior Support",
+  socialEmotionalSupport: "Social/Emotional Support",
+  instructionalExpertise: "Instructional Expertise",
 }
 
 const DEFAULT_MISSING_PROFILE_PENALTY = 0.4

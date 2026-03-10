@@ -1,4 +1,4 @@
-import { CoTeachCategory, Grade, STUDENT_TAGS, Student, StudentTag } from "../types"
+import { CoTeachCategory, Grade, LEGACY_STUDENT_TAG_ALIASES, STUDENT_TAGS, Student, StudentTag } from "../types"
 import { MAX_COTEACH_MINUTES, normalizeCoTeachMinutes } from "./coTeach"
 
 export interface CsvFieldOption {
@@ -37,7 +37,7 @@ export const STUDENT_CSV_FIELD_OPTIONS = [
   { key: "ell", label: "ELL", required: false },
   { key: "section504", label: "504 plan", required: false },
   { key: "raceEthnicity", label: "Race/ethnicity", required: false },
-  { key: "studentTags", label: "Student tags", required: false },
+  { key: "studentTags", label: "Student characteristics", required: false },
   { key: "teacherNotes", label: "Teacher notes", required: false },
 ] as const satisfies readonly CsvFieldOption[]
 
@@ -74,7 +74,7 @@ const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   section504: ["section504", "plan504", "program504", "504"],
   raceEthnicity: ["raceethnicity", "race/ethnicity", "ethnicity", "race", "studentrace", "studentethnicity"],
-  studentTags: ["studenttags", "tags", "placementtags", "supporttags"],
+  studentTags: ["studentcharacteristics", "studenttags", "tags", "placementtags", "supporttags"],
   teacherNotes: ["teachernotes", "notes", "comments", "placementnotes"],
 }
 
@@ -296,7 +296,10 @@ function buildCoTeachMinutes(values: string[], rowIndex: number, get: (values: s
   return normalizeCoTeachMinutes(coTeachMinutes)
 }
 
-const TAG_LOOKUP = new Map(STUDENT_TAGS.map((tag) => [tag.trim().toLowerCase(), tag]))
+const TAG_LOOKUP = new Map<string, StudentTag>([
+  ...STUDENT_TAGS.map((tag) => [tag.trim().toLowerCase(), tag] as const),
+  ...Object.entries(LEGACY_STUDENT_TAG_ALIASES).map(([legacyTag, currentTag]) => [legacyTag.trim().toLowerCase(), currentTag] as const),
+])
 
 function parseStudentTags(raw: string): { tags: StudentTag[]; invalidTokens: string[] } {
   if (!raw || !raw.trim()) return { tags: [], invalidTokens: [] }
@@ -373,7 +376,7 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
 
     if (parsedTags.invalidTokens.length > 0) {
       errors.push(
-        `Row ${rowIndex + 2}: Unknown student tag(s): ${parsedTags.invalidTokens.join(", ")} - ignored.`
+        `Row ${rowIndex + 2}: Unknown student characteristic(s): ${parsedTags.invalidTokens.join(", ")} - ignored.`
       )
     }
 
@@ -483,7 +486,7 @@ const STUDENT_TEMPLATE_HEADER = [
   "ell",
   "section504",
   "raceEthnicity",
-  "studentTags",
+  "studentCharacteristics",
   "teacherNotes",
 ]
 
@@ -502,7 +505,7 @@ export function generateStudentSampleCSV(): string {
     "Needs enrichment;Independent worker",
     "Sensitive to correction;Low academic confidence",
     "Needs movement breaks;High energy",
-    "Needs positive peer models;Easily influenced by peers",
+    "Struggles with peer conflict;Needs strong routine",
     "Easily frustrated;Needs reassurance",
     "Independent worker",
   ]
@@ -529,7 +532,7 @@ export function generateStudentSampleCSV(): string {
       const mapMath = grade === "K" ? "" : 158 + i * 3 + grades.indexOf(grade) * 2
       const ireadyReading = grade === "K" ? "" : ["Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2", "Early 3"][i]
       const ireadyMath = grade === "K" ? "" : ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2"][i]
-      const assignedTeacher = `Ms. ${grade}-${String.fromCharCode(65 + (i % 4))}`
+      const assignedTeacher = `Ms. Grade${grade}${String.fromCharCode(65 + (i % 4))}`
       const ell = i % 4 === 0 ? "TRUE" : "FALSE"
       const section504 = i === 3 ? "TRUE" : "FALSE"
       const race = races[(i + grades.indexOf(grade)) % races.length]
@@ -573,3 +576,5 @@ export function generateStudentSampleCSV(): string {
 
   return [generateStudentTemplateCSV(), ...rows].join("\n")
 }
+
+

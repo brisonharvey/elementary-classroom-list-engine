@@ -78,13 +78,13 @@ export const SummaryPanel = memo(function SummaryPanel() {
           <span className="total-pill pill-ref">{totalReferral} Referral</span>
           <span className="total-pill">{totalEL} EL</span>
           <span className="total-pill">{total504} 504</span>
-          <span className="total-pill">{fmt(totalTagSupportLoad)} tag load</span>
+          <span className="total-pill">{fmt(totalTagSupportLoad)} characteristic load</span>
           <span className="total-pill">{totalPoorFit} poor fit</span>
         </div>
       </div>
 
       <div className="tag-support-overview">
-        <div className="tag-support-overview-header">Tag-Based Classroom Support Load</div>
+        <div className="tag-support-overview-header">Characteristic-Based Classroom Support Load</div>
         <div className="tag-support-overview-chips">
           <span className="summary-metric summary-metric-tag">Average total: {fmt(tagSummary.averageTotal)}</span>
           <span className="summary-metric summary-metric-tag">Range: {fmt(tagSummary.rangeTotal)}</span>
@@ -92,7 +92,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
             Highest room: {fmt(tagSummary.highestTotal)} / Lowest room: {fmt(tagSummary.lowestTotal)}
           </span>
           <span className="summary-metric summary-metric-tag">
-            Worst category: {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} ({fmt(tagSummary.rangeByCategory[worstTagCategory])})
+            Largest category gap: {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} ({fmt(tagSummary.rangeByCategory[worstTagCategory])})
           </span>
         </div>
       </div>
@@ -179,7 +179,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
                     </>
                   )}
                   <span className="summary-metric summary-metric-support">Support: {fmt(supportLoad)}</span>
-                  <span className={`summary-metric summary-metric-tag ${tagWarn ? "summary-metric-tag-warn" : ""}`}>Tag: {fmt(stats.tagSupportLoad)}</span>
+                  <span className={`summary-metric summary-metric-tag ${tagWarn ? "summary-metric-tag-warn" : ""}`}>Characteristics: {fmt(stats.tagSupportLoad)}</span>
                   <span className="summary-metric" title={coTeachBreakdown || "No co-teach minutes"}>
                     Co-teach: {stats.totalCoTeachMinutes} total / {fmt(stats.avgCoTeachMinutes)} avg
                   </span>
@@ -187,7 +187,7 @@ export const SummaryPanel = memo(function SummaryPanel() {
                 </div>
 
                 <div className="summary-room-section">
-                  <div className="summary-room-section-label">Tag Support Load</div>
+                  <div className="summary-room-section-label">Characteristic Support Load</div>
                   <div className="summary-room-tag-grid">
                     <span className={`summary-metric summary-metric-tag ${tagWarn ? "summary-metric-tag-warn" : ""}`}>Total {fmt(stats.tagSupportLoad)}</span>
                     <span className="summary-metric summary-metric-tag">Behavioral {fmt(stats.behavioralTagSupportLoad)}</span>
@@ -233,3 +233,4 @@ export const SummaryPanel = memo(function SummaryPanel() {
     </div>
   )
 })
+

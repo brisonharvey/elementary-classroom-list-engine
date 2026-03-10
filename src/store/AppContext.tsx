@@ -1,5 +1,5 @@
 import React, { createContext, Dispatch, useContext, useEffect, useReducer } from "react"
-import { AppState, Classroom, Snapshot, STUDENT_TAGS, Student, TeacherProfile } from "../types"
+import { AppState, Classroom, LEGACY_STUDENT_TAG_ALIASES, Snapshot, STUDENT_TAGS, Student, TeacherProfile } from "../types"
 import {
   createDefaultGradeSettingsMap,
   getRoomLabelFromIndex,
@@ -16,7 +16,18 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-const STORAGE_KEY = "classroom-placement-state-v4"
+const STORAGE_KEY = "classroom-placement-state-v5"
+
+type LegacyTeacherCharacteristics = {
+  classroomStructure?: unknown
+  behaviorManagementStrength?: unknown
+  emotionalSupportNurturing?: unknown
+  academicEnrichmentStrength?: unknown
+  independenceScaffolding?: unknown
+  movementFlexibility?: unknown
+  peerSocialCoaching?: unknown
+  confidenceBuilding?: unknown
+}
 
 function normalizeIdList(value: unknown): number[] {
   if (Array.isArray(value)) {
@@ -30,10 +41,16 @@ function normalizeIdList(value: unknown): number[] {
 
 function normalizeTagList(value: unknown): Student["tags"] {
   if (!Array.isArray(value)) return []
-  return value.filter(
-    (entry): entry is (typeof STUDENT_TAGS)[number] =>
-      typeof entry === "string" && STUDENT_TAGS.includes(entry as (typeof STUDENT_TAGS)[number])
-  )
+
+  const normalizedTags = value
+    .map((entry) => {
+      if (typeof entry !== "string") return null
+      if (STUDENT_TAGS.includes(entry as (typeof STUDENT_TAGS)[number])) return entry as (typeof STUDENT_TAGS)[number]
+      return LEGACY_STUDENT_TAG_ALIASES[entry] ?? null
+    })
+    .filter((entry): entry is (typeof STUDENT_TAGS)[number] => entry != null)
+
+  return Array.from(new Set(normalizedTags))
 }
 
 function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown; tags?: unknown }>(student: T): T {
@@ -82,20 +99,58 @@ function normalizeTeacherProfile(profile: TeacherProfile): TeacherProfile {
     return Math.max(1, Math.min(5, Math.round(value))) as 1 | 2 | 3 | 4 | 5
   }
 
+  const normalizeAverage = (entries: Array<{ value: unknown; weight: number }>): 1 | 2 | 3 | 4 | 5 => {
+    const usable = entries
+      .map(({ value, weight }) => ({ value: typeof value === "number" && Number.isFinite(value) ? value : null, weight }))
+      .filter((entry): entry is { value: number; weight: number } => entry.value != null)
+
+    if (usable.length === 0) return 3
+
+    const totalWeight = usable.reduce((sum, entry) => sum + entry.weight, 0)
+    const weightedAverage = usable.reduce((sum, entry) => sum + entry.value * entry.weight, 0) / totalWeight
+    return normalizeRating(weightedAverage)
+  }
+
+  const characteristics = (profile.characteristics ?? {}) as TeacherProfile["characteristics"] & LegacyTeacherCharacteristics
+
+  const hasNewCharacteristics =
+    characteristics.structure != null ||
+    characteristics.regulationBehaviorSupport != null ||
+    characteristics.socialEmotionalSupport != null ||
+    characteristics.instructionalExpertise != null
+
   return {
     ...profile,
     id: profile.id || `${profile.grade}:${profile.teacherName.trim().toLowerCase()}`,
     teacherName: profile.teacherName?.trim() || "",
-    characteristics: {
-      classroomStructure: normalizeRating(profile.characteristics?.classroomStructure),
-      behaviorManagementStrength: normalizeRating(profile.characteristics?.behaviorManagementStrength),
-      emotionalSupportNurturing: normalizeRating(profile.characteristics?.emotionalSupportNurturing),
-      academicEnrichmentStrength: normalizeRating(profile.characteristics?.academicEnrichmentStrength),
-      independenceScaffolding: normalizeRating(profile.characteristics?.independenceScaffolding),
-      movementFlexibility: normalizeRating(profile.characteristics?.movementFlexibility),
-      peerSocialCoaching: normalizeRating(profile.characteristics?.peerSocialCoaching),
-      confidenceBuilding: normalizeRating(profile.characteristics?.confidenceBuilding),
-    },
+    characteristics: hasNewCharacteristics
+      ? {
+          structure: normalizeRating(characteristics.structure),
+          regulationBehaviorSupport: normalizeRating(characteristics.regulationBehaviorSupport),
+          socialEmotionalSupport: normalizeRating(characteristics.socialEmotionalSupport),
+          instructionalExpertise: normalizeRating(characteristics.instructionalExpertise),
+        }
+      : {
+          structure: normalizeAverage([
+            { value: characteristics.classroomStructure, weight: 0.75 },
+            { value: characteristics.independenceScaffolding, weight: 0.25 },
+          ]),
+          regulationBehaviorSupport: normalizeAverage([
+            { value: characteristics.behaviorManagementStrength, weight: 0.55 },
+            { value: characteristics.classroomStructure, weight: 0.2 },
+            { value: characteristics.movementFlexibility, weight: 0.25 },
+          ]),
+          socialEmotionalSupport: normalizeAverage([
+            { value: characteristics.emotionalSupportNurturing, weight: 0.5 },
+            { value: characteristics.peerSocialCoaching, weight: 0.25 },
+            { value: characteristics.confidenceBuilding, weight: 0.25 },
+          ]),
+          instructionalExpertise: normalizeAverage([
+            { value: characteristics.academicEnrichmentStrength, weight: 0.6 },
+            { value: characteristics.independenceScaffolding, weight: 0.25 },
+            { value: characteristics.confidenceBuilding, weight: 0.15 },
+          ]),
+        },
   }
 }
 
@@ -113,6 +168,7 @@ function loadPersistedState(): AppState {
   try {
     const raw =
       window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem("classroom-placement-state-v4") ??
       window.localStorage.getItem("classroom-placement-state-v3") ??
       window.localStorage.getItem("classroom-placement-state-v2") ??
       window.localStorage.getItem("classroom-placement-state-v1")
@@ -128,6 +184,13 @@ function loadPersistedState(): AppState {
       (student) => (student as Student).specialEd?.requiresCoTeachReading || (student as Student).specialEd?.requiresCoTeachMath
     )
     const hadLegacyRoomFlags = (parsed.classrooms ?? []).some((classroom) => (classroom as Classroom & { coTeach?: unknown }).coTeach)
+    const hadLegacyStudentTags = (parsed.allStudents ?? []).some((student) =>
+      ((student as Student).tags ?? []).some((tag) => typeof tag === "string" && LEGACY_STUDENT_TAG_ALIASES[tag] != null)
+    )
+    const hadLegacyTeacherCharacteristics = (parsed.teacherProfiles ?? []).some((profile) => {
+      const characteristics = (profile as TeacherProfile).characteristics as TeacherProfile["characteristics"] & LegacyTeacherCharacteristics
+      return characteristics?.structure == null && characteristics?.classroomStructure != null
+    })
 
     const defaultSettings = createDefaultGradeSettingsMap()
     const migrationWarnings: string[] = []
@@ -136,6 +199,12 @@ function loadPersistedState(): AppState {
     }
     if (hadLegacyRoomFlags) {
       migrationWarnings.push("Migrated legacy room co-teach toggles to category coverage.")
+    }
+    if (hadLegacyStudentTags) {
+      migrationWarnings.push("Mapped retired student characteristics to the current characteristic list.")
+    }
+    if (hadLegacyTeacherCharacteristics) {
+      migrationWarnings.push("Mapped retired teacher characteristics into the current four-category teacher profile.")
     }
 
     return {

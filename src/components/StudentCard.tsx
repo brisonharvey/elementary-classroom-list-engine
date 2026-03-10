@@ -179,14 +179,14 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
             )}
 
             {tagContributions.length > 0 && (
-              <span className={`badge badge-tag-load ${tagSupportLoad < 0 ? "badge-tag-load-negative" : ""}`} title={`Tag-based support load: ${tagSupportLoad}`}>
-                TSL:{tagSupportLoad}
+              <span className={`badge badge-tag-load ${tagSupportLoad < 0 ? "badge-tag-load-negative" : ""}`} title={`Characteristic-based support load: ${tagSupportLoad}`}>
+                CSL:{tagSupportLoad}
               </span>
             )}
 
             {(student.tags?.length ?? 0) > 0 && (
               <span className="badge badge-tags" title={(student.tags ?? []).join(", ")}>
-                Tags:{student.tags!.length}
+                Chars:{student.tags!.length}
               </span>
             )}
 
@@ -313,12 +313,12 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 <>
                   <hr className="tt-sep" />
                   <div className="tt-row">
-                    <span className="tt-label">Tag Load</span>
+                    <span className="tt-label">Characteristic Load</span>
                     <span className={tagSupportLoad >= 4 ? "tt-flag" : ""}>{tagSupportLoad}</span>
                   </div>
                   {tagContributions.length > 0 && (
                     <div className="tt-row">
-                      <span className="tt-label">Load Tags</span>
+                      <span className="tt-label">Load Characteristics</span>
                       <span className="tt-no-contact">
                         {tagContributions
                           .map((contribution) => `${contribution.tag} (${formatContribution(contribution.weight)})`)
@@ -329,7 +329,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                   {roomTagBreakdown && (
                     <>
                       <div className="tt-row">
-                        <span className="tt-label">Room Tag Load</span>
+                        <span className="tt-label">Room Characteristic Load</span>
                         <span className={roomTagBreakdown.total - gradeTagSummary.averageTotal >= 3 ? "tt-poor-fit" : ""}>
                           {roomTagBreakdown.total.toFixed(1)} total
                         </span>
@@ -351,7 +351,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 <>
                   <hr className="tt-sep" />
                   <div className="tt-row">
-                    <span className="tt-label">Student Tags</span>
+                    <span className="tt-label">Student Characteristics</span>
                     <span className="tt-no-contact">{student.tags?.join(", ")}</span>
                   </div>
                 </>
@@ -415,4 +415,5 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     </>
   )
 })
+
 

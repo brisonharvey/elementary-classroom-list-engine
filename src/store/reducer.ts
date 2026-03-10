@@ -43,9 +43,12 @@ export type Action =
   | { type: "UPSERT_RELATIONSHIP_RULE"; payload: RelationshipRule }
   | { type: "DELETE_RELATIONSHIP_RULE"; payload: string }
   | { type: "UPDATE_GRADE_SETTINGS"; payload: { grade: Grade; updates: Partial<AppState["gradeSettings"][Grade]> } }
+  | { type: "APPLY_GRADE_SETTINGS_TO_ALL"; payload: GradeSettingsPayload }
   | { type: "RESET_GRADE_SETTINGS"; payload: Grade }
   | { type: "RESET_GRADE" }
   | { type: "CLEAR_ALL" }
+
+interface GradeSettingsPayload extends Partial<AppState["gradeSettings"][Grade]> {}
 
 export const initialState: AppState = {
   allStudents: [],
@@ -272,7 +275,7 @@ export function reducer(state: AppState, action: Action): AppState {
               student.id === previousId
                 ? normalizeStudentRecord({
                     ...nextStudent,
-                    locked: roomStudent.locked,
+                    locked: nextStudent.locked,
                   })
                 : student
             ),
@@ -478,6 +481,16 @@ export function reducer(state: AppState, action: Action): AppState {
           }),
         },
       }
+    case "APPLY_GRADE_SETTINGS_TO_ALL": {
+      const normalized = normalizeGradeSettings(action.payload)
+      const gradeSettings = Object.fromEntries(
+        Object.keys(state.gradeSettings).map((grade) => [grade, normalized])
+      ) as AppState["gradeSettings"]
+      return {
+        ...state,
+        gradeSettings,
+      }
+    }
     case "RESET_GRADE_SETTINGS":
       return {
         ...state,

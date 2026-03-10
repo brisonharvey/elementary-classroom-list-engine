@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { GradeSettings } from "../types"
+import { GRADES, GradeSettings } from "../types"
 import { useApp } from "../store/AppContext"
 import { getDefaultGradeSettings, normalizeGradeSettings } from "../utils/classroomInit"
 
@@ -11,6 +11,7 @@ interface SettingField {
   key: keyof GradeSettings
   label: string
   help: string
+  example: string
   step: number
   min: number
 }
@@ -29,14 +30,16 @@ const SETTINGS_SECTIONS: SettingSection[] = [
       {
         key: "maxIEPPerRoom",
         label: "IEPs allowed in one room",
-        help: "Maximum number of students with IEPs allowed in one classroom.",
+        help: "This is the most IEP students one room can hold.",
+        example: "Example: 3 means a room can have 3 IEP students, but the app will not place a 4th there.",
         step: 1,
         min: 0,
       },
       {
         key: "maxReferralsPerRoom",
         label: "Referral-heavy students allowed in one room",
-        help: "Maximum number of students with a referral status or referral count allowed in one classroom.",
+        help: "This is the most referral-status or referral-count students one room can hold.",
+        example: "Example: 4 means the room can take 4 students with referral needs, but not a 5th.",
         step: 1,
         min: 0,
       },
@@ -49,42 +52,48 @@ const SETTINGS_SECTIONS: SettingSection[] = [
       {
         key: "ellConcentrationSoftCap",
         label: "EL share before a room gets penalized",
-        help: "Example: 0.35 means the app starts pushing back when more than 35% of a room is EL.",
+        help: "This is the EL percentage where the app starts pushing students to other rooms.",
+        example: "Example: 0.35 means about 35 out of 100 students, or about 7 EL students in a class of 20.",
         step: 0.01,
         min: 0,
       },
       {
         key: "genderBalanceTolerance",
         label: "Boy/girl gap allowed before penalty",
-        help: "How many students apart the room can get before the app sees it as unbalanced.",
+        help: "This is how uneven a room can get before the app sees it as off balance.",
+        example: "Example: 2 means 11 boys and 9 girls is okay, but 13 boys and 9 girls starts getting penalized.",
         step: 1,
         min: 0,
       },
       {
         key: "classSizeVarianceLimit",
         label: "Class size gap allowed",
-        help: "How far apart the biggest and smallest rooms can be before a penalty starts.",
+        help: "This is the biggest allowed size gap between the fullest room and the smallest room.",
+        example: "Example: 3 means one room at 24 and another at 21 is okay, but 24 and 20 starts getting penalized.",
         step: 1,
         min: 0,
       },
       {
         key: "ellOverCapPenaltyWeight",
         label: "How strongly to avoid rooms over the EL target",
-        help: "Higher number means the app works harder to avoid going over the EL share target.",
+        help: "This controls how hard the app pushes back once a room goes over the EL target.",
+        example: "Example: 10 pushes much harder than 2, so the app will try much more strongly to avoid that room.",
         step: 0.25,
         min: 0,
       },
       {
         key: "genderImbalancePenaltyWeight",
         label: "How strongly to avoid big boy/girl gaps",
-        help: "Higher number means the app pushes harder against rooms with a wide gender gap.",
+        help: "This controls how much the app cares about boy/girl imbalance after the gap is too wide.",
+        example: "Example: 5 means the app will avoid a 14/8 split more strongly than if this were set to 1.",
         step: 0.25,
         min: 0,
       },
       {
         key: "classSizeVariancePenaltyWeight",
         label: "How strongly to avoid class size gaps",
-        help: "Higher number means the app spreads students more evenly across rooms.",
+        help: "This controls how hard the app tries to keep room sizes close together.",
+        example: "Example: 4 means the app will work harder to keep rooms near 22/22/21/21 instead of 24/22/20/20.",
         step: 0.25,
         min: 0,
       },
@@ -97,111 +106,126 @@ const SETTINGS_SECTIONS: SettingSection[] = [
       {
         key: "roomFillPenaltyWeight",
         label: "Avoid filling one room too fast",
-        help: "Higher number makes the app prefer emptier rooms sooner.",
+        help: "This controls how soon the app starts preferring emptier rooms.",
+        example: "Example: 12 means the app spreads students out sooner than if this number were 4.",
         step: 0.25,
         min: 0,
       },
       {
         key: "academicBalancePenaltyWeight",
         label: "Match academic support levels",
-        help: "Higher number makes the app spread reading and math needs more evenly.",
+        help: "This controls how much the app spreads reading and math need levels across rooms.",
+        example: "Example: 6 means the app will work harder to avoid putting too many high-need readers in one room than if it were 2.",
         step: 0.25,
         min: 0,
       },
       {
         key: "behavioralBalancePenaltyWeight",
         label: "Match behavior support levels",
-        help: "Higher number makes the app spread behavior needs and referrals more evenly.",
+        help: "This controls how much the app spreads behavior needs and referrals across rooms.",
+        example: "Example: 6 means the app will work harder to avoid stacking behavior support in one room than if it were 2.",
         step: 0.25,
         min: 0,
       },
       {
         key: "demographicBalancePenaltyWeight",
         label: "Spread student groups evenly",
-        help: "Higher number makes the app care more about balancing gender, EL, 504, IEP, and referral groups.",
+        help: "This controls how much the app balances groups like EL, 504, IEP, referrals, and gender.",
+        example: "Example: 5 means the app will care more about group balance than if this number is 1.",
         step: 0.25,
         min: 0,
       },
       {
         key: "preferredPeerBonus",
         label: "Reward keeping requested peers together",
-        help: "Higher number makes the app more likely to place preferred peers in the same room.",
+        help: "This gives a boost when a student is placed with a requested peer.",
+        example: "Example: 2 means the app gives a stronger nudge to keep requested peers together than if this were 0.5.",
         step: 0.25,
         min: 0,
       },
       {
         key: "preferredPeerSplitPenalty",
         label: "Penalty for splitting requested peers",
-        help: "Higher number makes the app avoid separating preferred peers.",
+        help: "This adds a cost when requested peers end up in different rooms.",
+        example: "Example: 2 means the app is more likely to avoid splitting preferred peers than if this were 0.5.",
         step: 0.25,
         min: 0,
       },
       {
         key: "keepTogetherBonus",
         label: "Reward keeping required pairs together",
-        help: "Higher number makes the app favor rooms that keep do-not-separate pairs together.",
+        help: "This gives a stronger boost for do-not-separate pairs than normal preferred peers.",
+        example: "Example: 3 means the app strongly favors rooms that keep required pairs together.",
         step: 0.25,
         min: 0,
       },
       {
         key: "keepTogetherSplitPenalty",
         label: "Penalty for splitting required pairs",
-        help: "Higher number makes the app avoid splitting do-not-separate pairs.",
+        help: "This adds a cost when a do-not-separate pair would land in different rooms.",
+        example: "Example: 3 means splitting a required pair becomes a major negative in the score.",
         step: 0.25,
         min: 0,
       },
     ],
   },
   {
-    title: "Tag load formula",
-    description: "These numbers tune how strongly the app spreads tag-based support load.",
+    title: "Characteristic load formula",
+    description: "These numbers tune how strongly the app spreads characteristic-based support load.",
     fields: [
       {
         key: "tagTotalBalancePenaltyWeight",
-        label: "Balance total tag load",
-        help: "Higher number makes the app care more about the overall tag load in each room.",
+        label: "Balance total characteristic load",
+        help: "This controls how much the app looks at the overall characteristic load in each room.",
+        example: "Example: 2 means the app pays twice as much attention to total characteristic load as it would at 1.",
         step: 0.25,
         min: 0,
       },
       {
         key: "tagBehavioralPenaltyWeight",
-        label: "Balance behavior-related tags",
-        help: "Higher number makes the app spread behavior-related tags more evenly.",
+        label: "Balance behavior-related characteristics",
+        help: "This controls how much the app spreads behavior-related characteristics across rooms.",
+        example: "Example: 0.8 means the app will push harder to spread characteristics like frequent redirection than if this were 0.2.",
         step: 0.05,
         min: 0,
       },
       {
         key: "tagEmotionalPenaltyWeight",
-        label: "Balance emotion-related tags",
-        help: "Higher number makes the app spread emotion-related tags more evenly.",
+        label: "Balance emotion-related characteristics",
+        help: "This controls how much the app spreads emotion-related characteristics across rooms.",
+        example: "Example: 0.8 means the app works harder to spread characteristics like needs reassurance than if this were 0.2.",
         step: 0.05,
         min: 0,
       },
       {
         key: "tagInstructionalPenaltyWeight",
-        label: "Balance learning-support tags",
-        help: "Higher number makes the app spread learning-support tags more evenly.",
+        label: "Balance learning-support characteristics",
+        help: "This controls how much the app spreads learning-support characteristics across rooms.",
+        example: "Example: 0.8 means the app works harder to spread characteristics like low academic confidence than if this were 0.2.",
         step: 0.05,
         min: 0,
       },
       {
         key: "tagEnergyPenaltyWeight",
-        label: "Balance energy-related tags",
-        help: "Higher number makes the app spread high-energy tags more evenly.",
+        label: "Balance energy-related characteristics",
+        help: "This controls how much the app spreads high-energy characteristics across rooms.",
+        example: "Example: 0.8 means the app works harder to spread students who need movement breaks than if this were 0.2.",
         step: 0.05,
         min: 0,
       },
       {
         key: "tagHotspotPenaltyWeight",
-        label: "Extra penalty for one tag-heavy room",
-        help: "Higher number adds more pushback when one room becomes the clear tag-load hotspot.",
+        label: "Extra penalty for one characteristic-heavy room",
+        help: "This adds extra pushback when one room becomes the clear characteristic-load hotspot.",
+        example: "Example: 3 means once one room stands out as the characteristic-heavy room, the app strongly avoids adding more to it.",
         step: 0.25,
         min: 0,
       },
       {
         key: "tagHotspotThreshold",
-        label: "Tag gap needed before hotspot penalty starts",
-        help: "How far above the grade average a room must get before the extra hotspot penalty is used.",
+        label: "Characteristic gap needed before hotspot penalty starts",
+        help: "This is how far above the grade average a room must get before the extra hotspot penalty turns on for characteristic load.",
+        example: "Example: 3 means the room must be at least 3 characteristic-load points above the grade average before the extra penalty starts.",
         step: 0.25,
         min: 0,
       },
@@ -226,6 +250,11 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
   }, [settings])
 
   const hasUnsavedChanges = useMemo(() => !settingsAreEqual(draft, settings), [draft, settings])
+  const normalizedDraft = useMemo(() => normalizeGradeSettings(draft), [draft])
+  const canApplyToAllGrades = useMemo(
+    () => GRADES.some((grade) => !settingsAreEqual(state.gradeSettings[grade], normalizedDraft)),
+    [normalizedDraft, state.gradeSettings]
+  )
 
   useEffect(() => {
     if (hasUnsavedChanges) setSaveMessage("")
@@ -240,13 +269,21 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
   }
 
   const handleSave = () => {
-    const normalized = normalizeGradeSettings(draft)
     dispatch({
       type: "UPDATE_GRADE_SETTINGS",
-      payload: { grade: state.activeGrade, updates: normalized },
+      payload: { grade: state.activeGrade, updates: normalizedDraft },
     })
-    setDraft(normalized)
+    setDraft(normalizedDraft)
     setSaveMessage(`Saved Grade ${state.activeGrade} settings on this device.`)
+  }
+
+  const handleApplyToAllGrades = () => {
+    dispatch({
+      type: "APPLY_GRADE_SETTINGS_TO_ALL",
+      payload: normalizedDraft,
+    })
+    setDraft(normalizedDraft)
+    setSaveMessage(`Applied these settings to all grade levels on this device.`)
   }
 
   const handleClose = () => {
@@ -262,7 +299,7 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
         <div>
           <h3 className="summary-title">Grade {state.activeGrade} Settings</h3>
           <p className="settings-panel-intro">
-            Change the placement rules for this grade. Your changes apply after you click Save settings.
+            Change the placement rules for this grade. You can save just this grade or copy the same rules to every grade.
           </p>
         </div>
         <button className="btn btn-ghost btn-sm" onClick={handleClose} aria-label="Close settings">
@@ -285,6 +322,7 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
               <label key={field.key} className="setting-card">
                 <span className="setting-card-label">{field.label}</span>
                 <span className="setting-card-help">{field.help}</span>
+                <span className="setting-card-example">{field.example}</span>
                 <input
                   className="setting-card-input"
                   type="number"
@@ -306,8 +344,11 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
         <button className="btn btn-ghost btn-sm" onClick={() => setDraft(getDefaultGradeSettings())}>
           Load defaults
         </button>
+        <button className="btn btn-ghost btn-sm" onClick={handleApplyToAllGrades} disabled={!canApplyToAllGrades}>
+          Save to all grades
+        </button>
         <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={!hasUnsavedChanges}>
-          Save settings
+          Save this grade
         </button>
       </div>
 
@@ -315,3 +356,4 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
     </div>
   )
 }
+

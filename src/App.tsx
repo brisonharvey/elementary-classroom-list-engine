@@ -123,10 +123,10 @@ export default function App() {
             </>
           )}
           {supportImbalance && <div className="warning-chip">Support load imbalanced across classrooms</div>}
-          {tagSupportImbalance && <div className="warning-chip">Tag support load range is {tagSummary.rangeTotal.toFixed(1)} across classrooms</div>}
+          {tagSupportImbalance && <div className="warning-chip">Characteristic support load range is {tagSummary.rangeTotal.toFixed(1)} across classrooms</div>}
           {categoryTagImbalance && (
             <div className="warning-chip">
-              {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} tag load is concentrated in one room group ({tagSummary.rangeByCategory[worstTagCategory].toFixed(1)} spread)
+              {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} characteristic load is concentrated in one room group ({tagSummary.rangeByCategory[worstTagCategory].toFixed(1)} spread)
             </div>
           )}
         </div>
@@ -189,3 +189,4 @@ export default function App() {
     </div>
   )
 }
+

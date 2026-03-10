@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict")
+const fs = require("node:fs")
 
 const {
   getStudentTagSupportLoad,
@@ -7,7 +8,10 @@ const {
 } = require("./.compiled/src/utils/tagSupportLoad.js")
 const { getTagSupportLoadPenalty } = require("./.compiled/src/utils/scoring.js")
 const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
-const { parseStudentCSVWithMapping } = require("./.compiled/src/utils/csvParser.js")
+const {
+  parseStudentCSVWithMapping,
+  generateStudentTemplateCSV,
+} = require("./.compiled/src/utils/csvParser.js")
 
 function createStudent(overrides = {}) {
   return {
@@ -52,7 +56,7 @@ function createClassroom(id, students) {
 
 const tests = [
   {
-    name: "student tag support load is derived from tag weights and categories",
+    name: "student characteristic load is derived from characteristic weights and categories",
     run: () => {
       const student = createStudent({
         tags: ["Needs strong routine", "Needs frequent redirection", "Independent worker"],
@@ -63,9 +67,9 @@ const tests = [
 
       assert.equal(total, 5)
       assert.equal(breakdown.total, 5)
-      assert.equal(breakdown.behavioral, 4)
+      assert.equal(breakdown.behavioral, 6)
       assert.equal(breakdown.emotional, 0)
-      assert.equal(breakdown.instructional, 1)
+      assert.equal(breakdown.instructional, -1)
       assert.equal(breakdown.energy, 0)
       assert.deepEqual(
         breakdown.contributions.map((entry) => [entry.tag, entry.weight]),
@@ -78,7 +82,7 @@ const tests = [
     },
   },
   {
-    name: "classroom tag support load breakdown sums student totals and category subtotals",
+    name: "classroom characteristic load breakdown sums student totals and category subtotals",
     run: () => {
       const classroom = createClassroom("1-A", [
         createStudent({ id: 1, tags: ["Needs strong routine", "Needs frequent redirection", "Independent worker"] }),
@@ -88,14 +92,14 @@ const tests = [
       const breakdown = getClassroomTagSupportLoadBreakdown(classroom)
 
       assert.equal(breakdown.total, 10)
-      assert.equal(breakdown.behavioral, 4)
+      assert.equal(breakdown.behavioral, 6)
       assert.equal(breakdown.emotional, 3)
-      assert.equal(breakdown.instructional, 1)
+      assert.equal(breakdown.instructional, -1)
       assert.equal(breakdown.energy, 2)
     },
   },
   {
-    name: "projected tag support load penalty is higher for an already overloaded room",
+    name: "projected characteristic load penalty is higher for an already overloaded room",
     run: () => {
       const candidate = createStudent({
         id: 10,
@@ -117,12 +121,12 @@ const tests = [
     },
   },
   {
-    name: "studentTags CSV parsing stays backward compatible with existing separators and exact labels",
+    name: "student characteristic CSV parsing accepts current headers and retired peer labels",
     run: () => {
       const csv = [
-        "id,grade,firstName,lastName,studentTags",
+        "id,grade,firstName,lastName,studentCharacteristics",
         '101,1,Ada,Stone,"Needs strong routine;Needs reassurance"',
-        '102,1,Ben,Reed,"Needs movement breaks|Independent worker"',
+        '102,1,Ben,Reed,"Needs positive peer models|Easily influenced by peers"',
       ].join("\n")
 
       const result = parseStudentCSVWithMapping(csv, {
@@ -130,17 +134,64 @@ const tests = [
         grade: "grade",
         firstName: "firstName",
         lastName: "lastName",
-        studentTags: "studentTags",
+        studentTags: "studentCharacteristics",
       })
 
       assert.equal(result.skipped, 0)
       assert.equal(result.errors.length, 0)
       assert.deepEqual(result.students[0].tags, ["Needs strong routine", "Needs reassurance"])
-      assert.deepEqual(result.students[1].tags, ["Needs movement breaks", "Independent worker"])
+      assert.deepEqual(result.students[1].tags, ["Struggles with peer conflict"])
     },
   },
   {
-    name: "tag formula settings can reduce hotspot scoring pressure",
+    name: "public templates use the current student and teacher headers",
+    run: () => {
+      const studentTemplate = fs.readFileSync("public/student-import-template.csv", "utf8").trim()
+      const teacherTemplate = fs.readFileSync("public/teacher-import-template.csv", "utf8").trim()
+
+      assert.equal(studentTemplate, generateStudentTemplateCSV())
+      assert.equal(teacherTemplate, "grade,teacherName,structure,regulationBehaviorSupport,socialEmotionalSupport,instructionalExpertise")
+    },
+  },
+  {
+    name: "public sample students include assigned teachers that match the teacher sample naming scheme",
+    run: () => {
+      const sampleText = fs.readFileSync("public/sample-students.csv", "utf8").trim().split(/\r?\n/)
+      const headers = sampleText[0].split(",")
+      const assignedTeacherIndex = headers.indexOf("assignedTeacher")
+      assert.ok(assignedTeacherIndex >= 0)
+
+      const assignedTeachers = sampleText
+        .slice(1)
+        .map((line) => line.split(",")[assignedTeacherIndex])
+        .filter(Boolean)
+
+      assert.ok(assignedTeachers.length > 0)
+      assert.ok(assignedTeachers.every((name) => /^Ms\. Grade(?:K|[1-5])[A-D]$/.test(name)))
+    },
+  },
+  {
+    name: "public sample assigned teachers all exist in the public teacher sample",
+    run: () => {
+      const studentLines = fs.readFileSync("public/sample-students.csv", "utf8").trim().split(/\r?\n/)
+      const teacherLines = fs.readFileSync("public/sample-teachers.csv", "utf8").trim().split(/\r?\n/)
+      const studentHeaders = studentLines[0].split(",")
+      const teacherHeaders = teacherLines[0].split(",")
+      const assignedTeacherIndex = studentHeaders.indexOf("assignedTeacher")
+      const teacherNameIndex = teacherHeaders.indexOf("teacherName")
+      assert.ok(assignedTeacherIndex >= 0)
+      assert.ok(teacherNameIndex >= 0)
+
+      const assignedTeachers = new Set(studentLines.slice(1).map((line) => line.split(",")[assignedTeacherIndex]).filter(Boolean))
+      const teacherNames = new Set(teacherLines.slice(1).map((line) => line.split(",")[teacherNameIndex]).filter(Boolean))
+
+      for (const teacherName of assignedTeachers) {
+        assert.equal(teacherNames.has(teacherName), true)
+      }
+    },
+  },
+  {
+    name: "characteristic formula settings can reduce hotspot scoring pressure",
     run: () => {
       const candidate = createStudent({
         id: 20,
@@ -178,4 +229,9 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
+
+
+
+
+
 
