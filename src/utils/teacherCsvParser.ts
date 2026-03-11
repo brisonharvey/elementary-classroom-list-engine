@@ -1,5 +1,5 @@
 import { Grade, TEACHER_CHARACTERISTIC_KEYS, TeacherProfile } from "../types"
-import { CsvFieldOption, CSVPreview, parseCSVPreview } from "./csvParser"
+import { CsvFieldOption, CSVPreview, normalizeHeader, parseCSVPreview, suggestFieldMapping } from "./csvParser"
 
 export const TEACHER_CSV_FIELD_OPTIONS = [
   { key: "grade", label: "Grade", required: true },
@@ -57,10 +57,6 @@ export interface TeacherParseResult {
   skipped: number
 }
 
-function normalizeHeader(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, "")
-}
-
 function parseGrade(val: string): Grade {
   const v = val.trim()
   if (v === "K" || v === "1" || v === "2" || v === "3" || v === "4" || v === "5") return v
@@ -93,16 +89,7 @@ function parseRating(raw: string, rowIndex: number, label: string, errors: strin
 }
 
 export function suggestTeacherFieldMapping(headers: string[]): TeacherCsvFieldMapping {
-  const normalized = headers.map(normalizeHeader)
-  const mapping: TeacherCsvFieldMapping = {}
-
-  for (const field of TEACHER_CSV_FIELD_OPTIONS) {
-    const aliases = FIELD_ALIASES[field.key]
-    const index = normalized.findIndex((header) => aliases.includes(header))
-    if (index >= 0) mapping[field.key] = headers[index]
-  }
-
-  return mapping
+  return suggestFieldMapping(headers, TEACHER_CSV_FIELD_OPTIONS, FIELD_ALIASES)
 }
 
 export function parseTeacherCSVWithMapping(text: string, mapping: TeacherCsvFieldMapping): TeacherParseResult {

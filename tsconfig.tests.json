@@ -22,6 +22,7 @@
     "src/utils/exportUtils.ts",
     "src/utils/scoring.ts",
     "src/utils/tagSupportLoad.ts",
+    "src/utils/teacherCsvParser.ts",
     "src/utils/teacherFit.ts",
     "src/engine/placementEngine.ts",
     "src/store/reducer.ts"

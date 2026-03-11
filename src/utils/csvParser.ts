@@ -47,8 +47,8 @@ export type StudentCsvFieldMapping = Partial<Record<StudentCsvFieldKey, string>>
 const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   id: ["id", "studentid", "student.studentnumber", "studentnumber", "sisid", "localid", "student.personid", "personid"],
   grade: ["grade", "gradelevel", "studentgrade", "grd"],
-  firstName: ["student.firstname", "firstname", "first", "givenname", "studentfirstname"],
-  lastName: ["student.lastname", "lastname", "last", "surname", "familyname", "studentlastname"],
+  firstName: ["student.firstname", "student first name", "firstname", "first name", "first", "givenname", "studentfirstname"],
+  lastName: ["student.lastname", "student last name", "lastname", "last name", "last", "surname", "familyname", "studentlastname"],
   gender: ["gender", "sex", "f/m"],
   status: ["status", "spedstatus", "specialedstatus", "specialeducationstatus", "sped", "specialeducation"],
   coTeachReadingMinutes: ["coteachreadingminutes", "serviceminutesreading", "readingcoteachminutes"],
@@ -70,12 +70,12 @@ const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   ireadyReading: ["ireadyreading", "ireadingreading", "ireadyreadinglevel", "winter(november16-march1)|overallplacement"],
   ireadyMath: ["ireadymath", "ireadymathlevel", "winter(november16-march1)|overallplacement(diagnostic_results_math_confidential(1).csv)"],
   referrals: ["referrals", "referralcount", "disciplinereferrals", "disc.referrals"],
-  assignedTeacher: ["assignedteacher", "teacher", "homeroomteacher", "classteacher", "classteacher(s)"],
+  assignedTeacher: ["assignedteacher", "assigned teacher", "teachername", "homeroomteacher", "classteacher", "classteacher(s)"],
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   section504: ["section504", "plan504", "program504", "504"],
   raceEthnicity: ["raceethnicity", "race/ethnicity", "ethnicity", "race", "studentrace", "studentethnicity"],
   studentTags: ["studentcharacteristics", "studenttags", "tags", "placementtags", "supporttags"],
-  teacherNotes: ["teachernotes", "notes", "comments", "placementnotes"],
+  teacherNotes: ["teachernotes", "teacher notes", "teacher notes placement", "notes", "comments", "placementnotes"],
 }
 
 function parseBool(val: string): boolean {
@@ -229,8 +229,93 @@ export interface CSVPreview {
   rows: string[][]
 }
 
-function normalizeHeader(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, "")
+export function normalizeHeader(value: string): string {
+  return value
+    .replace(/^\uFEFF/, "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+}
+
+function tokenizeHeader(value: string): string[] {
+  const normalized = value
+    .replace(/^\uFEFF/, "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+
+  return normalized ? normalized.split(/\s+/).filter(Boolean) : []
+}
+
+function scoreHeaderAliasMatch(header: string, alias: string): number {
+  const normalizedHeader = normalizeHeader(header)
+  const normalizedAlias = normalizeHeader(alias)
+  if (!normalizedHeader || !normalizedAlias) return 0
+  if (normalizedHeader === normalizedAlias) return 100
+
+  const headerTokens = tokenizeHeader(header)
+  const aliasTokens = tokenizeHeader(alias)
+  const aliasTokenSet = new Set(aliasTokens)
+  const headerTokenSet = new Set(headerTokens)
+
+  if (aliasTokens.length > 0 && aliasTokens.every((token) => headerTokenSet.has(token))) {
+    return 88 + Math.min(aliasTokens.length, 4)
+  }
+
+  if (
+    normalizedAlias.length >= 6 &&
+    (normalizedHeader.includes(normalizedAlias) || normalizedAlias.includes(normalizedHeader))
+  ) {
+    return 82
+  }
+
+  if (aliasTokenSet.size > 0) {
+    let overlap = 0
+    for (const token of aliasTokenSet) {
+      if (headerTokenSet.has(token)) overlap += 1
+    }
+
+    if (overlap > 0) {
+      const coverage = overlap / aliasTokenSet.size
+      if (coverage >= 0.75 && aliasTokenSet.size >= 2) return 76
+      if (coverage >= 0.5 && aliasTokenSet.size >= 2) return 70
+    }
+  }
+
+  return 0
+}
+
+export function suggestFieldMapping<TFieldKey extends string>(
+  headers: string[],
+  fieldOptions: readonly (CsvFieldOption & { key: TFieldKey })[],
+  fieldAliases: Record<TFieldKey, string[]>
+): Partial<Record<TFieldKey, string>> {
+  const mapping: Partial<Record<TFieldKey, string>> = {}
+  const usedHeaders = new Set<number>()
+
+  for (const field of fieldOptions) {
+    const aliases = fieldAliases[field.key as TFieldKey] ?? []
+    let bestIndex = -1
+    let bestScore = 0
+
+    headers.forEach((header, index) => {
+      if (usedHeaders.has(index)) return
+      const score = aliases.reduce((max, alias) => Math.max(max, scoreHeaderAliasMatch(header, alias)), 0)
+      if (score > bestScore) {
+        bestScore = score
+        bestIndex = index
+      }
+    })
+
+    if (bestIndex >= 0 && bestScore >= 82) {
+      mapping[field.key as TFieldKey] = headers[bestIndex]
+      usedHeaders.add(bestIndex)
+    }
+  }
+
+  return mapping
 }
 
 export function parseCSVPreview(text: string): CSVPreview {
@@ -259,16 +344,7 @@ export function buildSampleValues(headers: string[], rows: string[][]): Record<s
 }
 
 export function suggestStudentFieldMapping(headers: string[]): StudentCsvFieldMapping {
-  const normalized = headers.map(normalizeHeader)
-  const mapping: StudentCsvFieldMapping = {}
-
-  for (const field of STUDENT_CSV_FIELD_OPTIONS) {
-    const aliases = FIELD_ALIASES[field.key]
-    const index = normalized.findIndex((header) => aliases.includes(header))
-    if (index >= 0) mapping[field.key] = headers[index]
-  }
-
-  return mapping
+  return suggestFieldMapping(headers, STUDENT_CSV_FIELD_OPTIONS, FIELD_ALIASES)
 }
 
 function parseCoTeachMinutes(raw: string, rowIndex: number, label: string, errors: string[]): number {

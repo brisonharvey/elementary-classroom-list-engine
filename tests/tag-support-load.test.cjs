@@ -12,7 +12,12 @@ const { buildPlacementCSV } = require("./.compiled/src/utils/exportUtils.js")
 const {
   parseStudentCSVWithMapping,
   generateStudentTemplateCSV,
+  suggestStudentFieldMapping,
 } = require("./.compiled/src/utils/csvParser.js")
+const {
+  parseTeacherCSVWithMapping,
+  suggestTeacherFieldMapping,
+} = require("./.compiled/src/utils/teacherCsvParser.js")
 
 function createStudent(overrides = {}) {
   return {
@@ -58,6 +63,77 @@ function createClassroom(id, students) {
 }
 
 const tests = [
+  {
+    name: "student header suggestions handle BOMs punctuation and SIS-style labels",
+    run: () => {
+      const headers = [
+        "\uFEFFStudent ID",
+        "Grade Level",
+        "Student First Name",
+        "Student Last Name",
+        "Race / Ethnicity",
+        "Co-Teach Science / Social Studies Minutes",
+        "Teacher Notes (Placement)",
+      ]
+
+      const mapping = suggestStudentFieldMapping(headers)
+
+      assert.equal(mapping.id, "\uFEFFStudent ID")
+      assert.equal(mapping.grade, "Grade Level")
+      assert.equal(mapping.firstName, "Student First Name")
+      assert.equal(mapping.lastName, "Student Last Name")
+      assert.equal(mapping.raceEthnicity, "Race / Ethnicity")
+      assert.equal(mapping.coTeachScienceSocialStudiesMinutes, "Co-Teach Science / Social Studies Minutes")
+      assert.equal(mapping.teacherNotes, "Teacher Notes (Placement)")
+    },
+  },
+  {
+    name: "teacher header suggestions match descriptive exported labels",
+    run: () => {
+      const headers = [
+        "Grade Level",
+        "Homeroom Teacher",
+        "Classroom Structure",
+        "Regulation / Behavior Support",
+        "Social / Emotional Support",
+        "Instructional Expertise",
+      ]
+
+      const mapping = suggestTeacherFieldMapping(headers)
+
+      assert.equal(mapping.grade, "Grade Level")
+      assert.equal(mapping.teacherName, "Homeroom Teacher")
+      assert.equal(mapping.structure, "Classroom Structure")
+      assert.equal(mapping.regulationBehaviorSupport, "Regulation / Behavior Support")
+      assert.equal(mapping.socialEmotionalSupport, "Social / Emotional Support")
+      assert.equal(mapping.instructionalExpertise, "Instructional Expertise")
+    },
+  },
+  {
+    name: "teacher CSV parsing works with spaced and slashed headers",
+    run: () => {
+      const headers = [
+        "Grade Level",
+        "Homeroom Teacher",
+        "Classroom Structure",
+        "Regulation / Behavior Support",
+        "Social / Emotional Support",
+        "Instructional Expertise",
+      ]
+      const csv = [
+        headers.join(","),
+        "1,Ms. Maple,5,4,3,5",
+      ].join("\n")
+
+      const result = parseTeacherCSVWithMapping(csv, suggestTeacherFieldMapping(headers))
+
+      assert.equal(result.errors.length, 0)
+      assert.equal(result.skipped, 0)
+      assert.equal(result.teachers.length, 1)
+      assert.equal(result.teachers[0].teacherName, "Ms. Maple")
+      assert.equal(result.teachers[0].characteristics.regulationBehaviorSupport, 4)
+    },
+  },
   {
     name: "student characteristic load is derived from characteristic weights and categories",
     run: () => {
