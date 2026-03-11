@@ -34,6 +34,8 @@ Tier columns can be entered either as plain numbers or as notes that contain tie
 
 `ell` accepts `EL`, `ELL`, `RFEP 1-4`, and standard truthy values.
 
+Student imports are additive. You can import a second student CSV later, and the app only adds rows whose `id` is not already in the current roster.
+
 Assessment columns:
 
 - `briganceReadiness`
@@ -207,10 +209,10 @@ That teacher profile is also a strong fit for those same characteristics.
 ## Notes
 
 - Student imports can include `assignedTeacher` if you want to seed a student into a matching teacher room.
+- Repeated student imports ignore duplicate `id` values instead of overwriting the existing student record.
 - Teacher imports do not lock students.
 - Locking happens only inside the app.
 - Poor teacher fits are highlighted after placement, but the underlying teacher profile scores remain hidden in the app.
 - The templates do not include extra columns for derived support-load totals because the app computes them from `studentCharacteristics`.
 - The parser still accepts legacy `studentTags` headers and retired characteristic labels for backward compatibility.
-
 

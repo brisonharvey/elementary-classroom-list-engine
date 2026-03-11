@@ -322,6 +322,9 @@ html, body, #root {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  min-width: 0;
+  width: 100%;
+  justify-content: flex-end;
 }
 
 .drop-zone {
@@ -337,7 +340,8 @@ html, body, #root {
   font-weight: 500;
   cursor: pointer;
   transition: all .15s ease;
-  white-space: nowrap;
+  white-space: normal;
+  min-width: 0;
 }
 
 .drop-zone:hover,
@@ -349,14 +353,18 @@ html, body, #root {
 
 .drop-zone svg { flex-shrink: 0; }
 
+.upload-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
 .upload-status {
   font-size: 11px;
   padding: 3px 8px;
   border-radius: var(--radius);
-  white-space: nowrap;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  max-width: min(100%, 480px);
 }
 
 .status-success {
@@ -1344,6 +1352,10 @@ html, body, #root {
     margin-left: 0;
   }
 
+  .csv-uploader {
+    justify-content: flex-start;
+  }
+
   .toolbar-left {
     gap: 10px;
   }
@@ -1463,6 +1475,17 @@ html, body, #root {
     border-right: 0;
     padding-right: 0;
     margin-right: 0;
+  }
+
+  .drop-zone {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .upload-status,
+  .upload-hint {
+    width: 100%;
   }
 
   .control-group .btn {
@@ -2422,6 +2445,5 @@ input { font-family: inherit; }
   color: var(--text-light);
   line-height: 1.4;
 }
-
 
 

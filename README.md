@@ -4,7 +4,7 @@ Desktop and web app for building balanced K-5 classroom rosters from separate st
 
 ## Current capabilities
 
-- Separate student and teacher CSV imports with header mapping.
+- Separate student and teacher CSV imports with header mapping. Student imports can be repeated to append another batch.
 - Hard constraints first, teacher-fit comparison second, and weighted soft balancing after that.
 - Weighted balancing includes class size, academic need, behavioral need, demographic balance, preferred-peer adjustment, do-not-separate adjustment, and grade settings pressure.
 - Additive characteristic-based Classroom Support Load derived from student characteristics.
@@ -82,6 +82,7 @@ Common optional columns:
 Notes:
 
 - `assignedTeacher` is optional on student import and can seed a student into a matching teacher room.
+- Re-importing students appends only brand-new student IDs. Existing IDs are ignored, so a second batch can safely add late roster entries without overwriting the current roster.
 - Students are only locked or fixed to rooms inside the app.
 - For kindergarten, use `briganceReadiness` and leave MAP/i-Ready blank if you do not need them for reporting.
 - `academicTier` and `behaviorTier` can be plain numbers or note text that includes tier values like `Reading - Tier 2; Math - Tier 3`. The app keeps the note text on the student summary and sums the tier values for support load.
@@ -152,13 +153,14 @@ The engine compares student characteristics to teacher characteristics like this
 ## Placement workflow
 
 1. Import students.
-2. Import teachers.
-3. Review teacher names, co-teach coverage, rules, settings, and weights.
-4. Run auto-place for the active grade.
-5. Review warnings, poor-fit cards, room characteristic-load summaries, and the summary drawer.
-6. Drag students manually as needed.
-7. Lock placements that should be preserved.
-8. Export the active grade or all grades.
+2. Import another student batch if late enrollments arrive. Duplicate student IDs are ignored.
+3. Import teachers.
+4. Review teacher names, co-teach coverage, rules, settings, and weights.
+5. Run auto-place for the active grade.
+6. Review warnings, poor-fit cards, room characteristic-load summaries, and the summary drawer.
+7. Drag students manually as needed.
+8. Lock placements that should be preserved.
+9. Export the active grade or all grades.
 
 ## Placement model
 
@@ -239,5 +241,4 @@ Derived support-load values are not exported as additional columns. When tier no
 - `node_modules/.bin/tsc -b` verifies the TypeScript projects.
 - `npm run build` may still fail in a restricted sandbox if Vite/esbuild cannot spawn its subprocess.
 - `npm run lint` requires `eslint` to be installed in the environment.
-
 

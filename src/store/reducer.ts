@@ -150,57 +150,95 @@ function assignStudentToTeacherClassroom(classrooms: Classroom[], student: Stude
   return next
 }
 
+function dedupeStudentsById(students: Student[], existingIds = new Set<number>()): Student[] {
+  const seen = new Set(existingIds)
+  const unique: Student[] = []
+
+  for (const student of students) {
+    if (seen.has(student.id)) continue
+    seen.add(student.id)
+    unique.push(student)
+  }
+
+  return unique
+}
+
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "LOAD_STUDENTS": {
-      const freshClassrooms = syncClassroomsWithTeacherProfiles(initializeClassrooms(), state.teacherProfiles)
-      const allStudents = action.payload.map((student) => ({
-        ...student,
-        coTeachMinutes: normalizeCoTeachMinutes(student.coTeachMinutes),
-        locked: student.preassignedTeacher ? true : false,
-      }))
+      const incomingStudents = dedupeStudentsById(
+        action.payload.map((student) => ({
+          ...student,
+          coTeachMinutes: normalizeCoTeachMinutes(student.coTeachMinutes),
+          locked: student.preassignedTeacher ? true : false,
+        })),
+        new Set(state.allStudents.map((student) => student.id))
+      )
 
-      const teacherToClassroomId = new Map<string, string>()
-      for (const student of allStudents) {
-        const teacherName = student.preassignedTeacher?.trim()
-        if (!teacherName) continue
+      if (incomingStudents.length === 0) return state
 
-        const key = `${student.grade}:${teacherName}`
-        if (teacherToClassroomId.has(key)) continue
+      if (state.allStudents.length === 0) {
+        const freshClassrooms = syncClassroomsWithTeacherProfiles(initializeClassrooms(), state.teacherProfiles)
+        const allStudents = incomingStudents
 
-        const gradeRooms = getClassroomsForGrade(freshClassrooms, student.grade)
-        const existing = gradeRooms.find((classroom) => classroom.teacherName.trim().toLowerCase() === teacherName.toLowerCase())
-        if (existing) {
-          teacherToClassroomId.set(key, existing.id)
-          continue
+        const teacherToClassroomId = new Map<string, string>()
+        for (const student of allStudents) {
+          const teacherName = student.preassignedTeacher?.trim()
+          if (!teacherName) continue
+
+          const key = `${student.grade}:${teacherName}`
+          if (teacherToClassroomId.has(key)) continue
+
+          const gradeRooms = getClassroomsForGrade(freshClassrooms, student.grade)
+          const existing = gradeRooms.find((classroom) => classroom.teacherName.trim().toLowerCase() === teacherName.toLowerCase())
+          if (existing) {
+            teacherToClassroomId.set(key, existing.id)
+            continue
+          }
+
+          const available = gradeRooms.find((classroom) => !classroom.teacherName.trim())
+          if (available) {
+            available.teacherName = teacherName
+            teacherToClassroomId.set(key, available.id)
+          }
         }
 
-        const available = gradeRooms.find((classroom) => !classroom.teacherName.trim())
-        if (available) {
-          available.teacherName = teacherName
-          teacherToClassroomId.set(key, available.id)
+        for (const student of allStudents) {
+          const teacherName = student.preassignedTeacher?.trim()
+          if (!teacherName) continue
+
+          const classroomId = teacherToClassroomId.get(`${student.grade}:${teacherName}`)
+          if (!classroomId) continue
+
+          const classroom = freshClassrooms.find((entry) => entry.id === classroomId)
+          if (classroom && classroom.students.length < classroom.maxSize) {
+            classroom.students.push({ ...student })
+          }
+        }
+
+        return {
+          ...state,
+          allStudents,
+          classrooms: freshClassrooms,
+          snapshots: [],
+          relationshipRules: [],
+          unresolvedReasons: {},
+          placementWarnings: [],
         }
       }
 
-      for (const student of allStudents) {
-        const teacherName = student.preassignedTeacher?.trim()
-        if (!teacherName) continue
+      const allStudents = normalizeStudentRelationships([...state.allStudents, ...incomingStudents].map((student) => normalizeStudentRecord(student)))
+      let classrooms = cloneClassrooms(state.classrooms)
 
-        const classroomId = teacherToClassroomId.get(`${student.grade}:${teacherName}`)
-        if (!classroomId) continue
-
-        const classroom = freshClassrooms.find((entry) => entry.id === classroomId)
-        if (classroom && classroom.students.length < classroom.maxSize) {
-          classroom.students.push({ ...student })
-        }
+      for (const student of incomingStudents) {
+        if (!student.preassignedTeacher) continue
+        classrooms = assignStudentToTeacherClassroom(classrooms, student, student.id)
       }
 
       return {
         ...state,
         allStudents,
-        classrooms: freshClassrooms,
-        snapshots: [],
-        relationshipRules: [],
+        classrooms,
         unresolvedReasons: {},
         placementWarnings: [],
       }
@@ -510,4 +548,3 @@ export function reducer(state: AppState, action: Action): AppState {
       return state
   }
 }
-

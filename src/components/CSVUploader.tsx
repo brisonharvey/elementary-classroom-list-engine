@@ -25,7 +25,7 @@ type UploadMode = "students" | "teachers"
 type GenericMapping = Record<string, string | undefined>
 
 export function CSVUploader() {
-  const { dispatch } = useApp()
+  const { state, dispatch } = useApp()
   const [mode, setMode] = useState<UploadMode>("students")
   const [status, setStatus] = useState<{ type: "idle" | "success" | "error"; message: string }>({
     type: "idle",
@@ -83,7 +83,7 @@ export function CSVUploader() {
       templateFilename: "student-import-template.csv",
       sampleContent: generateStudentSampleCSV,
       templateContent: generateStudentTemplateCSV,
-      importLabel: "Import students",
+      importLabel: state.allStudents.length > 0 ? "Add student batch" : "Import students",
       uploadLabel: "Student CSV",
       ariaLabel: "Upload student CSV file",
       process: (text: string, fieldMapping: GenericMapping) => {
@@ -93,12 +93,31 @@ export function CSVUploader() {
           return
         }
 
-        dispatch({ type: "LOAD_STUDENTS", payload: students })
+        const existingIds = new Set(state.allStudents.map((student) => student.id))
+        const seenIds = new Set<number>()
+        const newStudents = students.filter((student) => {
+          if (existingIds.has(student.id) || seenIds.has(student.id)) return false
+          seenIds.add(student.id)
+          return true
+        })
+        const duplicateCount = students.length - newStudents.length
+
+        if (newStudents.length === 0) {
+          const skippedNote = skipped > 0 ? ` ${skipped} row(s) were already skipped during parsing.` : ""
+          setStatus({
+            type: "error",
+            message: `No new students were added. ${duplicateCount} duplicate ID(s) matched the current roster or repeated in the file.${skippedNote}`,
+          })
+          return
+        }
+
+        dispatch({ type: "LOAD_STUDENTS", payload: newStudents })
         const warn = skipped > 0 ? ` (${skipped} rows skipped)` : ""
+        const duplicateNote = duplicateCount > 0 ? ` (${duplicateCount} duplicate ID${duplicateCount === 1 ? "" : "s"} ignored)` : ""
         const errNote = errors.length > 0 ? ` - ${errors.length} warning(s)` : ""
         setStatus({
           type: "success",
-          message: `Loaded ${students.length} students across grades K-5${warn}${errNote}.`,
+          message: `${state.allStudents.length > 0 ? "Added" : "Loaded"} ${newStudents.length} student${newStudents.length === 1 ? "" : "s"} across grades K-5${duplicateNote}${warn}${errNote}.`,
         })
         if (errors.length > 0) {
           console.warn("[Student CSV Import Warnings]", errors)
@@ -106,7 +125,7 @@ export function CSVUploader() {
         setStep("upload")
       },
     }
-  }, [dispatch, mode])
+  }, [dispatch, mode, state.allStudents])
 
   const mappedHeaderSet = useMemo(() => new Set(Object.values(mapping).filter(Boolean)), [mapping])
   const sampleValues = useMemo(() => buildSampleValues(csvHeaders, csvRows), [csvHeaders, csvRows])
@@ -201,6 +220,9 @@ export function CSVUploader() {
             <span>Drop {config.uploadLabel} here or click to upload</span>
           </div>
           <input ref={inputRef} type="file" accept=".csv,text/csv" onChange={onFileChange} hidden />
+          {mode === "students" && state.allStudents.length > 0 && (
+            <span className="upload-hint">Additional student imports append new IDs and ignore duplicates.</span>
+          )}
           <button className="btn btn-ghost btn-sm" onClick={() => downloadFile(config.templateContent(), config.templateFilename)}>
             Template CSV
           </button>
@@ -215,7 +237,7 @@ export function CSVUploader() {
           <div className="mapping-header">
             <span>Match CSV columns to import fields</span>
             <span className="mapping-stats">
-              {csvHeaders.length} columns detected · {matchedCount}/{config.fieldOptions.length} fields mapped
+              {csvHeaders.length} columns detected Â· {matchedCount}/{config.fieldOptions.length} fields mapped
               {autoMatchCount > 0 && <span className="mapping-stats-auto"> ({autoMatchCount} auto-matched)</span>}
             </span>
           </div>

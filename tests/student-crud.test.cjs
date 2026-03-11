@@ -200,6 +200,32 @@ const tests = [
     },
   },
   {
+    name: "loading a second student batch appends only new ids and preserves existing placements",
+    run: () => {
+      const state = createState()
+      state.classrooms = [
+        createClassroom("1-A", [createStudent(101, { firstName: "Alpha", locked: true })], { teacherName: "Ms. Rivera" }),
+        createClassroom("1-B", []),
+      ]
+
+      const next = reducer(state, {
+        type: "LOAD_STUDENTS",
+        payload: [
+          createStudent(101, { firstName: "Duplicate Alpha" }),
+          createStudent(303, { firstName: "Gamma" }),
+          createStudent(404, { firstName: "Delta", preassignedTeacher: "Ms. Rivera" }),
+          createStudent(303, { firstName: "Gamma Again" }),
+        ],
+      })
+
+      assert.deepEqual(next.allStudents.map((student) => student.id).sort((a, b) => a - b), [101, 102, 303, 404])
+      assert.deepEqual(next.classrooms[0].students.map((student) => student.id).sort((a, b) => a - b), [101, 404])
+      assert.equal(next.classrooms[0].students.find((student) => student.id === 101).locked, true)
+      assert.equal(next.classrooms.some((classroom) => classroom.students.some((student) => student.id === 303)), false)
+      assert.equal(next.relationshipRules.length, 1)
+    },
+  },
+  {
     name: "grade settings updates keep new formula fields and reset restores defaults",
     run: () => {
       const state = createState()
@@ -257,7 +283,6 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
-
 
 
 
