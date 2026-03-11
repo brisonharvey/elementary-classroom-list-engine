@@ -2,6 +2,10 @@
 
 Desktop and web app for building balanced K-5 classroom rosters from separate student and teacher CSV imports.
 
+Additional documentation:
+
+- `ADMIN_BEGINNERS_GUIDE.md` for a non-technical school administrator walkthrough
+
 ## Current capabilities
 
 - Separate student and teacher CSV imports with header mapping. Student imports can be repeated to append another batch.
@@ -241,4 +245,3 @@ Derived support-load values are not exported as additional columns. When tier no
 - `node_modules/.bin/tsc -b` verifies the TypeScript projects.
 - `npm run build` may still fail in a restricted sandbox if Vite/esbuild cannot spawn its subprocess.
 - `npm run lint` requires `eslint` to be installed in the environment.
-

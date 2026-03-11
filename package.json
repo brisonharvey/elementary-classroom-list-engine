@@ -1,7 +1,7 @@
 {
   "name": "claude-classroom-engine",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "description": "Desktop and web app for generating balanced elementary classroom rosters.",
   "author": "Elementary Classroom List Engine Team",
   "type": "module",
@@ -75,5 +75,4 @@
     "wait-on": "^9.0.4"
   }
 }
-
 
