@@ -42,6 +42,8 @@ export type Action =
   | { type: "DUPLICATE_SNAPSHOT"; payload: string }
   | { type: "UPSERT_RELATIONSHIP_RULE"; payload: RelationshipRule }
   | { type: "DELETE_RELATIONSHIP_RULE"; payload: string }
+  | { type: "UPSERT_NO_CONTACT_PAIR"; payload: { grade: Grade; studentIds: [number, number]; note?: string } }
+  | { type: "DELETE_NO_CONTACT_PAIR"; payload: { grade: Grade; studentIds: [number, number] } }
   | { type: "UPDATE_GRADE_SETTINGS"; payload: { grade: Grade; updates: Partial<AppState["gradeSettings"][Grade]> } }
   | { type: "APPLY_GRADE_SETTINGS_TO_ALL"; payload: GradeSettingsPayload }
   | { type: "RESET_GRADE_SETTINGS"; payload: Grade }
@@ -119,6 +121,59 @@ function replaceStudentId(ids: number[] | undefined, previousId: number, nextId:
   )
 }
 
+function normalizePair(studentIds: [number, number]): [number, number] {
+  return studentIds[0] < studentIds[1]
+    ? [studentIds[0], studentIds[1]]
+    : [studentIds[1], studentIds[0]]
+}
+
+function syncClassroomStudentCopies(classrooms: Classroom[], allStudents: Student[]): Classroom[] {
+  const byId = new Map(allStudents.map((student) => [student.id, student]))
+
+  return classrooms.map((classroom) => ({
+    ...classroom,
+    students: classroom.students
+      .map((student) => byId.get(student.id))
+      .filter((student): student is Student => student != null)
+      .map((student) => ({ ...student })),
+  }))
+}
+
+function withNoContactPair(students: Student[], studentIds: [number, number], enabled: boolean): Student[] {
+  const [leftId, rightId] = normalizePair(studentIds)
+
+  return normalizeStudentRelationships(
+    students.map((student) => {
+      if (student.id !== leftId && student.id !== rightId) return student
+
+      const peerId = student.id === leftId ? rightId : leftId
+      const nextNoContact = enabled
+        ? uniqueStudentIds([...(student.noContactWith ?? []), peerId], student.id)
+        : uniqueStudentIds(student.noContactWith, student.id).filter((id) => id !== peerId)
+
+      return normalizeStudentRecord({
+        ...student,
+        noContactWith: nextNoContact,
+      })
+    })
+  )
+}
+
+function findRelationshipRuleByPair(
+  relationshipRules: RelationshipRule[],
+  grade: Grade,
+  type: RelationshipRule["type"],
+  studentIds: [number, number]
+): RelationshipRule | undefined {
+  const pair = normalizePair(studentIds)
+
+  return relationshipRules.find((rule) => {
+    if (rule.grade !== grade || rule.type !== type) return false
+    const existingPair = normalizePair(rule.studentIds)
+    return existingPair[0] === pair[0] && existingPair[1] === pair[1]
+  })
+}
+
 function cloneClassrooms(classrooms: Classroom[]): Classroom[] {
   return classrooms.map((classroom) => ({ ...classroom, students: [...classroom.students] }))
 }
@@ -179,7 +234,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
       if (state.allStudents.length === 0) {
         const freshClassrooms = syncClassroomsWithTeacherProfiles(initializeClassrooms(), state.teacherProfiles)
-        const allStudents = incomingStudents
+        const allStudents = normalizeStudentRelationships(incomingStudents.map((student) => normalizeStudentRecord(student)))
 
         const teacherToClassroomId = new Map<string, string>()
         for (const student of allStudents) {
@@ -510,6 +565,70 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case "DELETE_RELATIONSHIP_RULE":
       return { ...state, relationshipRules: state.relationshipRules.filter((rule) => rule.id !== action.payload) }
+    case "UPSERT_NO_CONTACT_PAIR": {
+      const pair = normalizePair(action.payload.studentIds)
+      const pairStudents = state.allStudents.filter((student) => pair.includes(student.id))
+      if (pairStudents.length !== 2 || pairStudents.some((student) => student.grade !== action.payload.grade)) {
+        return state
+      }
+
+      const allStudents = withNoContactPair(state.allStudents, pair, true)
+      const classrooms = syncClassroomStudentCopies(state.classrooms, allStudents)
+      const existing = findRelationshipRuleByPair(state.relationshipRules, action.payload.grade, "NO_CONTACT", pair)
+      const trimmedNote = action.payload.note?.trim()
+      const shouldPersistRule = Boolean(trimmedNote) || existing != null
+      const relationshipRules = shouldPersistRule
+        ? (existing
+            ? state.relationshipRules.map((rule) =>
+                rule.id === existing.id
+                  ? {
+                      ...rule,
+                      studentIds: pair,
+                      note: trimmedNote || undefined,
+                    }
+                  : rule
+              )
+            : [
+                ...state.relationshipRules,
+                {
+                  id: `rule-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
+                  type: "NO_CONTACT" as const,
+                  studentIds: pair,
+                  note: trimmedNote || undefined,
+                  createdAt: Date.now(),
+                  grade: action.payload.grade,
+                },
+              ])
+        : state.relationshipRules
+
+      return {
+        ...state,
+        allStudents,
+        classrooms,
+        relationshipRules,
+        unresolvedReasons: {},
+        placementWarnings: [],
+      }
+    }
+    case "DELETE_NO_CONTACT_PAIR": {
+      const pair = normalizePair(action.payload.studentIds)
+      const allStudents = withNoContactPair(state.allStudents, pair, false)
+      const classrooms = syncClassroomStudentCopies(state.classrooms, allStudents)
+      const relationshipRules = state.relationshipRules.filter((rule) => {
+        if (rule.grade !== action.payload.grade || rule.type !== "NO_CONTACT") return true
+        const existingPair = normalizePair(rule.studentIds)
+        return existingPair[0] !== pair[0] || existingPair[1] !== pair[1]
+      })
+
+      return {
+        ...state,
+        allStudents,
+        classrooms,
+        relationshipRules,
+        unresolvedReasons: {},
+        placementWarnings: [],
+      }
+    }
     case "UPDATE_GRADE_SETTINGS":
       return {
         ...state,
@@ -548,3 +667,5 @@ export function reducer(state: AppState, action: Action): AppState {
       return state
   }
 }
+
+

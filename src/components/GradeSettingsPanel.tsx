@@ -7,8 +7,22 @@ interface GradeSettingsPanelProps {
   onClose: () => void
 }
 
+interface SettingSection {
+  title: string
+  description: string
+  fields: SettingField[]
+}
+
+type DisplaySettingKey =
+  | "showClassroomHeaderTagSupportLoad"
+  | "showClassroomHeaderIepCount"
+  | "showClassroomHeaderMapReadingAverage"
+  | "showClassroomHeaderMapMathAverage"
+
+type NumberSettingKey = Exclude<keyof GradeSettings, DisplaySettingKey>
+
 interface SettingField {
-  key: keyof GradeSettings
+  key: NumberSettingKey
   label: string
   help: string
   example: string
@@ -16,11 +30,34 @@ interface SettingField {
   min: number
 }
 
-interface SettingSection {
-  title: string
-  description: string
-  fields: SettingField[]
+interface DisplaySettingField {
+  key: DisplaySettingKey
+  label: string
+  help: string
 }
+
+const DISPLAY_SETTING_FIELDS: DisplaySettingField[] = [
+  {
+    key: "showClassroomHeaderTagSupportLoad",
+    label: "Show total characteristic support load",
+    help: "Adds each room's total characteristic support load to the top of the classroom column.",
+  },
+  {
+    key: "showClassroomHeaderIepCount",
+    label: "Show IEP count",
+    help: "Adds the number of IEP students in the room to the top of the classroom column.",
+  },
+  {
+    key: "showClassroomHeaderMapReadingAverage",
+    label: "Show average MAP R",
+    help: "Adds the room's average MAP Reading value to the top of the classroom column.",
+  },
+  {
+    key: "showClassroomHeaderMapMathAverage",
+    label: "Show average MAP M",
+    help: "Adds the room's average MAP Math value to the top of the classroom column.",
+  },
+]
 
 const SETTINGS_SECTIONS: SettingSection[] = [
   {
@@ -233,7 +270,10 @@ const SETTINGS_SECTIONS: SettingSection[] = [
   },
 ]
 
-const ALL_SETTING_KEYS = SETTINGS_SECTIONS.flatMap((section) => section.fields.map((field) => field.key))
+const ALL_SETTING_KEYS = [
+  ...SETTINGS_SECTIONS.flatMap((section) => section.fields.map((field) => field.key)),
+  ...DISPLAY_SETTING_FIELDS.map((field) => field.key),
+] as const
 
 function settingsAreEqual(a: GradeSettings, b: GradeSettings): boolean {
   return ALL_SETTING_KEYS.every((key) => a[key] === b[key])
@@ -260,11 +300,18 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
     if (hasUnsavedChanges) setSaveMessage("")
   }, [hasUnsavedChanges])
 
-  const setValue = (key: keyof GradeSettings, value: string) => {
+  const setValue = (key: NumberSettingKey, value: string) => {
     const nextValue = Number(value)
     setDraft((current) => ({
       ...current,
       [key]: Number.isFinite(nextValue) ? nextValue : 0,
+    }))
+  }
+
+  const setToggle = (key: DisplaySettingKey, checked: boolean) => {
+    setDraft((current) => ({
+      ...current,
+      [key]: checked,
     }))
   }
 
@@ -310,6 +357,27 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
       <div className="settings-panel-note">
         Use <strong>0</strong> to turn off a soft rule or formula penalty.
       </div>
+
+      <section className="settings-section">
+        <div className="settings-section-header">
+          <h4 className="settings-section-title">Classroom column header</h4>
+          <p className="settings-section-copy">Choose which extra room metrics appear at the top of each classroom column for this grade.</p>
+        </div>
+        <div className="settings-card-grid">
+          {DISPLAY_SETTING_FIELDS.map((field) => (
+            <label key={field.key} className="setting-card setting-card-toggle">
+              <span className="setting-card-label">{field.label}</span>
+              <span className="setting-card-help">{field.help}</span>
+              <input
+                className="setting-card-checkbox"
+                type="checkbox"
+                checked={draft[field.key]}
+                onChange={(event) => setToggle(field.key, event.target.checked)}
+              />
+            </label>
+          ))}
+        </div>
+      </section>
 
       {SETTINGS_SECTIONS.map((section) => (
         <section key={section.title} className="settings-section">

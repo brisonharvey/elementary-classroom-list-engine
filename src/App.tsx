@@ -39,8 +39,8 @@ export default function App() {
   const { state, dispatch } = useApp()
   const hasStudents = state.allStudents.length > 0
   const [activePanel, setActivePanel] = useState<SlidePanel>("none")
-  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(true)
-  const [bottomPanelState, setBottomPanelState] = useState<"expanded" | "minimized" | "hidden">("expanded")
+  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false)
+  const [bottomPanelState, setBottomPanelState] = useState<"expanded" | "minimized" | "hidden">("hidden")
   const showSummaryButton = hasStudents && !summaryDrawerOpen
   const showSnapshotsButton = hasStudents && bottomPanelState === "hidden"
   const showFloatingActions = showSummaryButton || showSnapshotsButton
@@ -76,8 +76,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <h1 className="app-title">Classroom Placement Engine</h1>
-          <span className="app-subtitle">K-5 Elementary Placement Tool</span>
+          <h1 className="app-title">Classroom Placement Engine</h1>
         </div>
         <div className="header-right">
           <CSVUploader />
@@ -111,9 +110,29 @@ export default function App() {
         <WeightSliders />
       </div>
 
+      {hasStudents && (
+        <details className="student-card-key">
+          <summary className="student-card-key-summary">Student Card Key</summary>
+          <div className="student-card-key-items" aria-label="Student card key">
+            <span className="student-card-key-item"><span className="badge badge-gender badge-f">F</span> Gender</span>
+            <span className="student-card-key-item"><span className="badge badge-sped badge-iep">IEP</span> Special education status</span>
+            <span className="student-card-key-item"><span className="badge badge-tier tier-2">ACA 2</span> Academic tier</span>
+            <span className="student-card-key-item"><span className="badge badge-tier tier-2">SEB 2</span> Social-emotional / behavior tier</span>
+            <span className="student-card-key-item"><span className="badge badge-map">MAP R:45</span> MAP Reading</span>
+            <span className="student-card-key-item"><span className="badge badge-map">MAP M:48</span> MAP Math</span>
+            <span className="student-card-key-item"><span className="badge badge-iready">IR:Mid 2</span> iReady Reading level</span>
+            <span className="student-card-key-item"><span className="badge badge-iready">IM:Late 1</span> iReady Math level</span>
+            <span className="student-card-key-item"><span className="badge badge-coteach-total">CT:60</span> Total co-teach minutes</span>
+            <span className="student-card-key-item"><span className="badge badge-coteach badge-coteach-reading">R:30</span> Co-teach area and minutes</span>
+            <span className="student-card-key-item"><span className="badge badge-tags">Chars:3</span> Student characteristics count</span>
+            <span className="student-card-key-item"><span className="badge badge-poor-fit">Poor Fit</span> Teacher fit warning</span>
+          </div>
+        </details>
+      )}
+
       {(readingImbalance || mathImbalance || supportImbalance || tagSupportImbalance || categoryTagImbalance || genderWarningLabels.length > 0) && (
         <div className="main-warnings-row">
-          {genderWarningLabels.length > 0 && <div className="warning-chip">Gender imbalance beyond ±{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
+          {genderWarningLabels.length > 0 && <div className="warning-chip">Gender imbalance beyond ï¿½{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
           {isKindergarten ? (
             readingImbalance && <div className="warning-chip">Brigance spread across classrooms</div>
           ) : (
@@ -182,11 +201,12 @@ export default function App() {
       )}
 
       {activePanel !== "none" && <div className="slide-panel-backdrop" onClick={() => setActivePanel("none")} />}
-      <aside className={`slide-panel ${activePanel !== "none" ? "open" : ""}`}>
+      <aside className={`slide-panel ${activePanel !== "none" ? "open" : ""} ${activePanel !== "none" ? "slide-panel-wide" : ""}`}>
         {activePanel === "rules" && <RelationshipManager onClose={() => setActivePanel("none")} />}
         {activePanel === "settings" && <GradeSettingsPanel onClose={() => setActivePanel("none")} />}
       </aside>
     </div>
   )
 }
+
 

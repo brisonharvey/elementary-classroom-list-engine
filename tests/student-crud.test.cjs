@@ -226,6 +226,47 @@ const tests = [
     },
   },
   {
+    name: "upserting a no-contact pair preserves imported links and adds a manager note",
+    run: () => {
+      const state = createState()
+      state.relationshipRules = []
+
+      const next = reducer(state, {
+        type: "UPSERT_NO_CONTACT_PAIR",
+        payload: {
+          grade: "1",
+          studentIds: [102, 101],
+          note: "Family request",
+        },
+      })
+
+      assert.deepEqual(next.allStudents.find((student) => student.id === 101).noContactWith, [102])
+      assert.deepEqual(next.allStudents.find((student) => student.id === 102).noContactWith, [101])
+      assert.deepEqual(next.classrooms[0].students[0].noContactWith, [102])
+      assert.equal(next.relationshipRules.length, 1)
+      assert.deepEqual(next.relationshipRules[0].studentIds, [101, 102])
+      assert.equal(next.relationshipRules[0].note, "Family request")
+    },
+  },
+  {
+    name: "deleting a no-contact pair removes student links and mirrored manager rules",
+    run: () => {
+      const state = createState()
+      const next = reducer(state, {
+        type: "DELETE_NO_CONTACT_PAIR",
+        payload: {
+          grade: "1",
+          studentIds: [102, 101],
+        },
+      })
+
+      assert.deepEqual(next.allStudents.find((student) => student.id === 101).noContactWith, [])
+      assert.deepEqual(next.allStudents.find((student) => student.id === 102).noContactWith, [])
+      assert.deepEqual(next.classrooms[0].students[0].noContactWith, [])
+      assert.equal(next.relationshipRules.length, 0)
+    },
+  },
+  {
     name: "grade settings updates keep new formula fields and reset restores defaults",
     run: () => {
       const state = createState()
@@ -239,6 +280,7 @@ const tests = [
             maxIEPPerRoom: 4,
             roomFillPenaltyWeight: 22,
             tagHotspotThreshold: 5.5,
+            showClassroomHeaderIepCount: true,
           },
         },
       })
@@ -246,7 +288,9 @@ const tests = [
       assert.equal(next.gradeSettings["1"].maxIEPPerRoom, 4)
       assert.equal(next.gradeSettings["1"].roomFillPenaltyWeight, 22)
       assert.equal(next.gradeSettings["1"].tagHotspotThreshold, 5.5)
+      assert.equal(next.gradeSettings["1"].showClassroomHeaderIepCount, true)
       assert.equal(next.gradeSettings["1"].preferredPeerBonus, defaults.preferredPeerBonus)
+      assert.equal(next.gradeSettings["1"].showClassroomHeaderMapMathAverage, defaults.showClassroomHeaderMapMathAverage)
 
       const reset = reducer(next, { type: "RESET_GRADE_SETTINGS", payload: "1" })
       assert.deepEqual(reset.gradeSettings["1"], defaults)
@@ -262,6 +306,7 @@ const tests = [
           maxIEPPerRoom: 3,
           roomFillPenaltyWeight: 18,
           tagHotspotThreshold: 4.5,
+          showClassroomHeaderMapReadingAverage: true,
         },
       })
 
@@ -269,6 +314,7 @@ const tests = [
         assert.equal(next.gradeSettings[grade].maxIEPPerRoom, 3)
         assert.equal(next.gradeSettings[grade].roomFillPenaltyWeight, 18)
         assert.equal(next.gradeSettings[grade].tagHotspotThreshold, 4.5)
+        assert.equal(next.gradeSettings[grade].showClassroomHeaderMapReadingAverage, true)
         assert.equal(next.gradeSettings[grade].preferredPeerBonus, state.gradeSettings["1"].preferredPeerBonus)
       }
     },

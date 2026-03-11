@@ -148,6 +148,10 @@ export interface GradeSettings {
   tagEnergyPenaltyWeight: number
   tagHotspotPenaltyWeight: number
   tagHotspotThreshold: number
+  showClassroomHeaderTagSupportLoad: boolean
+  showClassroomHeaderIepCount: boolean
+  showClassroomHeaderMapReadingAverage: boolean
+  showClassroomHeaderMapMathAverage: boolean
 }
 
 export type GradeSettingsMap = Record<Grade, GradeSettings>

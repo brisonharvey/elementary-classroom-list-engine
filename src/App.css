@@ -37,9 +37,10 @@
   --shadow-md: 0 4px 6px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.04);
 
   --col-width: 240px;
-  --header-h: 64px;
-  --toolbar-h: 48px;
-  --controls-h: 88px;
+  --col-width-responsive: clamp(240px, 24vw, 320px);
+  --header-h: 52px;
+  --toolbar-h: 42px;
+  --controls-h: 64px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,9 +76,9 @@ html, body, #root {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   flex-wrap: wrap;
-  padding: 0 20px;
+  padding: 0 16px;
   min-height: var(--header-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -121,9 +122,9 @@ html, body, #root {
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   flex-wrap: wrap;
-  padding: 0 20px;
+  padding: 0 16px;
   min-height: var(--toolbar-h);
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
@@ -152,9 +153,9 @@ html, body, #root {
 .controls-row {
   display: flex;
   align-items: stretch;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  padding: 12px 20px;
+  padding: 8px 16px;
   min-height: var(--controls-h);
   background: var(--surface);
   border-bottom: 2px solid var(--border);
@@ -164,13 +165,73 @@ html, body, #root {
   overflow: visible;
 }
 
+/* ── Student card key ── */
+.student-card-key {
+  padding: 0 16px 6px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.student-card-key[open] {
+  padding-bottom: 8px;
+}
+
+.student-card-key-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.student-card-key-summary::-webkit-details-marker {
+  display: none;
+}
+
+.student-card-key-summary::before {
+  content: "+";
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.student-card-key[open] .student-card-key-summary::before {
+  content: "-";
+}
+
+.student-card-key-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding-top: 4px;
+}
+
+.student-card-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* ── Main workspace ── */
 .workspace {
   display: flex;
   flex: 1;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 12px 16px;
+  padding: 8px 12px;
   gap: 10px;
   background: var(--bg);
   min-height: 0;
@@ -894,8 +955,10 @@ html, body, #root {
 ══════════════════════════════════════════ */
 
 .classroom-column {
-  width: var(--col-width);
+  width: var(--col-width-responsive);
   min-width: var(--col-width);
+  max-width: 320px;
+  flex: 1 0 var(--col-width-responsive);
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -1105,8 +1168,9 @@ html, body, #root {
 
 .student-card {
   display: flex;
-  align-items: flex-start;
-  gap: 5px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
   padding: 5px 6px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1141,6 +1205,13 @@ html, body, #root {
   background: var(--primary-light);
 }
 
+.student-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  width: 100%;
+}
+
 .drag-handle {
   font-size: 14px;
   color: var(--text-light);
@@ -1172,20 +1243,6 @@ html, body, #root {
   gap: 2px;
 }
 
-.card-tier-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.card-tier-note {
-  font-size: 10px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ── Badges ── */
 .badge {
   display: inline-flex;
@@ -1205,7 +1262,15 @@ html, body, #root {
 .badge-sped.badge-iep { background: var(--danger-light); color: #991b1b; }
 .badge-sped.badge-referral { background: var(--warning-light); color: #92400e; }
 
-.badge-coteach { background: var(--purple-light); color: #6d28d9; }
+.badge-coteach-total { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+.badge-coteach { border: 1px solid transparent; }
+.badge-coteach-reading { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+.badge-coteach-writing { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+.badge-coteach-scienceSocialStudies { background: #ddd6fe; color: #5b21b6; border-color: #a78bfa; }
+.badge-coteach-math { background: #c4b5fd; color: #4c1d95; border-color: #8b5cf6; }
+.badge-coteach-behavior { background: #a78bfa; color: #ffffff; border-color: #8b5cf6; }
+.badge-coteach-social { background: #8b5cf6; color: #ffffff; border-color: #7c3aed; }
+.badge-coteach-vocational { background: #6d28d9; color: #ffffff; border-color: #5b21b6; }
 
 .badge-tier {
   border: 1px solid currentColor;
@@ -1216,10 +1281,18 @@ html, body, #root {
 
 .badge-referrals { background: #fef2f2; color: #b91c1c; }
 .badge-map { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
+.badge-iready { background: #ecfccb; color: #3f6212; border: 1px solid #bef264; }
 
-
-
-
+.student-card-coteach-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: calc(100% - 19px);
+  margin-left: 19px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  box-sizing: border-box;
+}
 
 /* Lock button */
 .lock-btn {
@@ -1324,6 +1397,12 @@ html, body, #root {
 }
 
 @media (max-width: 1280px) {
+  .classroom-column {
+    width: var(--col-width);
+    max-width: none;
+    flex-basis: var(--col-width);
+  }
+
   .summary-drawer {
     width: min(640px, 64vw);
     min-width: 380px;
@@ -1339,6 +1418,11 @@ html, body, #root {
 }
 
 @media (max-width: 1024px) {
+  .student-card-key {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
   .app-header,
   .toolbar,
   .controls-row,
@@ -1386,7 +1470,12 @@ html, body, #root {
   }
 
   .slide-panel {
-    width: min(560px, 86vw);
+    width: min(760px, 92vw);
+    min-width: 0;
+  }
+
+  .slide-panel-wide {
+    width: min(820px, 92vw);
     min-width: 0;
   }
 
@@ -1801,7 +1890,7 @@ input { font-family: inherit; }
   font-size: 11px;
   line-height: 1.5;
   pointer-events: none;
-  z-index: 2000;
+  z-index: 100;
   overflow: hidden;
 }
 
@@ -2047,8 +2136,8 @@ input { font-family: inherit; }
   top: 0;
   right: 0;
   height: 100vh;
-  width: min(560px, 48vw);
-  min-width: 420px;
+  width: min(640px, 56vw);
+  min-width: 460px;
   background: var(--surface);
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
@@ -2061,6 +2150,11 @@ input { font-family: inherit; }
 
 .slide-panel.open {
   transform: translateX(0);
+}
+
+.slide-panel-wide {
+  width: min(860px, 72vw);
+  min-width: 560px;
 }
 
 .slide-panel-content {
@@ -2079,6 +2173,151 @@ input { font-family: inherit; }
   border-bottom: 1px solid var(--border);
   padding-bottom: 8px;
   margin-bottom: 4px;
+}
+
+.relationship-manager {
+  gap: 12px;
+}
+
+.relationship-manager-intro {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.relationship-manager-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+}
+
+.relationship-manager-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.relationship-manager-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.relationship-manager-field span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.relationship-manager-field-wide {
+  grid-column: 1 / -1;
+}
+
+.relationship-manager-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.relationship-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.relationship-manager-empty {
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.relationship-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.relationship-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.relationship-item-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.relationship-type-chip,
+.relationship-source {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.relationship-type-hard {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fda4af;
+}
+
+.relationship-type-soft {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
+
+.relationship-source-imported {
+  background: #f8fafc;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.relationship-source-managed {
+  background: #ecfdf5;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.relationship-item-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.relationship-item-meta {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.relationship-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .race-totals {
@@ -2418,6 +2657,18 @@ input { font-family: inherit; }
 }
 
 @media (max-width: 900px) {
+  .relationship-manager-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .relationship-item {
+    grid-template-columns: 1fr;
+  }
+
+  .relationship-item-actions {
+    justify-content: flex-start;
+  }
+
   .student-modal-shell {
     padding: 12px;
   }
@@ -2445,5 +2696,6 @@ input { font-family: inherit; }
   color: var(--text-light);
   line-height: 1.4;
 }
+
 
 

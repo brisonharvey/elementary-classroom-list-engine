@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useMemo, useState } from "react"
-import { Classroom, CoTeachCategory } from "../types"
+import { Classroom, CoTeachCategory, Student } from "../types"
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
 import { StudentCard } from "./StudentCard"
@@ -17,6 +17,22 @@ function compareStudentsByName(a: Classroom["students"][number], b: Classroom["s
     a.id - b.id
 }
 
+function compareStudentsByIepThenName(a: Classroom["students"][number], b: Classroom["students"][number]): number {
+  const aIep = a.specialEd.status === "IEP" ? 0 : 1
+  const bIep = b.specialEd.status === "IEP" ? 0 : 1
+  return aIep - bIep || compareStudentsByName(a, b)
+}
+
+function getAverageMetric(students: Student[], key: "mapReading" | "mapMath"): number | null {
+  const values = students.map((student) => student[key]).filter((value): value is number => value !== undefined)
+  if (values.length === 0) return null
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function formatQuickStatValue(value: number): string {
+  return value.toFixed(1)
+}
+
 export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: ClassroomColumnProps) {
   const { state, dispatch } = useApp()
   const { drag, clearDrag } = useDrag()
@@ -31,6 +47,7 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
   }, [classroom.maxSize])
 
   const stats = computeRoomStats(classroom)
+  const settings = state.gradeSettings[classroom.grade]
   const canShowTeacherName = state.showTeacherNames
   const isFull = stats.size >= classroom.maxSize
   const fillPct = Math.min(100, Math.round((stats.size / classroom.maxSize) * 100))
@@ -39,6 +56,50 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     if (classroom.coTeachCoverage.length === 0) return "Co-teach: None"
     return "Co-teach: " + classroom.coTeachCoverage.map((category) => CO_TEACH_LABELS[category]).join(", ")
   }, [classroom.coTeachCoverage])
+
+  const headerQuickStats = useMemo(() => {
+    const metrics: Array<{ key: string; className: string; label: string; value: string }> = []
+
+    if (settings.showClassroomHeaderTagSupportLoad) {
+      metrics.push({
+        key: "tagSupportLoad",
+        className: "qs-tag",
+        label: "Characteristics",
+        value: formatQuickStatValue(stats.tagSupportLoad),
+      })
+    }
+
+    if (settings.showClassroomHeaderIepCount) {
+      metrics.push({
+        key: "iepCount",
+        className: "qs-iep",
+        label: "IEP",
+        value: String(stats.iepCount),
+      })
+    }
+
+    if (settings.showClassroomHeaderMapReadingAverage) {
+      const avg = getAverageMetric(classroom.students, "mapReading")
+      metrics.push({
+        key: "mapReading",
+        className: "qs-map",
+        label: "MAP R",
+        value: avg === null ? "-" : formatQuickStatValue(avg),
+      })
+    }
+
+    if (settings.showClassroomHeaderMapMathAverage) {
+      const avg = getAverageMetric(classroom.students, "mapMath")
+      metrics.push({
+        key: "mapMath",
+        className: "qs-map",
+        label: "MAP M",
+        value: avg === null ? "-" : formatQuickStatValue(avg),
+      })
+    }
+
+    return metrics
+  }, [classroom.students, settings, stats.iepCount, stats.tagSupportLoad])
 
   const setCoverage = (coTeachCoverage: CoTeachCategory[]) => {
     dispatch({ type: "UPDATE_CLASSROOM", payload: { id: classroom.id, coTeachCoverage } })
@@ -66,6 +127,16 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
       payload: {
         id: classroom.id,
         students: [...classroom.students].sort(compareStudentsByName),
+      },
+    })
+  }
+
+  const sortClassroomByIep = () => {
+    dispatch({
+      type: "UPDATE_CLASSROOM",
+      payload: {
+        id: classroom.id,
+        students: [...classroom.students].sort(compareStudentsByIepThenName),
       },
     })
   }
@@ -138,13 +209,22 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
         )}
 
         <div className="classroom-actions-row">
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={sortClassroomByLastName}
-            title={`Sort ${classroom.label} by last name`}
-          >
-            Sort A-Z
-          </button>
+          <div className="classroom-sort-actions">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={sortClassroomByLastName}
+              title={`Sort ${classroom.label} by last name`}
+            >
+              Sort A-Z
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={sortClassroomByIep}
+              title={`Move IEP students to the top in ${classroom.label}`}
+            >
+              IEP Top
+            </button>
+          </div>
 
           <div className="coverage-control">
             <button
@@ -217,6 +297,11 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
 
         <div className="room-quick-stats">
           <span className="qs-badge qs-support">Support: {stats.supportLoad.toFixed(2)}</span>
+          {headerQuickStats.map((metric) => (
+            <span key={metric.key} className={`qs-badge ${metric.className}`}>
+              {metric.label}: {metric.value}
+            </span>
+          ))}
         </div>
       </div>
 

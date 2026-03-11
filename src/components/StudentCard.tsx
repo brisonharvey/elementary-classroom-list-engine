@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { Student } from "../types"
+import { CoTeachCategory, Student } from "../types"
 import { CO_TEACH_LABELS, getStudentCoTeachTotal, getStudentRequiredCoTeachCategories } from "../utils/coTeach"
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
@@ -18,6 +18,16 @@ function tierClass(tier: number): string {
   return "tier-1"
 }
 
+const CO_TEACH_ABBREVIATIONS: Record<CoTeachCategory, string> = {
+  reading: "R",
+  writing: "W",
+  scienceSocialStudies: "SS",
+  math: "M",
+  behavior: "B",
+  social: "Soc",
+  vocational: "Voc",
+}
+
 export const StudentCard = memo(function StudentCard({ student, classroomId }: StudentCardProps) {
   const { state, dispatch } = useApp()
   const { startDrag, clearDrag } = useDrag()
@@ -30,7 +40,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
 
   useEffect(() => {
     return () => clearTimeout(timerRef.current)
-  }, [])
+  }, [editingStudent])
 
   const currentClassroom = useMemo(
     () => (classroomId ? state.classrooms.find((classroom) => classroom.id === classroomId) ?? null : null),
@@ -50,7 +60,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
       if (x + tooltipWidth > window.innerWidth - 8) x = rect.left - tooltipWidth - 8
       let y = rect.top
       if (y + tooltipHeight > window.innerHeight - 8) y = window.innerHeight - tooltipHeight - 8
-      setTooltip({ x, y })
+      if (!editingStudent) setTooltip({ x, y })
     }, 500)
   }
 
@@ -92,6 +102,12 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
   const relatedRuleCount = state.relationshipRules.filter((rule) => rule.grade === student.grade && rule.studentIds.includes(student.id)).length
   const coTeachCategories = getStudentRequiredCoTeachCategories(student)
   const totalCoTeachMinutes = getStudentCoTeachTotal(student)
+  const coTeachBadges = coTeachCategories.map((category) => ({
+    category,
+    abbreviation: CO_TEACH_ABBREVIATIONS[category],
+    minutes: student.coTeachMinutes[category] ?? 0,
+    label: CO_TEACH_LABELS[category],
+  }))
   const noContactNames = (student.noContactWith ?? []).map((id) => {
     const noContact = state.allStudents.find((entry) => entry.id === id)
     return noContact ? `${noContact.firstName} ${noContact.lastName}` : `#${id}`
@@ -109,107 +125,124 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
         onMouseLeave={onMouseLeave}
         title={`${student.firstName} ${student.lastName} - Drag to move. Use Edit to update student data.`}
       >
-        <span className="drag-handle" aria-hidden>...</span>
+        <div className="student-card-main">
+          <span className="drag-handle" aria-hidden>...</span>
 
-        <div className="card-body">
-          <div className={`card-name ${isPoorTeacherFit ? "card-name-poor-fit" : ""}`}>
-            {student.lastName}, {student.firstName}
-          </div>
-          {(student.academicTierNotes || student.behaviorTierNotes) && (
-            <div className="card-tier-notes">
-              {student.academicTierNotes && <div className="card-tier-note" title={student.academicTierNotes}>Acad: {student.academicTierNotes}</div>}
-              {student.behaviorTierNotes && <div className="card-tier-note" title={student.behaviorTierNotes}>Beh: {student.behaviorTierNotes}</div>}
+          <div className="card-body">
+            <div className={`card-name ${isPoorTeacherFit ? "card-name-poor-fit" : ""}`}>
+              {student.lastName}, {student.firstName}
             </div>
-          )}
-          <div className="card-badges">
-            <span className={`badge badge-gender badge-${student.gender.toLowerCase()}`}>{student.gender}</span>
+            <div className="card-badges">
+              <span className={`badge badge-gender badge-${student.gender.toLowerCase()}`}>{student.gender}</span>
 
-            {specialEd.status !== "None" && (
-              <span className={`badge badge-sped badge-${specialEd.status.toLowerCase()}`}>{specialEd.status}</span>
-            )}
+              {specialEd.status !== "None" && (
+                <span className={`badge badge-sped badge-${specialEd.status.toLowerCase()}`}>{specialEd.status}</span>
+              )}
 
-            {totalCoTeachMinutes > 0 && (
-              <span className="badge badge-coteach" title={`Co-teach required: ${totalCoTeachMinutes} minutes total`}>
-                CT:{totalCoTeachMinutes}
+              <span className={`badge badge-tier ${tierClass(intervention.academicTier)}`} title={`Academic Tier ${intervention.academicTier}`}>
+                ACA {intervention.academicTier}
               </span>
-            )}
 
-            <span className={`badge badge-tier ${tierClass(intervention.academicTier)}`} title={`Academic Tier ${intervention.academicTier}`}>
-              A{intervention.academicTier}
-            </span>
-
-            <span className={`badge badge-tier ${tierClass(behaviorTier)}`} title={`Behavior Tier ${behaviorTier}`}>
-              B{behaviorTier}
-            </span>
-
-            {(student.referrals ?? 0) > 0 && (
-              <span className="badge badge-referrals" title={`${student.referrals} referral(s)`}>
-                {student.referrals}R
+              <span className={`badge badge-tier ${tierClass(behaviorTier)}`} title={`Behavior Tier ${behaviorTier}`}>
+                SEB {behaviorTier}
               </span>
-            )}
 
-            {isKindergarten && student.briganceReadiness !== undefined && (
-              <span className="badge badge-map" title={`Brigance readiness: ${student.briganceReadiness}`}>
-                BR:{student.briganceReadiness}
-              </span>
-            )}
+              {(student.referrals ?? 0) > 0 && (
+                <span className="badge badge-referrals" title={`${student.referrals} referral(s)`}>
+                  {student.referrals}R
+                </span>
+              )}
 
-            {!isKindergarten && student.mapReading !== undefined && (
-              <span className="badge badge-map" title={`MAP Reading: ${student.mapReading}`}>
-                MR:{student.mapReading}
-              </span>
-            )}
-            {!isKindergarten && student.mapMath !== undefined && (
-              <span className="badge badge-map" title={`MAP Math: ${student.mapMath}`}>
-                MM:{student.mapMath}
-              </span>
-            )}
-            {(student.tags?.length ?? 0) > 0 && (
-              <span className="badge badge-tags" title={(student.tags ?? []).join(", ")}>
-                Chars:{student.tags!.length}
-              </span>
-            )}
+              {isKindergarten && student.briganceReadiness !== undefined && (
+                <span className="badge badge-map" title={`Brigance readiness: ${student.briganceReadiness}`}>
+                  BR:{student.briganceReadiness}
+                </span>
+              )}
 
-            {isPoorTeacherFit && <span className="badge badge-poor-fit">Poor Fit</span>}
+              {!isKindergarten && student.mapReading !== undefined && (
+                <span className="badge badge-map" title={`MAP Reading: ${student.mapReading}`}>
+                  MAP R:{student.mapReading}
+                </span>
+              )}
+              {!isKindergarten && student.mapMath !== undefined && (
+                <span className="badge badge-map" title={`MAP Math: ${student.mapMath}`}>
+                  MAP M:{student.mapMath}
+                </span>
+              )}
+              {!isKindergarten && student.ireadyReading && (
+                <span className="badge badge-iready" title={`iReady Reading: ${student.ireadyReading}`}>
+                  IR:{student.ireadyReading}
+                </span>
+              )}
+              {!isKindergarten && student.ireadyMath && (
+                <span className="badge badge-iready" title={`iReady Math: ${student.ireadyMath}`}>
+                  IM:{student.ireadyMath}
+                </span>
+              )}
+              {(student.tags?.length ?? 0) > 0 && (
+                <span className="badge badge-tags" title={(student.tags ?? []).join(", ")}>
+                  Chars:{student.tags!.length}
+                </span>
+              )}
 
-            {relatedRuleCount > 0 && <span className="badge badge-referrals" title={`${relatedRuleCount} relationship rule(s)`}>Link:{relatedRuleCount}</span>}
+              {isPoorTeacherFit && <span className="badge badge-poor-fit">Poor Fit</span>}
+
+              {relatedRuleCount > 0 && <span className="badge badge-referrals" title={`${relatedRuleCount} relationship rule(s)`}>Link:{relatedRuleCount}</span>}
+            </div>
+          </div>
+
+          <div className="student-card-actions">
+            <button
+              className="card-action-btn"
+              draggable={false}
+              onMouseDown={suppressCardDrag}
+              onPointerDown={suppressCardDrag}
+              onDragStart={suppressCardDrag}
+              onClick={(e) => {
+                e.stopPropagation()
+                setEditingStudent(true)
+              }}
+              title="Edit student data"
+              aria-label="Edit student"
+            >
+              Edit
+            </button>
+            <button
+              className={`lock-btn ${locked ? "locked" : ""}`}
+              draggable={false}
+              onMouseDown={suppressCardDrag}
+              onPointerDown={suppressCardDrag}
+              onDragStart={suppressCardDrag}
+              onClick={toggleLock}
+              title={locked ? "Unlock student (allow auto-placement)" : "Lock student (preserve placement)"}
+              aria-label={locked ? "Unlock" : "Lock"}
+            >
+              {locked ? "\uD83D\uDD12" : "\uD83D\uDD13"}
+            </button>
           </div>
         </div>
 
-        <div className="student-card-actions">
-          <button
-            className="card-action-btn"
-            draggable={false}
-            onMouseDown={suppressCardDrag}
-            onPointerDown={suppressCardDrag}
-            onDragStart={suppressCardDrag}
-            onClick={(e) => {
-              e.stopPropagation()
-              setEditingStudent(true)
-            }}
-            title="Edit student data"
-            aria-label="Edit student"
-          >
-            Edit
-          </button>
-          <button
-            className={`lock-btn ${locked ? "locked" : ""}`}
-            draggable={false}
-            onMouseDown={suppressCardDrag}
-            onPointerDown={suppressCardDrag}
-            onDragStart={suppressCardDrag}
-            onClick={toggleLock}
-            title={locked ? "Unlock student (allow auto-placement)" : "Lock student (preserve placement)"}
-            aria-label={locked ? "Unlock" : "Lock"}
-          >
-            {locked ? "\uD83D\uDD12" : "\uD83D\uDD13"}
-          </button>
-        </div>
+        {coTeachBadges.length > 0 && (
+          <div className="student-card-coteach-row">
+            <span className="badge badge-coteach-total" title={`Co-teach required: ${totalCoTeachMinutes} minutes total`}>
+              CT:{totalCoTeachMinutes}
+            </span>
+            {coTeachBadges.map((entry) => (
+              <span
+                key={entry.category}
+                className={`badge badge-coteach badge-coteach-${entry.category}`}
+                title={`${entry.label}: ${entry.minutes} minute${entry.minutes === 1 ? "" : "s"}`}
+              >
+                {entry.abbreviation}:{entry.minutes}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {editingStudent && <StudentEditorModal student={student} defaultGrade={student.grade} onClose={() => setEditingStudent(false)} />}
 
-      {tooltip &&
+      {tooltip && !editingStudent &&
         createPortal(
           <div className="student-tooltip" style={{ position: "fixed", top: tooltip.y, left: tooltip.x }}>
             <div className="tt-header">

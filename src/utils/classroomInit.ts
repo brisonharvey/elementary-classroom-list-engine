@@ -26,6 +26,10 @@ const DEFAULT_GRADE_SETTINGS: GradeSettings = {
   tagEnergyPenaltyWeight: 0.5,
   tagHotspotPenaltyWeight: 1.5,
   tagHotspotThreshold: 3,
+  showClassroomHeaderTagSupportLoad: false,
+  showClassroomHeaderIepCount: false,
+  showClassroomHeaderMapReadingAverage: false,
+  showClassroomHeaderMapMathAverage: false,
 }
 
 function readNumber(value: unknown, fallback: number, minimum = 0, maximum?: number): number {
@@ -37,6 +41,10 @@ function readNumber(value: unknown, fallback: number, minimum = 0, maximum?: num
 
 function readWholeNumber(value: unknown, fallback: number, minimum = 0): number {
   return Math.round(readNumber(value, fallback, minimum))
+}
+
+function readBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback
 }
 
 export function getDefaultGradeSettings(): GradeSettings {
@@ -70,6 +78,10 @@ export function normalizeGradeSettings(settings: Partial<GradeSettings> | null |
     tagEnergyPenaltyWeight: readNumber(settings?.tagEnergyPenaltyWeight, defaults.tagEnergyPenaltyWeight),
     tagHotspotPenaltyWeight: readNumber(settings?.tagHotspotPenaltyWeight, defaults.tagHotspotPenaltyWeight),
     tagHotspotThreshold: readNumber(settings?.tagHotspotThreshold, defaults.tagHotspotThreshold),
+    showClassroomHeaderTagSupportLoad: readBoolean(settings?.showClassroomHeaderTagSupportLoad, defaults.showClassroomHeaderTagSupportLoad),
+    showClassroomHeaderIepCount: readBoolean(settings?.showClassroomHeaderIepCount, defaults.showClassroomHeaderIepCount),
+    showClassroomHeaderMapReadingAverage: readBoolean(settings?.showClassroomHeaderMapReadingAverage, defaults.showClassroomHeaderMapReadingAverage),
+    showClassroomHeaderMapMathAverage: readBoolean(settings?.showClassroomHeaderMapMathAverage, defaults.showClassroomHeaderMapMathAverage),
   }
 }
 
