@@ -117,7 +117,7 @@ export function ControlBar() {
           <button
             className="btn btn-ghost"
             onClick={toggleTeacherNames}
-            title="Toggle teacher names in summary and classroom columns"
+            title="Toggle teacher names and teacher-fit details throughout the app"
           >
             {state.showTeacherNames ? "Hide Teacher Names" : "Show Teacher Names"}
           </button>
@@ -153,3 +153,4 @@ export function ControlBar() {
     </div>
   )
 }
+

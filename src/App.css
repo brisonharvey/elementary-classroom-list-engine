@@ -1075,6 +1075,12 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+.max-size-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .max-size-input {
   width: 32px;
   border: 1px solid var(--border);
@@ -2696,6 +2702,8 @@ input { font-family: inherit; }
   color: var(--text-light);
   line-height: 1.4;
 }
+
+
 
 
 

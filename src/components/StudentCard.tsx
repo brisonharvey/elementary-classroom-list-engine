@@ -31,6 +31,7 @@ const CO_TEACH_ABBREVIATIONS: Record<CoTeachCategory, string> = {
 export const StudentCard = memo(function StudentCard({ student, classroomId }: StudentCardProps) {
   const { state, dispatch } = useApp()
   const { startDrag, clearDrag } = useDrag()
+  const showTeacherDetails = state.showTeacherNames
 
   const { specialEd, intervention, behaviorTier, locked } = student
   const cardRef = useRef<HTMLDivElement>(null)
@@ -46,7 +47,10 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     () => (classroomId ? state.classrooms.find((classroom) => classroom.id === classroomId) ?? null : null),
     [classroomId, state.classrooms]
   )
-  const teacherFit = currentClassroom ? getStudentTeacherFitForClassroom(student, currentClassroom, state.teacherProfiles) : null
+  const teacherFit =
+    showTeacherDetails && currentClassroom
+      ? getStudentTeacherFitForClassroom(student, currentClassroom, state.teacherProfiles)
+      : null
   const isPoorTeacherFit = Boolean(teacherFit?.isPoorFit)
   const isKindergarten = student.grade === "K"
 
@@ -344,7 +348,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </>
               )}
 
-              {teacherFit && currentClassroom && (student.tags?.length ?? 0) > 0 && (
+              {showTeacherDetails && teacherFit && currentClassroom && (student.tags?.length ?? 0) > 0 && (
                 <>
                   <hr className="tt-sep" />
                   <div className="tt-row">
@@ -402,5 +406,10 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     </>
   )
 })
+
+
+
+
+
 
 

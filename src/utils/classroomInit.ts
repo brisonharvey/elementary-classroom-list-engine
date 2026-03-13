@@ -28,6 +28,7 @@ const DEFAULT_GRADE_SETTINGS: GradeSettings = {
   tagHotspotThreshold: 3,
   showClassroomHeaderTagSupportLoad: false,
   showClassroomHeaderIepCount: false,
+  showClassroomHeaderGenderCounts: false,
   showClassroomHeaderMapReadingAverage: false,
   showClassroomHeaderMapMathAverage: false,
 }
@@ -80,6 +81,7 @@ export function normalizeGradeSettings(settings: Partial<GradeSettings> | null |
     tagHotspotThreshold: readNumber(settings?.tagHotspotThreshold, defaults.tagHotspotThreshold),
     showClassroomHeaderTagSupportLoad: readBoolean(settings?.showClassroomHeaderTagSupportLoad, defaults.showClassroomHeaderTagSupportLoad),
     showClassroomHeaderIepCount: readBoolean(settings?.showClassroomHeaderIepCount, defaults.showClassroomHeaderIepCount),
+    showClassroomHeaderGenderCounts: readBoolean(settings?.showClassroomHeaderGenderCounts, defaults.showClassroomHeaderGenderCounts),
     showClassroomHeaderMapReadingAverage: readBoolean(settings?.showClassroomHeaderMapReadingAverage, defaults.showClassroomHeaderMapReadingAverage),
     showClassroomHeaderMapMathAverage: readBoolean(settings?.showClassroomHeaderMapMathAverage, defaults.showClassroomHeaderMapMathAverage),
   }
@@ -161,3 +163,4 @@ export function syncClassroomsWithTeacherProfiles(classrooms: Classroom[], teach
 
   return next
 }
+

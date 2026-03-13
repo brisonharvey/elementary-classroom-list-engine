@@ -16,6 +16,7 @@ interface SettingSection {
 type DisplaySettingKey =
   | "showClassroomHeaderTagSupportLoad"
   | "showClassroomHeaderIepCount"
+  | "showClassroomHeaderGenderCounts"
   | "showClassroomHeaderMapReadingAverage"
   | "showClassroomHeaderMapMathAverage"
 
@@ -46,6 +47,11 @@ const DISPLAY_SETTING_FIELDS: DisplaySettingField[] = [
     key: "showClassroomHeaderIepCount",
     label: "Show IEP count",
     help: "Adds the number of IEP students in the room to the top of the classroom column.",
+  },
+  {
+    key: "showClassroomHeaderGenderCounts",
+    label: "Show gender counts",
+    help: "Adds the room's male and female counts to the top of the classroom column.",
   },
   {
     key: "showClassroomHeaderMapReadingAverage",
@@ -424,4 +430,5 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
     </div>
   )
 }
+
 

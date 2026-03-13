@@ -150,6 +150,7 @@ export interface GradeSettings {
   tagHotspotThreshold: number
   showClassroomHeaderTagSupportLoad: boolean
   showClassroomHeaderIepCount: boolean
+  showClassroomHeaderGenderCounts: boolean
   showClassroomHeaderMapReadingAverage: boolean
   showClassroomHeaderMapMathAverage: boolean
 }
@@ -191,3 +192,4 @@ export interface RoomStats {
   instructionalTagSupportLoad: number
   energyTagSupportLoad: number
 }
+

@@ -78,6 +78,15 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
       })
     }
 
+    if (settings.showClassroomHeaderGenderCounts) {
+      metrics.push({
+        key: "genderCounts",
+        className: "qs-gender",
+        label: "M/F",
+        value: `${stats.maleCount}/${stats.femaleCount}`,
+      })
+    }
+
     if (settings.showClassroomHeaderMapReadingAverage) {
       const avg = getAverageMetric(classroom.students, "mapReading")
       metrics.push({
@@ -99,7 +108,7 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     }
 
     return metrics
-  }, [classroom.students, settings, stats.iepCount, stats.tagSupportLoad])
+  }, [classroom.students, settings, stats.femaleCount, stats.iepCount, stats.maleCount, stats.tagSupportLoad])
 
   const setCoverage = (coTeachCoverage: CoTeachCategory[]) => {
     dispatch({ type: "UPDATE_CLASSROOM", payload: { id: classroom.id, coTeachCoverage } })
@@ -120,6 +129,15 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     dispatch({ type: "UPDATE_CLASSROOM", payload: { id: classroom.id, maxSize: parsed } })
     setMaxSizeInput(String(parsed))
   }
+
+  const cancelMaxSizeEdit = () => {
+    setMaxSizeInput(String(classroom.maxSize))
+  }
+
+  const suppressInputEvent = (event: React.SyntheticEvent) => {
+    event.stopPropagation()
+  }
+
 
   const sortClassroomByLastName = () => {
     dispatch({
@@ -276,22 +294,46 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
           <div className="capacity-bar"><div className="capacity-fill" style={{ width: `${fillPct}%` }} /></div>
           <span className="capacity-text">
             {stats.size}/
-            <input
-              className="max-size-input"
-              value={maxSizeInput}
-              onChange={(e) => setMaxSizeInput(e.target.value)}
-              onBlur={commitMaxSize}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.currentTarget.blur()
-                }
-                if (e.key === "Escape") {
-                  setMaxSizeInput(String(classroom.maxSize))
-                  e.currentTarget.blur()
-                }
+            <form
+              className="max-size-editor"
+              onSubmit={(event) => {
+                event.preventDefault()
+                commitMaxSize()
               }}
-              aria-label={`Max size for room ${classroom.label}`}
-            />
+            >
+              <input
+                className="max-size-input"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                value={maxSizeInput}
+                onChange={(e) => setMaxSizeInput(e.target.value)}
+                onBlur={commitMaxSize}
+                onClick={suppressInputEvent}
+                onMouseDown={suppressInputEvent}
+                onPointerDown={suppressInputEvent}
+                onDragStart={suppressInputEvent}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    cancelMaxSizeEdit()
+                    e.currentTarget.blur()
+                  }
+                }}
+                aria-label={`Max size for room ${classroom.label}`}
+              />
+              <button
+                type="submit"
+                className="btn-icon"
+                onMouseDown={suppressInputEvent}
+                onPointerDown={suppressInputEvent}
+                onDragStart={suppressInputEvent}
+                aria-label={`Apply max size for room ${classroom.label}`}
+                title="Apply class size limit"
+              >
+                Save
+              </button>
+            </form>
           </span>
         </div>
 
@@ -313,3 +355,11 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     </div>
   )
 })
+
+
+
+
+
+
+
+
