@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react"
+import { Suspense, lazy, useMemo, useState } from "react"
 import { useApp } from "./store/AppContext"
 import { DragProvider } from "./store/DragContext"
-import { CSVUploader } from "./components/CSVUploader"
 import { GradeSelector } from "./components/GradeSelector"
 import { WeightSliders } from "./components/WeightSliders"
 import { ControlBar } from "./components/ControlBar"
@@ -15,7 +14,12 @@ import { getClassroomsForGrade } from "./utils/classroomInit"
 import { getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "./utils/scoring"
 import { getGradeTagSupportLoadSummary, TAG_SUPPORT_LOAD_CATEGORY_LABELS, TagSupportLoadCategory } from "./utils/tagSupportLoad"
 
-type SlidePanel = "none" | "rules" | "settings"
+const CsvImportPanel = lazy(async () => {
+  const module = await import("./features/csv-import")
+  return { default: module.CsvImportPanel }
+})
+
+type SlidePanel = "none" | "import" | "rules" | "settings"
 
 function PlacementWorkspace() {
   const { state } = useApp()
@@ -79,7 +83,9 @@ export default function App() {
           <h1 className="app-title">Classroom Placement Engine</h1>
         </div>
         <div className="header-right">
-          <CSVUploader />
+          <button className={`btn btn-sm ${activePanel === "import" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "import" ? "none" : "import"))}>
+            Import CSV
+          </button>
         </div>
       </header>
 
@@ -202,6 +208,11 @@ export default function App() {
 
       {activePanel !== "none" && <div className="slide-panel-backdrop" onClick={() => setActivePanel("none")} />}
       <aside className={`slide-panel ${activePanel !== "none" ? "open" : ""} ${activePanel !== "none" ? "slide-panel-wide" : ""}`}>
+        {activePanel === "import" && (
+          <Suspense fallback={<div className="slide-panel-loading">Loading import tools...</div>}>
+            <CsvImportPanel onClose={() => setActivePanel("none")} />
+          </Suspense>
+        )}
         {activePanel === "rules" && <RelationshipManager onClose={() => setActivePanel("none")} />}
         {activePanel === "settings" && <GradeSettingsPanel onClose={() => setActivePanel("none")} />}
       </aside>

@@ -4,4 +4,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: './',
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/xlsx')) return 'xlsx'
+          if (id.includes('src/features/csv-import') || id.includes('src/lib/csv/spreadsheet')) return 'csv-import'
+        },
+      },
+    },
+  },
 })
