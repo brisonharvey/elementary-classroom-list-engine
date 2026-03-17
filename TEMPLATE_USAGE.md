@@ -1,21 +1,25 @@
-# Template Usage Guide
+# CSV Template Guide
 
-This guide explains how to fill out the student and teacher CSV templates shipped with the app.
+This guide explains the student and teacher templates shipped with the app.
 
 ## Student template
 
-File:
+Template file:
 
-- `public/student-import-template.csv`
+- [student-import-template.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/student-import-template.csv)
 
-Required columns:
+Sample file:
+
+- [sample-students.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/sample-students.csv)
+
+### Required columns
 
 - `id`
 - `grade`
 - `firstName`
 - `lastName`
 
-Common optional columns:
+### Common optional columns
 
 - `gender`
 - `status`
@@ -24,53 +28,43 @@ Common optional columns:
 - `referrals`
 - `noContactWith`
 - `preferredWith`
-- `ell`
-- `section504`
-- `raceEthnicity`
-- `teacherNotes`
-- `assignedTeacher`
-
-Tier columns can be entered either as plain numbers or as notes that contain tier values, such as `Reading - Tier 2; Math - Tier 3`. The app preserves that text on the student summary and sums the tier values into the support score.
-
-`ell` accepts `EL`, `ELL`, `RFEP 1-4`, and standard truthy values.
-
-Student imports are additive. You can import a second student CSV later, and the app only adds rows whose `id` is not already in the current roster.
-
-Assessment columns:
-
 - `briganceReadiness`
 - `mapReading`
 - `mapMath`
 - `ireadyReading`
 - `ireadyMath`
+- `ell`
+- `section504`
+- `raceEthnicity`
+- `studentCharacteristics`
+- `teacherNotes`
+- `assignedTeacher`
 
-Kindergarten rule:
+### Student import behavior
 
-- For grade `K`, use `briganceReadiness`.
-- For kindergarten placement, Brigance replaces MAP and i-Ready in the logic engine.
-- MAP and i-Ready can be left blank for kindergarten students.
+- `id` must be a unique positive integer.
+- `grade` accepts `K`, kindergarten-style values, and grades `1` through `5`.
+- `academicTier` and `behaviorTier` can be plain numbers or note text containing `Tier 1`, `Tier 2`, or `Tier 3`.
+- `ell` accepts common truthy values plus `EL`, `ELL`, and `RFEP 1-4`.
+- Student imports are additive. Existing IDs are skipped instead of overwritten.
+- `assignedTeacher` tries to place a student into a matching room on import.
 
-Relationship columns:
+### Relationship columns
+
+Use student IDs separated by commas, semicolons, pipes, or spaces.
 
 - `noContactWith`
 - `preferredWith`
 
-Use student IDs separated by semicolons.
+`preferredWith` is limited to same-grade peers.
 
-Example:
+### Kindergarten note
 
-```csv
-1001;1004;1012
-```
+For grade `K`, the placement engine uses `briganceReadiness` instead of MAP/i-Ready for academic scoring.
 
 ## Student characteristics
 
-Use the `studentCharacteristics` column for both:
-
-- teacher-fit comparison
-- characteristic-based Classroom Support Load derivation
-
-Enter one or more of these exact labels, separated by semicolons, commas, or pipes inside the field:
+Use the `studentCharacteristics` column with these exact labels:
 
 - `Needs strong routine`
 - `Needs frequent redirection`
@@ -84,60 +78,24 @@ Enter one or more of these exact labels, separated by semicolons, commas, or pip
 - `Independent worker`
 - `Low academic confidence`
 
-Example:
+These characteristics are used for:
 
-```csv
-Needs strong routine;Needs reassurance
-```
+- teacher-fit scoring
+- characteristic-based classroom support load
 
-### Characteristic support-load weights
-
-These weights are derived automatically in the app. Do not add extra columns for them.
-
-- `Needs strong routine = 2`
-- `Needs frequent redirection = 4`
-- `Easily frustrated = 3`
-- `Needs reassurance = 2`
-- `Sensitive to correction = 2`
-- `Struggles with peer conflict = 3`
-- `High energy = 2`
-- `Needs movement breaks = 2`
-- `Needs enrichment = 1`
-- `Independent worker = -1`
-- `Low academic confidence = 2`
-
-### Characteristic categories used in room balancing
-
-Behavioral:
-
-- `Needs strong routine`
-- `Needs frequent redirection`
-- `Struggles with peer conflict`
-
-Emotional:
-
-- `Easily frustrated`
-- `Needs reassurance`
-- `Sensitive to correction`
-- `Low academic confidence`
-
-Instructional:
-
-- `Needs enrichment`
-- `Independent worker`
-
-Energy:
-
-- `High energy`
-- `Needs movement breaks`
+The parser still accepts older aliases where possible for backward compatibility.
 
 ## Teacher template
 
-File:
+Template file:
 
-- `public/teacher-import-template.csv`
+- [teacher-import-template.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/teacher-import-template.csv)
 
-Required columns:
+Sample file:
+
+- [sample-teachers.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/sample-teachers.csv)
+
+### Required columns
 
 - `grade`
 - `teacherName`
@@ -146,20 +104,16 @@ Required columns:
 - `socialEmotionalSupport`
 - `instructionalExpertise`
 
-Teacher profile scores are entered in the CSV as `1-5`, but those numbers are hidden in the app UI after import.
+Teacher ratings are expected to be `1` through `5`.
 
-### Teacher characteristics
+### Teacher import behavior
 
-The teacher columns mean:
+- Teachers are assigned to rooms in CSV order within each grade.
+- If there are more teacher rows than rooms, the app creates extra rooms.
+- Teacher scores are kept for internal fit scoring and are not shown in the main UI after import.
+- Teacher imports also support XLSX files with sheet selection plus basic header-row/group-header preprocessing.
 
-- `structure`
-- `regulationBehaviorSupport`
-- `socialEmotionalSupport`
-- `instructionalExpertise`
-
-## How characteristics align to teacher characteristics
-
-The engine compares student characteristics to teacher characteristics like this:
+## Characteristic-to-teacher alignment
 
 - `Needs strong routine` -> `Structure`, `Regulation/Behavior Support`
 - `Needs frequent redirection` -> `Regulation/Behavior Support`, `Structure`
@@ -172,47 +126,3 @@ The engine compares student characteristics to teacher characteristics like this
 - `Needs enrichment` -> `Instructional Expertise`, `Structure`
 - `Independent worker` -> `Instructional Expertise`, `Structure`
 - `Low academic confidence` -> `Social/Emotional Support`, `Instructional Expertise`
-
-## Teacher import ordering
-
-Teacher rows are assigned to classrooms in CSV order within each grade.
-
-That means:
-
-- the first imported teacher for a grade is matched to the first classroom for that grade
-- the second imported teacher is matched to the second classroom
-- and so on
-
-If you want a specific teacher order across rooms, order the teacher rows that way in the CSV.
-
-## Practical example
-
-Student row:
-
-```csv
-1001,K,Amaya,Brooks,F,IEP,30,0,0,30,0,0,0,"Reading - Tier 2; Math - Tier 3","Check-In - Tier 2",1002,1003,62,,,,,1,RFEP 1-4,FALSE,Black,Needs strong routine;Needs reassurance,Needs a calm predictable start to the day
-```
-
-Teacher row:
-
-```csv
-K,Ms. GradeKA,5,4,5,3
-```
-
-That student contributes `4` points of characteristic support load from:
-
-- `Needs strong routine = 2`
-- `Needs reassurance = 2`
-
-That teacher profile is also a strong fit for those same characteristics.
-
-## Notes
-
-- Student imports can include `assignedTeacher` if you want to seed a student into a matching teacher room.
-- Repeated student imports ignore duplicate `id` values instead of overwriting the existing student record.
-- Teacher imports do not lock students.
-- Locking happens only inside the app.
-- Poor teacher fits are highlighted after placement, but the underlying teacher profile scores remain hidden in the app.
-- The templates do not include extra columns for derived support-load totals because the app computes them from `studentCharacteristics`.
-- The parser still accepts legacy `studentTags` headers and retired characteristic labels for backward compatibility.
-

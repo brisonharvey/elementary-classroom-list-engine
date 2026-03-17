@@ -18,6 +18,8 @@ const {
   parseTeacherCSVWithMapping,
   suggestTeacherFieldMapping,
 } = require("./.compiled/src/utils/teacherCsvParser.js")
+const { buildBlendedStudentCsv } = require("./.compiled/src/lib/csv/blend.js")
+const { readSpreadsheetFile } = require("./.compiled/src/lib/csv/spreadsheet.js")
 
 function createStudent(overrides = {}) {
   return {
@@ -272,6 +274,78 @@ const tests = [
     },
   },
   {
+    name: "student import accepts space-separated relationship ids",
+    run: () => {
+      const csv = [
+        "id,grade,firstName,lastName,noContactWith,preferredWith",
+        '101,1,Ada,Stone,"102  103","102 103"',
+        "102,1,Ben,Reed,,",
+        "103,1,Cam,Jones,,",
+      ].join("\n")
+
+      const result = parseStudentCSVWithMapping(csv, {
+        id: "id",
+        grade: "grade",
+        firstName: "firstName",
+        lastName: "lastName",
+        noContactWith: "noContactWith",
+        preferredWith: "preferredWith",
+      })
+
+      assert.equal(result.errors.length, 0)
+      assert.deepEqual(result.students[0].noContactWith, [102, 103])
+      assert.deepEqual(result.students[0].preferredWith, [102, 103])
+    },
+  },
+  {
+    name: "csv spreadsheet reader preserves multiline quoted cells",
+    run: async () => {
+      const sheets = await readSpreadsheetFile({
+        name: "students.csv",
+        text: async () => [
+          "id,grade,firstName,lastName,teacherNotes",
+          '101,1,Ada,Stone,"Line one',
+          'Line two"',
+        ].join("\n"),
+      })
+
+      assert.equal(sheets.length, 1)
+      assert.equal(sheets[0].rows.length, 2)
+      assert.equal(sheets[0].rows[1][4], "Line one\nLine two")
+    },
+  },
+  {
+    name: "blend builder reports missing master identity mappings as errors",
+    run: () => {
+      const result = buildBlendedStudentCsv(
+        {
+          id: "master-1",
+          name: "master.csv",
+          table: {
+            headers: ["id", "grade", "firstName", "lastName", "personId"],
+            rows: [["101", "1", "Ada", "Stone", "P-101"]],
+          },
+          matchColumn: "",
+          fieldMapping: {
+            id: "id",
+            grade: "grade",
+            firstName: "firstName",
+            lastName: "lastName",
+          },
+          masterIdColumns: {
+            personId: "personId",
+            stateId: undefined,
+            studentNumber: undefined,
+          },
+        },
+        []
+      )
+
+      assert.ok(result.issues.some((issue) => issue.severity === "error" && issue.message.includes("stateId")))
+      assert.ok(result.issues.some((issue) => issue.severity === "error" && issue.message.includes("studentNumber")))
+    },
+  },
+  {
     name: "student export keeps tier note text when present",
     run: () => {
       const student = createStudent({
@@ -395,15 +469,21 @@ const tests = [
   },
 ]
 
-let passed = 0
-for (const entry of tests) {
-  entry.run()
-  passed += 1
-  console.log(`PASS ${entry.name}`)
+async function main() {
+  let passed = 0
+  for (const entry of tests) {
+    await entry.run()
+    passed += 1
+    console.log(`PASS ${entry.name}`)
+  }
+
+  console.log(`\n${passed}/${tests.length} tests passed.`)
 }
 
-console.log(`\n${passed}/${tests.length} tests passed.`)
-
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})
 
 
 

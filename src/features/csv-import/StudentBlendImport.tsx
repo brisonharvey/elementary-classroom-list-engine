@@ -242,6 +242,12 @@ export function StudentBlendImport() {
   }
 
   function confirmImport() {
+    const hasErrors = (review?.issues ?? []).some((issue) => issue.severity === "error")
+    if (hasErrors) {
+      setStatus({ type: "error", message: "Resolve blend errors before importing students." })
+      return
+    }
+
     if (!review || review.studentsToImport.length === 0) {
       setStatus({ type: "error", message: "No blended students are ready to import." })
       return
@@ -589,7 +595,13 @@ export function StudentBlendImport() {
 
           <div className="csv-import-footer">
             <button className="btn btn-ghost btn-sm" onClick={() => setStep("configure")}>Back to sources</button>
-            <button className="btn btn-primary btn-sm" onClick={confirmImport} disabled={review.studentsToImport.length === 0}>Confirm import</button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={confirmImport}
+              disabled={review.studentsToImport.length === 0 || reviewSummary.error > 0}
+            >
+              Confirm import
+            </button>
           </div>
         </div>
       )}

@@ -278,7 +278,7 @@ function parseIdList(value: string): ParsedIdList {
   const ids: number[] = []
   const invalidTokens: string[] = []
 
-  for (const rawToken of value.split(/[;,|]/)) {
+  for (const rawToken of value.split(/[;,|\s]+/)) {
     const token = rawToken.trim()
     if (!token) continue
 

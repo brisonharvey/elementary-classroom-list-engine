@@ -38,7 +38,16 @@ export function TeacherCsvImport() {
 
   useEffect(() => {
     if (table.headers.length === 0) return
-    setMapping((current) => (Object.keys(current).length > 0 ? current : suggestTeacherFieldMapping(table.headers)))
+    setMapping((current) => {
+      const nextSuggested = suggestTeacherFieldMapping(table.headers)
+      const validCurrentEntries = Object.fromEntries(
+        Object.entries(current).filter(([, column]) => column && table.headers.includes(column))
+      )
+      return {
+        ...nextSuggested,
+        ...validCurrentEntries,
+      }
+    })
   }, [table.headers])
 
   async function handleFile(file: File) {
@@ -135,6 +144,16 @@ export function TeacherCsvImport() {
             </div>
           </div>
           <div className="csv-import-settings-grid">
+            {rawSheets.length > 1 && (
+              <label className="csv-import-field">
+                <span>Sheet</span>
+                <select value={preprocess.sheetName} onChange={(event) => setPreprocess((current) => ({ ...current, sheetName: event.target.value }))}>
+                  {rawSheets.map((sheet) => (
+                    <option key={sheet.name} value={sheet.name}>{sheet.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="csv-import-field">
               <span>Skip rows</span>
               <input type="number" min={0} value={preprocess.skipRows} onChange={(event) => setPreprocess((current) => ({ ...current, skipRows: Number(event.target.value) || 0 }))} />
@@ -143,6 +162,20 @@ export function TeacherCsvImport() {
               <span>Header row</span>
               <input type="number" min={0} value={preprocess.headerRow} onChange={(event) => setPreprocess((current) => ({ ...current, headerRow: Number(event.target.value) || 0 }))} />
             </label>
+            <label className="csv-import-check">
+              <input
+                type="checkbox"
+                checked={preprocess.mergeGroupHeaders}
+                onChange={(event) => setPreprocess((current) => ({ ...current, mergeGroupHeaders: event.target.checked }))}
+              />
+              <span>Merge group headers</span>
+            </label>
+            {preprocess.mergeGroupHeaders && (
+              <label className="csv-import-field">
+                <span>Group header row</span>
+                <input type="number" min={0} value={preprocess.groupHeaderRow} onChange={(event) => setPreprocess((current) => ({ ...current, groupHeaderRow: Number(event.target.value) || 0 }))} />
+              </label>
+            )}
           </div>
           <div className="csv-import-preview-table-wrap">
             <table className="csv-import-preview-table">

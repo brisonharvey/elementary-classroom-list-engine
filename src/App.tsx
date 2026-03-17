@@ -138,7 +138,7 @@ export default function App() {
 
       {(readingImbalance || mathImbalance || supportImbalance || tagSupportImbalance || categoryTagImbalance || genderWarningLabels.length > 0) && (
         <div className="main-warnings-row">
-          {genderWarningLabels.length > 0 && <div className="warning-chip">Gender imbalance beyond �{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
+          {genderWarningLabels.length > 0 && <div className="warning-chip">Gender imbalance beyond +/-{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
           {isKindergarten ? (
             readingImbalance && <div className="warning-chip">Brigance spread across classrooms</div>
           ) : (

@@ -1,29 +1,150 @@
 # Elementary Classroom List Engine
 
-Desktop and web app for building balanced K-5 classroom rosters from separate student and teacher CSV imports.
+Elementary Classroom List Engine is a React + Electron app for building balanced K-5 classroom rosters from separate student and teacher imports.
 
-Additional documentation:
+It supports:
 
-- `ADMIN_BEGINNERS_GUIDE.md` for a non-technical school administrator walkthrough
+- student and teacher CSV import with column mapping
+- CSV and XLSX imports, including sheet selection and basic header-row preprocessing
+- additive student imports for late enrollments
+- teacher-fit aware auto-placement
+- hard no-contact rules and soft keep-together rules
+- co-teach coverage checks
+- manual drag-and-drop adjustments
+- lockable placements
+- grade snapshots
+- CSV export for one grade or all grades
 
-## Current capabilities
+## App workflow
 
-- Separate student and teacher CSV imports with header mapping. Student imports can be repeated to append another batch.
-- Hard constraints first, teacher-fit comparison second, and weighted soft balancing after that.
-- Weighted balancing includes class size, academic need, behavioral need, demographic balance, preferred-peer adjustment, do-not-separate adjustment, and grade settings pressure.
-- Additive characteristic-based Classroom Support Load derived from student characteristics.
-- Kindergarten placement uses `briganceReadiness` instead of MAP/i-Ready for academic scoring.
-- Manual drag/drop, locks, snapshots, exports, and local persistence.
-- Teacher profile scores are used internally for fit and are not shown in the app UI.
+1. Import students.
+2. Import teachers.
+3. Choose the active grade.
+4. Review classrooms, room sizes, co-teach coverage, and relationship rules.
+5. Run auto-placement for that grade.
+6. Review warnings and the grade summary.
+7. Drag students manually as needed.
+8. Lock any placements you want preserved.
+9. Save a snapshot.
+10. Export the final roster.
 
-## Tech stack
+## Placement model
 
-- React 18
-- TypeScript
-- Vite
-- Electron Builder
+For each unlocked student in the active grade, the engine:
 
-## Getting started
+1. Rejects rooms that fail hard constraints.
+2. Prefers the room with the best teacher-fit penalty.
+3. Breaks teacher-fit ties with weighted soft balancing.
+
+Hard constraints include:
+
+- max room size
+- required co-teach coverage
+- max IEP count per room
+- max referral-heavy count per room
+- imported and managed no-contact conflicts
+
+Soft balancing includes:
+
+- class size
+- academic need
+- behavioral need
+- demographic balance
+- preferred peers
+- do-not-separate pairs
+- characteristic-based support load
+
+## Student import notes
+
+Required columns:
+
+- `id`
+- `grade`
+- `firstName`
+- `lastName`
+
+Common optional columns:
+
+- `gender`
+- `status`
+- `academicTier`
+- `behaviorTier`
+- `referrals`
+- `briganceReadiness`
+- `mapReading`
+- `mapMath`
+- `ireadyReading`
+- `ireadyMath`
+- `noContactWith`
+- `preferredWith`
+- `ell`
+- `section504`
+- `raceEthnicity`
+- `studentCharacteristics`
+- `teacherNotes`
+- `assignedTeacher`
+
+Important behavior:
+
+- Student imports are additive. Re-importing does not overwrite existing student IDs.
+- `assignedTeacher` seeds a student into a matching room when possible.
+- Kindergarten uses `briganceReadiness` in placement scoring instead of MAP/i-Ready.
+- `academicTier` and `behaviorTier` can be numeric or note text that contains one or more `Tier X` values.
+- `studentCharacteristics` accepts the current supported labels and also tolerates legacy aliases.
+- `noContactWith` and `preferredWith` accept comma-, semicolon-, pipe-, or space-separated student IDs.
+
+## Teacher import notes
+
+Required columns:
+
+- `grade`
+- `teacherName`
+- `structure`
+- `regulationBehaviorSupport`
+- `socialEmotionalSupport`
+- `instructionalExpertise`
+
+Important behavior:
+
+- Teacher rows are applied in CSV order within each grade.
+- Importing more teachers than existing rooms automatically adds rooms.
+- Teacher profile scores are used internally for fit scoring and are hidden in the main UI after import.
+
+## Student characteristics
+
+Supported `studentCharacteristics` values:
+
+- `Needs strong routine`
+- `Needs frequent redirection`
+- `Easily frustrated`
+- `Needs reassurance`
+- `Sensitive to correction`
+- `Struggles with peer conflict`
+- `High energy`
+- `Needs movement breaks`
+- `Needs enrichment`
+- `Independent worker`
+- `Low academic confidence`
+
+These characteristics drive both teacher fit and characteristic-based classroom support load.
+
+## Exports
+
+Exports are reporting-oriented CSVs, not full round-trip backups.
+
+Exported data includes:
+
+- core student identity fields
+- placement teacher
+- assessment fields
+- relationships
+- demographics
+- `studentCharacteristics`
+- staff notes
+
+Derived room metrics are not exported as extra columns.
+
+## Development
 
 ### Prerequisites
 
@@ -42,206 +163,33 @@ npm install
 npm run dev
 ```
 
-### Run the desktop app in development
+### Run the desktop app
 
 ```bash
 npm run dev:desktop
 ```
 
-### Validation
+### Verify
 
 ```bash
 npm run test
-node_modules/.bin/tsc -b
+npm run build
 ```
-
-## Import files
-
-Files in `public/`:
-
-- `student-import-template.csv`
-- `sample-students.csv`
-- `teacher-import-template.csv`
-- `sample-teachers.csv`
-
-The uploader also exposes template and sample downloads inside the app.
-
-## Student import schema
-
-Required columns:
-
-- `id`
-- `grade`
-- `firstName`
-- `lastName`
-
-Common optional columns:
-
-- Student profile: `gender`, `status`, `academicTier`, `behaviorTier`, `referrals`
-- Co-teach minutes: `coTeachReadingMinutes`, `coTeachWritingMinutes`, `coTeachScienceSocialStudiesMinutes`, `coTeachMathMinutes`, `coTeachBehaviorMinutes`, `coTeachSocialMinutes`, `coTeachVocationalMinutes`
-- Relationships: `noContactWith`, `preferredWith`
-- Assessments: `briganceReadiness`, `mapReading`, `mapMath`, `ireadyReading`, `ireadyMath`
-- Demographics/context: `ell`, `section504`, `raceEthnicity`, `studentCharacteristics`, `teacherNotes`, `assignedTeacher`
-
-Notes:
-
-- `assignedTeacher` is optional on student import and can seed a student into a matching teacher room.
-- Re-importing students appends only brand-new student IDs. Existing IDs are ignored, so a second batch can safely add late roster entries without overwriting the current roster.
-- Students are only locked or fixed to rooms inside the app.
-- For kindergarten, use `briganceReadiness` and leave MAP/i-Ready blank if you do not need them for reporting.
-- `academicTier` and `behaviorTier` can be plain numbers or note text that includes tier values like `Reading - Tier 2; Math - Tier 3`. The app keeps the note text on the student summary and sums the tier values for support load.
-- `ell` accepts `EL`, `ELL`, `RFEP 1-4`, and standard truthy values.
-- `studentCharacteristics` must use the exact human-readable labels documented in `TEMPLATE_USAGE.md`.
-- The parser still accepts legacy `studentTags` headers and retired characteristic labels for backward compatibility, but all exports and docs now use `studentCharacteristics`.
-
-## Teacher import schema
-
-Required columns:
-
-- `grade`
-- `teacherName`
-- `structure`
-- `regulationBehaviorSupport`
-- `socialEmotionalSupport`
-- `instructionalExpertise`
-
-Teacher import behavior:
-
-- Teacher rows are applied to classrooms in CSV order within each grade.
-- If a grade has more imported teachers than existing rooms, the app adds rooms.
-- Loading teachers later updates teacher names and profiles without clearing student placements.
-- Teacher-fit scoring matches the room using `grade + teacherName`.
-- Imported teacher scores are hidden in the app UI after import and only drive internal fit comparisons.
-
-## Student characteristics
-
-Supported student characteristics:
-
-- `Needs strong routine`
-- `Needs frequent redirection`
-- `Easily frustrated`
-- `Needs reassurance`
-- `Sensitive to correction`
-- `Struggles with peer conflict`
-- `High energy`
-- `Needs movement breaks`
-- `Needs enrichment`
-- `Independent worker`
-- `Low academic confidence`
-
-## Teacher characteristics
-
-Supported teacher characteristics:
-
-- `Structure`
-- `Regulation/Behavior Support`
-- `Social/Emotional Support`
-- `Instructional Expertise`
-
-## Characteristic-to-teacher alignment
-
-The engine compares student characteristics to teacher characteristics like this:
-
-- `Needs strong routine` -> `Structure`, `Regulation/Behavior Support`
-- `Needs frequent redirection` -> `Regulation/Behavior Support`, `Structure`
-- `Easily frustrated` -> `Social/Emotional Support`, `Regulation/Behavior Support`
-- `Needs reassurance` -> `Social/Emotional Support`, `Instructional Expertise`
-- `Sensitive to correction` -> `Social/Emotional Support`, `Instructional Expertise`
-- `Struggles with peer conflict` -> `Social/Emotional Support`, `Regulation/Behavior Support`
-- `High energy` -> `Regulation/Behavior Support`, `Structure`
-- `Needs movement breaks` -> `Regulation/Behavior Support`, `Structure`
-- `Needs enrichment` -> `Instructional Expertise`, `Structure`
-- `Independent worker` -> `Instructional Expertise`, `Structure`
-- `Low academic confidence` -> `Social/Emotional Support`, `Instructional Expertise`
-
-## Placement workflow
-
-1. Import students.
-2. Import another student batch if late enrollments arrive. Duplicate student IDs are ignored.
-3. Import teachers.
-4. Review teacher names, co-teach coverage, rules, settings, and weights.
-5. Run auto-place for the active grade.
-6. Review warnings, poor-fit cards, room characteristic-load summaries, and the summary drawer.
-7. Drag students manually as needed.
-8. Lock placements that should be preserved.
-9. Export the active grade or all grades.
-
-## Placement model
-
-Per candidate room, the engine evaluates in this order:
-
-1. Hard constraints.
-2. Teacher-fit penalty.
-3. Weighted soft balancing, including characteristic-support-load pressure.
-
-The weighted soft score is:
-
-`loadScore + academicPenalty + behavioralPenalty + demographicPenalty + preferredTogetherAdjustment + doNotSeparateAdjustment + settingsPenalty + tagSupportLoadPenalty`
-
-## Characteristic-based Classroom Support Load
-
-The app derives a second support signal from `studentCharacteristics`.
-
-Current characteristic weights:
-
-- `Needs strong routine = 2`
-- `Needs frequent redirection = 4`
-- `Easily frustrated = 3`
-- `Needs reassurance = 2`
-- `Sensitive to correction = 2`
-- `Struggles with peer conflict = 3`
-- `High energy = 2`
-- `Needs movement breaks = 2`
-- `Needs enrichment = 1`
-- `Independent worker = -1`
-- `Low academic confidence = 2`
-
-This derived load is surfaced in:
-
-- student cards and tooltips
-- classroom quick stats
-- room summary cards
-- grade-level warning chips
-- manual-move warnings
-
-## Kindergarten scoring
-
-For grade `K` only:
-
-- `briganceReadiness` replaces MAP and i-Ready in placement scoring.
-- Student cards show Brigance instead of MAP badges.
-- Room summaries show Brigance room averages.
-- Top-level warning chips use Brigance wording instead of reading spread wording.
-
-Grades `1-5` continue using MAP and i-Ready for academic balancing.
-
-## Export behavior
-
-Exports are reporting-oriented, not round-trip import templates.
-
-Exports include:
-
-- the student reporting fields already in the app
-- `studentCharacteristics`
-- `assignedTeacher`
-
-Derived support-load values are not exported as additional columns. When tier note text was imported, exports keep that original `academicTier` / `behaviorTier` text instead of flattening it to the summed number.
 
 ## Project structure
 
-- `src/components/`: uploader, controls, room columns, summary, snapshots, settings, and relationship management
-- `src/engine/`: placement engine
-- `src/store/`: reducer, app context, drag context
-- `src/utils/`: CSV parsing, teacher fit, characteristic-load derivation, scoring, constraints, exports, and classroom initialization
-- `src/types/`: shared domain types
-- `public/`: shipped CSV templates and samples
-- `tests/`: lightweight logic tests
-- `SETTINGS_PAGE_EXPLANATION.md`: guide to the Grade Settings panel and each setting
-- `electron/`: desktop shell and notarization hook
+- `src/components/` UI components for the workspace, drawers, panels, and editors
+- `src/engine/` auto-placement engine
+- `src/features/csv-import/` import flows and preprocessing UI
+- `src/lib/csv/` CSV and spreadsheet parsing helpers
+- `src/store/` reducer and persisted app state
+- `src/utils/` balancing, exports, teacher fit, constraints, and classroom setup
+- `public/` import templates and sample CSVs
+- `tests/` lightweight logic tests
 
-## Verification notes
+## Additional docs
 
-- `npm run test` validates characteristic-load derivation, projected penalty behavior, and backward-compatible student characteristic parsing.
-- `node_modules/.bin/tsc -b` verifies the TypeScript projects.
-- `npm run build` may still fail in a restricted sandbox if Vite/esbuild cannot spawn its subprocess.
-- `npm run lint` requires `eslint` to be installed in the environment.
+- [ADMIN_BEGINNERS_GUIDE.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/ADMIN_BEGINNERS_GUIDE.md)
+- [TEMPLATE_USAGE.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/TEMPLATE_USAGE.md)
+- [SETTINGS_PAGE_EXPLANATION.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/SETTINGS_PAGE_EXPLANATION.md)
+- [LOGIC_EXPLANATION.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/LOGIC_EXPLANATION.md)

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
     "module": "CommonJS",
     "moduleResolution": "node",
     "outDir": "tests/.compiled",
@@ -24,6 +25,8 @@
     "src/utils/tagSupportLoad.ts",
     "src/utils/teacherCsvParser.ts",
     "src/utils/teacherFit.ts",
+    "src/lib/csv/blend.ts",
+    "src/lib/csv/spreadsheet.ts",
     "src/engine/placementEngine.ts",
     "src/store/reducer.ts"
   ]

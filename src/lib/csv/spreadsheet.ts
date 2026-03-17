@@ -51,6 +51,52 @@ export interface TableData {
   rows: string[][]
 }
 
+function parseCsvText(text: string): string[][] {
+  const rows: string[][] = []
+  let currentRow: string[] = []
+  let currentCell = ""
+  let inQuotes = false
+
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index]
+    const nextCharacter = text[index + 1]
+
+    if (character === '"') {
+      if (inQuotes && nextCharacter === '"') {
+        currentCell += '"'
+        index++
+      } else {
+        inQuotes = !inQuotes
+      }
+      continue
+    }
+
+    if (character === "," && !inQuotes) {
+      currentRow.push(currentCell)
+      currentCell = ""
+      continue
+    }
+
+    if ((character === "\n" || character === "\r") && !inQuotes) {
+      if (character === "\r" && nextCharacter === "\n") index++
+      currentRow.push(currentCell)
+      rows.push(currentRow.map(stringifyCell))
+      currentRow = []
+      currentCell = ""
+      continue
+    }
+
+    currentCell += character
+  }
+
+  if (currentCell.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentCell)
+    rows.push(currentRow.map(stringifyCell))
+  }
+
+  return rows.filter((row) => row.some((cell) => cell !== ""))
+}
+
 function stringifyCell(value: unknown): string {
   if (value == null) return ""
   return String(value).trim()
@@ -80,34 +126,7 @@ export async function readSpreadsheetFile(file: File): Promise<RawSheetData[]> {
   return [
     {
       name: "Sheet1",
-      rows: text
-        .split(/\r?\n/)
-        .filter((line) => line.length > 0)
-        .map((line) => {
-          const values: string[] = []
-          let current = ""
-          let inQuotes = false
-
-          for (let index = 0; index < line.length; index++) {
-            const character = line[index]
-            if (character === '"') {
-              if (inQuotes && line[index + 1] === '"') {
-                current += '"'
-                index++
-              } else {
-                inQuotes = !inQuotes
-              }
-            } else if (character === "," && !inQuotes) {
-              values.push(current)
-              current = ""
-            } else {
-              current += character
-            }
-          }
-
-          values.push(current)
-          return values.map(stringifyCell)
-        }),
+      rows: parseCsvText(text),
     },
   ]
 }

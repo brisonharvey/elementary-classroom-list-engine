@@ -471,7 +471,9 @@ export function reducer(state: AppState, action: Action): AppState {
         )
       }
 
-      return { ...state, classrooms }
+      const allStudents = state.allStudents.map((student) => (student.id === studentId ? { ...student, locked: false } : student))
+
+      return { ...state, classrooms, allStudents }
     }
     case "TOGGLE_LOCK": {
       const id = action.payload
@@ -518,9 +520,10 @@ export function reducer(state: AppState, action: Action): AppState {
     case "RESTORE_SNAPSHOT": {
       const snapshot = state.snapshots.find((entry) => entry.id === action.payload)
       if (!snapshot) return state
+      const restoredGradeClassrooms = syncClassroomStudentCopies(deepClone(snapshot.payload.classrooms), state.allStudents)
       const classrooms = [
         ...state.classrooms.filter((classroom) => classroom.grade !== snapshot.grade),
-        ...deepClone(snapshot.payload.classrooms),
+        ...restoredGradeClassrooms,
       ]
       return {
         ...state,
@@ -667,5 +670,4 @@ export function reducer(state: AppState, action: Action): AppState {
       return state
   }
 }
-
 
