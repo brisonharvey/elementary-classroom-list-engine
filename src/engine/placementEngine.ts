@@ -3,6 +3,7 @@ import { checkHardConstraints } from "../utils/constraints"
 import { CO_TEACH_CATEGORIES, CO_TEACH_LABELS, getStudentCoTeachTotal } from "../utils/coTeach"
 import { computeRoomStats, getStudentSupportLoad, scoreStudentForRoom } from "../utils/scoring"
 import { getStudentTeacherFitForClassroom } from "../utils/teacherFit"
+import { getMatchingTeacherClassrooms } from "../utils/teacherAssignments"
 
 function deepCloneClassrooms(classrooms: Classroom[]): Classroom[] {
   return classrooms.map((classroom) => ({ ...classroom, students: classroom.students.map((student) => ({ ...student })) }))
@@ -81,6 +82,7 @@ export function runPlacement(
   const unresolvedReasons = new Map<number, Set<string>>()
   const roomStatsMap = new Map<string, RoomStats>(gradeRooms.map((room) => [room.id, computeRoomStats(room)]))
   const assignedRoomByStudentId = new Map<number, string>()
+  const teacherFixedHandledIds = new Set<number>()
 
   for (const room of gradeRooms) {
     for (const student of room.students) {
@@ -88,7 +90,54 @@ export function runPlacement(
     }
   }
 
-  for (const student of sorted) {
+  for (const student of gradeStudents.filter((entry) => Boolean(entry.preassignedTeacher?.trim()) && !lockedIds.has(entry.id))) {
+    teacherFixedHandledIds.add(student.id)
+    const matchingRooms = getMatchingTeacherClassrooms(gradeRooms, student)
+    if (matchingRooms.length === 0) {
+      unresolved.push(student)
+      unresolvedReasons.set(
+        student.id,
+        new Set([`Assigned teacher ${student.preassignedTeacher!.trim()} does not have a matching classroom in Grade ${student.grade}.`])
+      )
+      continue
+    }
+
+    let placed = false
+    const reasons = new Set<string>()
+    for (const room of matchingRooms) {
+      const stats = roomStatsMap.get(room.id)!
+      const { valid, reason } = checkHardConstraints(student, room, stats.size, {
+        settings: gradeSettings,
+        relationshipRules,
+      })
+      if (!valid) {
+        if (reason) reasons.add(reason)
+        continue
+      }
+
+      const lockedStudent = { ...student, locked: true }
+      room.students.push(lockedStudent)
+      roomStatsMap.set(room.id, computeRoomStats({ ...room, students: [...room.students] }))
+      assignedRoomByStudentId.set(student.id, room.id)
+      lockedIds.add(student.id)
+      placed = true
+      break
+    }
+
+    if (!placed) {
+      unresolved.push(student)
+      unresolvedReasons.set(
+        student.id,
+        new Set(
+          reasons.size > 0
+            ? Array.from(reasons).map((reason) => `Assigned teacher ${student.preassignedTeacher!.trim()}: ${reason}`)
+            : [`Assigned teacher ${student.preassignedTeacher!.trim()} could not place this student in the matching classroom.`]
+        )
+      )
+    }
+  }
+
+  for (const student of sorted.filter((entry) => !lockedIds.has(entry.id) && !teacherFixedHandledIds.has(entry.id))) {
     let bestRoom: Classroom | null = null
     let bestTeacherFitPenalty = Infinity
     let bestScore = Infinity
@@ -128,7 +177,9 @@ export function runPlacement(
       assignedRoomByStudentId.set(student.id, bestRoom.id)
       roomStatsMap.set(bestRoom.id, computeRoomStats({ ...bestRoom, students: [...bestRoom.students] }))
     } else {
-      unresolved.push(student)
+      if (!unresolved.some((entry) => entry.id === student.id)) {
+        unresolved.push(student)
+      }
       unresolvedReasons.set(student.id, reasons)
     }
   }

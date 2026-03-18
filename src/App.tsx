@@ -76,6 +76,26 @@ export default function App() {
       return state.showTeacherNames ? classroom.teacherName?.trim() || fallback : fallback
     })
 
+  const selectClassroomForDeletion = () => {
+    const rooms = state.classrooms.filter((classroom) => classroom.grade === state.activeGrade)
+    if (rooms.length === 0) return null
+    if (rooms.length === 1) return rooms[0]
+
+    const options = rooms
+      .map((room, index) => `${index + 1}. ${room.label}${room.teacherName.trim() ? ` - ${room.teacherName.trim()}` : ""} (${room.students.length}/${room.maxSize})`)
+      .join("\n")
+    const rawChoice = window.prompt(`Delete which Grade ${state.activeGrade} classroom?\n\n${options}\n\nEnter the room number or label.`)
+    if (!rawChoice) return null
+
+    const trimmedChoice = rawChoice.trim().toLowerCase()
+    const numericChoice = Number.parseInt(trimmedChoice, 10)
+    if (Number.isFinite(numericChoice) && numericChoice >= 1 && numericChoice <= rooms.length) {
+      return rooms[numericChoice - 1]
+    }
+
+    return rooms.find((room) => room.label.trim().toLowerCase() === trimmedChoice) ?? null
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -97,8 +117,7 @@ export default function App() {
           <button
             className="btn btn-warning btn-sm"
             onClick={() => {
-              const rooms = state.classrooms.filter((classroom) => classroom.grade === state.activeGrade)
-              const room = rooms[rooms.length - 1]
+              const room = selectClassroomForDeletion()
               if (!room) return
               const moveToUnassigned = room.students.length > 0 && window.confirm("Room has students. Move them to Unassigned and delete?")
               if (room.students.length === 0 || moveToUnassigned) {

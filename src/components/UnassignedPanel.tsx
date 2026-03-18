@@ -5,6 +5,7 @@ import { useDrag } from "../store/DragContext"
 import { StudentCard } from "./StudentCard"
 import { StudentEditorModal } from "./StudentEditorModal"
 import { getUnassignedStudents } from "../engine/placementEngine"
+import { getManualUnassignedWarnings } from "../utils/constraints"
 
 export const UnassignedPanel = memo(function UnassignedPanel() {
   const { state, dispatch } = useApp()
@@ -37,6 +38,30 @@ export const UnassignedPanel = memo(function UnassignedPanel() {
       clearDrag()
       return
     }
+
+    const student =
+      state.allStudents.find((entry) => entry.id === drag.studentId) ??
+      state.classrooms.flatMap((room) => room.students).find((entry) => entry.id === drag.studentId)
+
+    if (student) {
+      const warnings = getManualUnassignedWarnings(student, {
+        settings: state.gradeSettings[state.activeGrade],
+        relationshipRules: state.relationshipRules,
+        gradeRooms: state.classrooms.filter((room) => room.grade === state.activeGrade),
+      })
+      if (warnings.length > 0) {
+        const proceed = window.confirm(
+          `Warning - sending ${student.firstName} ${student.lastName} to Unassigned may create issues:\n\n${warnings
+            .map((warning) => `* ${warning}`)
+            .join("\n")}\n\nProceed anyway?`
+        )
+        if (!proceed) {
+          clearDrag()
+          return
+        }
+      }
+    }
+
     dispatch({
       type: "MOVE_STUDENT",
       payload: { studentId: drag.studentId, fromId: drag.fromId, toId: null },

@@ -38,7 +38,7 @@ type SourceConfig = {
 
 type ReviewState = {
   studentsToImport: Student[]
-  duplicateCount: number
+  updateCount: number
   issues: CsvValidationIssue[]
   skipped: number
 }
@@ -230,11 +230,11 @@ export function StudentBlendImport() {
 
     const parsed = parseStudentCSVWithMapping(blend.csvText, EXACT_MAPPING)
     const existingIds = new Set(state.allStudents.map((student) => student.id))
-    const studentsToImport = parsed.students.filter((student) => !existingIds.has(student.id))
+    const updateCount = parsed.students.filter((student) => existingIds.has(student.id)).length
 
     setReview({
-      studentsToImport,
-      duplicateCount: parsed.students.length - studentsToImport.length,
+      studentsToImport: parsed.students,
+      updateCount,
       issues: [...blend.issues, ...parsed.issues],
       skipped: parsed.skipped,
     })
@@ -256,7 +256,7 @@ export function StudentBlendImport() {
     dispatch({ type: "LOAD_STUDENTS", payload: review.studentsToImport })
     reset({
       type: "success",
-      message: `Imported ${review.studentsToImport.length} student${review.studentsToImport.length === 1 ? "" : "s"} from the blended roster.${review.duplicateCount > 0 ? ` ${review.duplicateCount} duplicate ID${review.duplicateCount === 1 ? " was" : "s were"} ignored.` : ""}`,
+      message: `Imported ${review.studentsToImport.length} student${review.studentsToImport.length === 1 ? "" : "s"} from the blended roster.${review.updateCount > 0 ? ` Updated ${review.updateCount} existing record${review.updateCount === 1 ? "" : "s"}.` : ""}`,
     })
   }
 
@@ -528,6 +528,10 @@ export function StudentBlendImport() {
               <strong>{review.studentsToImport.length}</strong>
             </div>
             <div className="csv-import-review-card">
+              <span className="csv-import-review-label">Existing students updated</span>
+              <strong>{review.updateCount}</strong>
+            </div>
+            <div className="csv-import-review-card">
               <span className="csv-import-review-label">Warnings</span>
               <strong>{reviewSummary.warning}</strong>
             </div>
@@ -563,7 +567,7 @@ export function StudentBlendImport() {
               <div className="csv-import-section-header">
                 <div>
                   <strong>Preview</strong>
-                  <p>Showing the first blended students that will be imported.</p>
+              <p>Showing the first blended students that will be imported or refreshed in the roster.</p>
                 </div>
               </div>
               <div className="csv-import-preview-table-wrap">

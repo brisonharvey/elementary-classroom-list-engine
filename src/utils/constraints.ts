@@ -65,6 +65,47 @@ function getTagLoadWarnings(student: Student, classroom: Classroom, gradeRooms: 
   return warnings
 }
 
+function getAssignedRoomByStudentId(gradeRooms: Classroom[] | undefined): Map<number, string> {
+  const assignedRoomByStudentId = new Map<number, string>()
+  for (const room of gradeRooms ?? []) {
+    for (const student of room.students) {
+      assignedRoomByStudentId.set(student.id, room.id)
+    }
+  }
+  return assignedRoomByStudentId
+}
+
+function getDoNotSeparateWarnings(
+  student: Student,
+  classroom: Classroom | null,
+  options: HardConstraintOptions
+): string[] {
+  if (!options.gradeRooms || options.gradeRooms.length === 0) return []
+
+  const warnings: string[] = []
+  const assignedRoomByStudentId = getAssignedRoomByStudentId(options.gradeRooms)
+  const targetRoomId = classroom?.id ?? null
+
+  for (const rule of options.relationshipRules) {
+    if (rule.type !== "DO_NOT_SEPARATE" || rule.grade !== student.grade) continue
+    if (!rule.studentIds.includes(student.id)) continue
+
+    const peerId = rule.studentIds[0] === student.id ? rule.studentIds[1] : rule.studentIds[0]
+    const peer = options.gradeRooms.flatMap((room) => room.students).find((roomStudent) => roomStudent.id === peerId)
+    const peerRoomId = assignedRoomByStudentId.get(peerId) ?? null
+    if (!peerRoomId) continue
+
+    if (targetRoomId !== peerRoomId) {
+      const peerRoom = options.gradeRooms.find((room) => room.id === peerRoomId)
+      const peerName = peer ? `${peer.firstName} ${peer.lastName}` : `#${peerId}`
+      const peerRoomLabel = peerRoom ? `${peerRoom.grade}-${peerRoom.label}` : peerRoomId
+      warnings.push(`Do Not Separate rule would split ${peerName} from this student (peer is in ${peerRoomLabel}).`)
+    }
+  }
+
+  return warnings
+}
+
 export function checkHardConstraints(
   student: Student,
   classroom: Classroom,
@@ -156,6 +197,25 @@ export function getManualMoveWarnings(
 
   if (options.gradeRooms) {
     warnings.push(...getTagLoadWarnings(student, classroom, options.gradeRooms))
+    warnings.push(...getDoNotSeparateWarnings(student, classroom, options))
+  }
+
+  if (student.preassignedTeacher?.trim()) {
+    const assignedTeacher = student.preassignedTeacher.trim()
+    const roomTeacher = classroom.teacherName.trim()
+    if (!roomTeacher || roomTeacher.toLowerCase() !== assignedTeacher.toLowerCase()) {
+      warnings.push(`Assigned teacher is ${assignedTeacher}, so this move would override the teacher-fixed placement.`)
+    }
+  }
+
+  return warnings
+}
+
+export function getManualUnassignedWarnings(student: Student, options: HardConstraintOptions): string[] {
+  const warnings = getDoNotSeparateWarnings(student, null, options)
+
+  if (student.preassignedTeacher?.trim()) {
+    warnings.push(`Assigned teacher is ${student.preassignedTeacher.trim()}, so leaving this student unassigned breaks the teacher-fixed placement.`)
   }
 
   return warnings

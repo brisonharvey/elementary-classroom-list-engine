@@ -18,6 +18,7 @@ import {
 } from "../utils/classroomInit"
 import { runPlacement } from "../engine/placementEngine"
 import { normalizeCoTeachMinutes } from "../utils/coTeach"
+import { collectAssignedTeacherPlacementIssues } from "../utils/teacherAssignments"
 
 export type Action =
   | { type: "LOAD_STUDENTS"; payload: Student[] }
@@ -218,6 +219,105 @@ function dedupeStudentsById(students: Student[], existingIds = new Set<number>()
   return unique
 }
 
+function buildTeacherAssignmentWarnings(issues: Record<number, string[]>, allStudents: Student[]): string[] {
+  return Object.entries(issues).map(([studentId, reasons]) => {
+    const student = allStudents.find((entry) => entry.id === Number(studentId))
+    const studentName = student ? `${student.firstName} ${student.lastName}` : `#${studentId}`
+    return `${studentName}: ${reasons.join(" ")}`
+  })
+}
+
+function withTeacherAssignmentDiagnostics(state: AppState): AppState {
+  const unresolvedReasons = collectAssignedTeacherPlacementIssues(state.allStudents, state.classrooms)
+  return {
+    ...state,
+    unresolvedReasons,
+    placementWarnings: buildTeacherAssignmentWarnings(unresolvedReasons, state.allStudents),
+  }
+}
+
+function applyUpsertStudentCore(state: AppState, studentInput: Student, previousId?: number): AppState {
+  const previousStudentId = previousId ?? studentInput.id
+  const existing = state.allStudents.find((student) => student.id === previousStudentId)
+  const currentPlacement = state.classrooms.find((classroom) => classroom.students.some((student) => student.id === previousStudentId))
+  const nextStudent = normalizeStudentRecord({
+    ...studentInput,
+    locked: studentInput.preassignedTeacher?.trim()
+      ? true
+      : studentInput.locked ?? existing?.locked ?? false,
+  })
+
+  if (state.allStudents.some((student) => student.id === nextStudent.id && student.id !== previousStudentId)) {
+    return state
+  }
+
+  let allStudents = existing
+    ? state.allStudents.map((student) => (student.id === previousStudentId ? nextStudent : student))
+    : [...state.allStudents, nextStudent]
+
+  if (existing && previousStudentId !== nextStudent.id) {
+    allStudents = allStudents.map((student) =>
+      student.id === nextStudent.id
+        ? student
+        : {
+            ...student,
+            noContactWith: replaceStudentId(student.noContactWith, previousStudentId, nextStudent.id, student.id),
+            preferredWith: replaceStudentId(student.preferredWith, previousStudentId, nextStudent.id, student.id),
+          }
+    )
+  }
+
+  allStudents = normalizeStudentRelationships(allStudents.map((student) => normalizeStudentRecord(student)))
+
+  let relationshipRules = state.relationshipRules
+  if (existing && existing.grade !== nextStudent.grade) {
+    relationshipRules = relationshipRules.filter((rule) => !rule.studentIds.includes(previousStudentId))
+  } else if (existing && previousStudentId !== nextStudent.id) {
+    relationshipRules = relationshipRules
+      .map((rule) => ({
+        ...rule,
+        studentIds: rule.studentIds.map((id) => (id === previousStudentId ? nextStudent.id : id)) as [number, number],
+      }))
+      .filter((rule) => rule.studentIds[0] !== rule.studentIds[1])
+  }
+
+  let classrooms: Classroom[]
+  if (nextStudent.preassignedTeacher) {
+    classrooms = assignStudentToTeacherClassroom(state.classrooms, nextStudent, previousStudentId)
+  } else {
+    classrooms = state.classrooms.map((classroom) => {
+      const roomStudent = classroom.students.find((student) => student.id === previousStudentId)
+      if (!roomStudent) return classroom
+      if (classroom.grade !== nextStudent.grade) {
+        return { ...classroom, students: classroom.students.filter((student) => student.id !== previousStudentId) }
+      }
+
+      return {
+        ...classroom,
+        students: classroom.students.map((student) =>
+          student.id === previousStudentId
+            ? normalizeStudentRecord({
+                ...nextStudent,
+                locked: nextStudent.locked,
+              })
+            : student
+        ),
+      }
+    })
+
+    if (!existing && currentPlacement == null) {
+      classrooms = cloneClassrooms(classrooms)
+    }
+  }
+
+  return {
+    ...state,
+    allStudents,
+    classrooms,
+    relationshipRules,
+  }
+}
+
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "LOAD_STUDENTS": {
@@ -227,7 +327,7 @@ export function reducer(state: AppState, action: Action): AppState {
           coTeachMinutes: normalizeCoTeachMinutes(student.coTeachMinutes),
           locked: student.preassignedTeacher ? true : false,
         })),
-        new Set(state.allStudents.map((student) => student.id))
+        new Set<number>()
       )
 
       if (incomingStudents.length === 0) return state
@@ -271,126 +371,47 @@ export function reducer(state: AppState, action: Action): AppState {
           }
         }
 
-        return {
+        return withTeacherAssignmentDiagnostics({
           ...state,
           allStudents,
           classrooms: freshClassrooms,
           snapshots: [],
           relationshipRules: [],
-          unresolvedReasons: {},
-          placementWarnings: [],
+        })
+      }
+
+      let nextState = { ...state }
+      for (const importedStudent of incomingStudents) {
+        const existing = nextState.allStudents.find((student) => student.id === importedStudent.id)
+        if (existing) {
+          const importedTeacher = importedStudent.preassignedTeacher?.trim()
+          nextState = applyUpsertStudentCore(nextState, {
+            ...existing,
+            ...importedStudent,
+            locked: importedTeacher
+              ? true
+              : existing.preassignedTeacher?.trim()
+                ? false
+                : existing.locked,
+          })
+          continue
         }
+
+        nextState = applyUpsertStudentCore(nextState, importedStudent, importedStudent.id)
       }
 
-      const allStudents = normalizeStudentRelationships([...state.allStudents, ...incomingStudents].map((student) => normalizeStudentRecord(student)))
-      let classrooms = cloneClassrooms(state.classrooms)
-
-      for (const student of incomingStudents) {
-        if (!student.preassignedTeacher) continue
-        classrooms = assignStudentToTeacherClassroom(classrooms, student, student.id)
-      }
-
-      return {
-        ...state,
-        allStudents,
-        classrooms,
-        unresolvedReasons: {},
-        placementWarnings: [],
-      }
+      return withTeacherAssignmentDiagnostics(nextState)
     }
     case "LOAD_TEACHERS": {
       const classrooms = syncClassroomsWithTeacherProfiles(state.classrooms, action.payload)
-      return {
+      return withTeacherAssignmentDiagnostics({
         ...state,
         teacherProfiles: action.payload,
         classrooms,
-        unresolvedReasons: {},
-        placementWarnings: [],
-      }
-    }
-    case "UPSERT_STUDENT": {
-      const previousId = action.payload.previousId ?? action.payload.student.id
-      const existing = state.allStudents.find((student) => student.id === previousId)
-      const currentPlacement = state.classrooms.find((classroom) => classroom.students.some((student) => student.id === previousId))
-      const nextStudent = normalizeStudentRecord({
-        ...action.payload.student,
-        locked: action.payload.student.preassignedTeacher?.trim()
-          ? true
-          : action.payload.student.locked ?? existing?.locked ?? false,
       })
-
-      if (state.allStudents.some((student) => student.id === nextStudent.id && student.id !== previousId)) {
-        return state
-      }
-
-      let allStudents = existing
-        ? state.allStudents.map((student) => (student.id === previousId ? nextStudent : student))
-        : [...state.allStudents, nextStudent]
-
-      if (existing && previousId !== nextStudent.id) {
-        allStudents = allStudents.map((student) =>
-          student.id === nextStudent.id
-            ? student
-            : {
-                ...student,
-                noContactWith: replaceStudentId(student.noContactWith, previousId, nextStudent.id, student.id),
-                preferredWith: replaceStudentId(student.preferredWith, previousId, nextStudent.id, student.id),
-              }
-        )
-      }
-
-      allStudents = normalizeStudentRelationships(allStudents.map((student) => normalizeStudentRecord(student)))
-
-      let relationshipRules = state.relationshipRules
-      if (existing && existing.grade !== nextStudent.grade) {
-        relationshipRules = relationshipRules.filter((rule) => !rule.studentIds.includes(previousId))
-      } else if (existing && previousId !== nextStudent.id) {
-        relationshipRules = relationshipRules
-          .map((rule) => ({
-            ...rule,
-            studentIds: rule.studentIds.map((id) => (id === previousId ? nextStudent.id : id)) as [number, number],
-          }))
-          .filter((rule) => rule.studentIds[0] !== rule.studentIds[1])
-      }
-
-      let classrooms: Classroom[]
-      if (nextStudent.preassignedTeacher) {
-        classrooms = assignStudentToTeacherClassroom(state.classrooms, nextStudent, previousId)
-      } else {
-        classrooms = state.classrooms.map((classroom) => {
-          const roomStudent = classroom.students.find((student) => student.id === previousId)
-          if (!roomStudent) return classroom
-          if (classroom.grade !== nextStudent.grade) {
-            return { ...classroom, students: classroom.students.filter((student) => student.id !== previousId) }
-          }
-
-          return {
-            ...classroom,
-            students: classroom.students.map((student) =>
-              student.id === previousId
-                ? normalizeStudentRecord({
-                    ...nextStudent,
-                    locked: nextStudent.locked,
-                  })
-                : student
-            ),
-          }
-        })
-
-        if (!existing && currentPlacement == null) {
-          classrooms = cloneClassrooms(classrooms)
-        }
-      }
-
-      return {
-        ...state,
-        allStudents,
-        classrooms,
-        relationshipRules,
-        unresolvedReasons: {},
-        placementWarnings: [],
-      }
     }
+    case "UPSERT_STUDENT":
+      return withTeacherAssignmentDiagnostics(applyUpsertStudentCore(state, action.payload.student, action.payload.previousId))
     case "DELETE_STUDENT": {
       const studentId = action.payload
       if (!state.allStudents.some((student) => student.id === studentId)) return state
@@ -473,26 +494,33 @@ export function reducer(state: AppState, action: Action): AppState {
 
       const allStudents = state.allStudents.map((student) => (student.id === studentId ? { ...student, locked: false } : student))
 
-      return { ...state, classrooms, allStudents }
+      return withTeacherAssignmentDiagnostics({ ...state, classrooms, allStudents })
     }
     case "TOGGLE_LOCK": {
       const id = action.payload
+      const targetStudent = state.allStudents.find((student) => student.id === id)
+      if (targetStudent?.preassignedTeacher?.trim()) {
+        return state
+      }
       const classrooms = state.classrooms.map((classroom) => ({
         ...classroom,
         students: classroom.students.map((student) => (student.id === id ? { ...student, locked: !student.locked } : student)),
       }))
       const allStudents = state.allStudents.map((student) => (student.id === id ? { ...student, locked: !student.locked } : student))
-      return { ...state, classrooms, allStudents }
+      return withTeacherAssignmentDiagnostics({ ...state, classrooms, allStudents })
     }
     case "UPDATE_CLASSROOM": {
       const { id, ...updates } = action.payload
-      return { ...state, classrooms: state.classrooms.map((classroom) => (classroom.id === id ? { ...classroom, ...updates } : classroom)) }
+      return withTeacherAssignmentDiagnostics({
+        ...state,
+        classrooms: state.classrooms.map((classroom) => (classroom.id === id ? { ...classroom, ...updates } : classroom)),
+      })
     }
     case "ADD_CLASSROOM": {
       const gradeRooms = getClassroomsForGrade(state.classrooms, action.payload.grade)
       const newRoom = createClassroom(action.payload.grade, gradeRooms.length)
       const classrooms = [...state.classrooms, newRoom]
-      return { ...state, classrooms }
+      return withTeacherAssignmentDiagnostics({ ...state, classrooms })
     }
     case "DELETE_CLASSROOM": {
       const room = state.classrooms.find((classroom) => classroom.id === action.payload.classroomId)
@@ -501,7 +529,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const classrooms = state.classrooms
         .map((classroom) => (classroom.id === room.id ? { ...classroom, students: [] } : classroom))
         .filter((classroom) => classroom.id !== room.id)
-      return { ...state, classrooms }
+      return withTeacherAssignmentDiagnostics({ ...state, classrooms })
     }
     case "SAVE_SNAPSHOT": {
       const snapshot: Snapshot = {
@@ -525,12 +553,12 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state.classrooms.filter((classroom) => classroom.grade !== snapshot.grade),
         ...restoredGradeClassrooms,
       ]
-      return {
+      return withTeacherAssignmentDiagnostics({
         ...state,
         activeGrade: snapshot.grade,
         classrooms,
         gradeSettings: { ...state.gradeSettings, [snapshot.grade]: normalizeGradeSettings(snapshot.payload.settings) },
-      }
+      })
     }
     case "DELETE_SNAPSHOT":
       return { ...state, snapshots: state.snapshots.filter((snapshot) => snapshot.id !== action.payload) }
@@ -662,7 +690,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const classrooms = state.classrooms.map((classroom) =>
         classroom.grade !== state.activeGrade ? classroom : { ...classroom, students: classroom.students.filter((student) => student.locked) }
       )
-      return { ...state, classrooms, placementWarnings: [], unresolvedReasons: {} }
+      return withTeacherAssignmentDiagnostics({ ...state, classrooms })
     }
     case "CLEAR_ALL":
       return { ...initialState }

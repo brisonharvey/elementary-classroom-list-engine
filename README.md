@@ -6,7 +6,7 @@ It supports:
 
 - student and teacher CSV import with column mapping
 - CSV and XLSX imports, including sheet selection and basic header-row preprocessing
-- additive student imports for late enrollments
+- student re-imports that update existing roster records by `id`
 - teacher-fit aware auto-placement
 - hard no-contact rules and soft keep-together rules
 - co-teach coverage checks
@@ -86,8 +86,9 @@ Common optional columns:
 
 Important behavior:
 
-- Student imports are additive. Re-importing does not overwrite existing student IDs.
-- `assignedTeacher` seeds a student into a matching room when possible.
+- Student re-imports refresh existing students when the same `id` appears again.
+- `assignedTeacher` creates a teacher-fixed placement when the matching classroom is available.
+- If a teacher-fixed student cannot be seated in the matching classroom, the app leaves that student unresolved and flags the reason instead of placing them elsewhere.
 - Kindergarten uses `briganceReadiness` in placement scoring instead of MAP/i-Ready.
 - `academicTier` and `behaviorTier` can be numeric or note text that contains one or more `Tier X` values.
 - `studentCharacteristics` accepts the current supported labels and also tolerates legacy aliases.
@@ -172,6 +173,7 @@ npm run dev:desktop
 ### Verify
 
 ```bash
+npm run lint
 npm run test
 npm run build
 ```
@@ -189,7 +191,7 @@ npm run build
 
 ## Additional docs
 
-- [ADMIN_BEGINNERS_GUIDE.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/ADMIN_BEGINNERS_GUIDE.md)
-- [TEMPLATE_USAGE.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/TEMPLATE_USAGE.md)
-- [SETTINGS_PAGE_EXPLANATION.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/SETTINGS_PAGE_EXPLANATION.md)
-- [LOGIC_EXPLANATION.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/LOGIC_EXPLANATION.md)
+- [ADMIN_BEGINNERS_GUIDE.md](ADMIN_BEGINNERS_GUIDE.md)
+- [TEMPLATE_USAGE.md](TEMPLATE_USAGE.md)
+- [SETTINGS_PAGE_EXPLANATION.md](SETTINGS_PAGE_EXPLANATION.md)
+- [LOGIC_EXPLANATION.md](LOGIC_EXPLANATION.md)

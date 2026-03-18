@@ -31,7 +31,7 @@ Have these ready:
 Important reminders:
 
 - Each student needs a unique `id`.
-- Student re-imports only add brand-new IDs.
+- Student re-imports update existing students when the same `id` appears again.
 - Teacher import does not move students by itself.
 - `Clear All` removes saved work and snapshots from this device.
 
@@ -62,7 +62,7 @@ Important reminders:
 
 ## Student import
 
-The app includes [student-import-template.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/student-import-template.csv) and [sample-students.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/sample-students.csv).
+The app includes [student-import-template.csv](public/student-import-template.csv) and [sample-students.csv](public/sample-students.csv).
 
 Required student columns:
 
@@ -93,7 +93,7 @@ Kindergarten tip:
 
 ## Teacher import
 
-The app includes [teacher-import-template.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/teacher-import-template.csv) and [sample-teachers.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/sample-teachers.csv).
+The app includes [teacher-import-template.csv](public/teacher-import-template.csv) and [sample-teachers.csv](public/sample-teachers.csv).
 
 Required teacher columns:
 
@@ -123,7 +123,7 @@ Check these items first:
 Useful room controls:
 
 - `Add Classroom`
-- `Delete Classroom`
+- `Delete Classroom` lets you choose which room to remove when a grade has more than one classroom
 - click a teacher name to edit it
 - edit room capacity
 - use the `Co-teach` menu in the room header
@@ -161,6 +161,9 @@ The engine:
 2. prefers the best teacher fit
 3. uses weighted balancing to break ties
 
+Students with an `assignedTeacher` stay teacher-fixed.
+If the matching classroom is missing, full, or blocked by another hard rule, the app leaves that student unresolved and shows the reason.
+
 Students that cannot be placed stay in `Unassigned` with reasons shown underneath.
 
 ## Reading the results
@@ -188,8 +191,9 @@ Student card actions:
 
 - `Edit` updates student details
 - lock/unlock preserves or releases a placement
+- teacher-fixed students stay locked until you clear `Assigned Teacher` in `Edit`
 
-Manual moves can show warnings before they are applied.
+Manual moves can show warnings before they are applied, including `Do Not Separate` soft-rule conflicts and teacher-fixed overrides.
 
 ## Snapshots and export
 

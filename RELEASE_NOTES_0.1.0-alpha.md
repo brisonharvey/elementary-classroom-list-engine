@@ -112,8 +112,8 @@ This alpha includes a kindergarten-specific placement path:
 
 ## Documentation
 
-- [README.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/README.md)
-- [ADMIN_BEGINNERS_GUIDE.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/ADMIN_BEGINNERS_GUIDE.md)
-- [TEMPLATE_USAGE.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/TEMPLATE_USAGE.md)
-- [SETTINGS_PAGE_EXPLANATION.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/SETTINGS_PAGE_EXPLANATION.md)
-- [LOGIC_EXPLANATION.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/LOGIC_EXPLANATION.md)
+- [README.md](README.md)
+- [ADMIN_BEGINNERS_GUIDE.md](ADMIN_BEGINNERS_GUIDE.md)
+- [TEMPLATE_USAGE.md](TEMPLATE_USAGE.md)
+- [SETTINGS_PAGE_EXPLANATION.md](SETTINGS_PAGE_EXPLANATION.md)
+- [LOGIC_EXPLANATION.md](LOGIC_EXPLANATION.md)

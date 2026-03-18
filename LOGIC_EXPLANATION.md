@@ -107,8 +107,9 @@ Grades `1` through `5` use MAP and i-Ready inputs.
 Student import:
 
 - requires `id`, `grade`, `firstName`, and `lastName`
-- accepts additive re-imports for new IDs only
+- updates existing students when the same `id` is re-imported
 - can seed students into a matching teacher room using `assignedTeacher`
+- keeps teacher-fixed students unresolved when the matching room is unavailable instead of auto-placing them elsewhere
 - accepts `noContactWith` and `preferredWith` lists separated by commas, semicolons, pipes, or spaces
 
 Teacher import:

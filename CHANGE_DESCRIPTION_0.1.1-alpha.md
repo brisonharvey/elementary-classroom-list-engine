@@ -30,9 +30,12 @@ It also adds administrator-facing documentation and updates packaged release met
 ### Student editing and export behavior
 
 - Manually assigning a teacher through the student editor now places and locks that student into the matching classroom when possible
+- Teacher-fixed students now stay unresolved with explicit reasons when the matching classroom is missing, full, or blocked
 - Clearing a previously assigned teacher now unlocks the student correctly
 - Exports now fall back to a student's preassigned teacher when that student is still unassigned
-- Loading an additional student batch preserves existing placements while appending only new student IDs
+- Re-importing students by `id` now refreshes existing roster records while preserving classroom state where possible
+- Manual placement warnings now flag `Do Not Separate` conflicts and teacher-fixed overrides
+- Deleting a classroom now lets staff choose which active-grade room to remove
 
 ## UI and Workflow Updates
 
@@ -44,10 +47,10 @@ It also adds administrator-facing documentation and updates packaged release met
 
 ## Documentation Updates
 
-- Added a non-technical administrator onboarding guide: [ADMIN_BEGINNERS_GUIDE.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/ADMIN_BEGINNERS_GUIDE.md)
-- Added a release notes document for the original alpha: [RELEASE_NOTES_0.1.0-alpha.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/RELEASE_NOTES_0.1.0-alpha.md)
+- Added a non-technical administrator onboarding guide: [ADMIN_BEGINNERS_GUIDE.md](ADMIN_BEGINNERS_GUIDE.md)
+- Added a release notes document for the original alpha: [RELEASE_NOTES_0.1.0-alpha.md](RELEASE_NOTES_0.1.0-alpha.md)
 - Added this release change summary for `0.1.1-alpha`
-- Updated [README.md](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/README.md) to point to the administrator documentation
+- Updated [README.md](README.md) to point to the administrator documentation
 
 ## Release Metadata
 

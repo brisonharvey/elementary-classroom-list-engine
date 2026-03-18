@@ -6,11 +6,11 @@ This guide explains the student and teacher templates shipped with the app.
 
 Template file:
 
-- [student-import-template.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/student-import-template.csv)
+- [student-import-template.csv](public/student-import-template.csv)
 
 Sample file:
 
-- [sample-students.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/sample-students.csv)
+- [sample-students.csv](public/sample-students.csv)
 
 ### Required columns
 
@@ -46,8 +46,9 @@ Sample file:
 - `grade` accepts `K`, kindergarten-style values, and grades `1` through `5`.
 - `academicTier` and `behaviorTier` can be plain numbers or note text containing `Tier 1`, `Tier 2`, or `Tier 3`.
 - `ell` accepts common truthy values plus `EL`, `ELL`, and `RFEP 1-4`.
-- Student imports are additive. Existing IDs are skipped instead of overwritten.
-- `assignedTeacher` tries to place a student into a matching room on import.
+- Student re-imports update existing students when the same `id` appears again.
+- `assignedTeacher` creates a teacher-fixed placement when a matching room is available.
+- If a teacher-fixed student cannot be seated in the matching room, the app keeps that student unresolved and flags the reason instead of placing the student somewhere else.
 
 ### Relationship columns
 
@@ -89,11 +90,11 @@ The parser still accepts older aliases where possible for backward compatibility
 
 Template file:
 
-- [teacher-import-template.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/teacher-import-template.csv)
+- [teacher-import-template.csv](public/teacher-import-template.csv)
 
 Sample file:
 
-- [sample-teachers.csv](/Users/brisonharvey/GitHub/elementary-classroom-list-engine/public/sample-teachers.csv)
+- [sample-teachers.csv](public/sample-teachers.csv)
 
 ### Required columns
 

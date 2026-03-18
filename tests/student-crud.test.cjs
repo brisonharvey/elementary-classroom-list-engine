@@ -3,6 +3,8 @@ const assert = require("node:assert/strict")
 const { reducer, initialState } = require("./.compiled/src/store/reducer.js")
 const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
 const { buildPlacementCSV } = require("./.compiled/src/utils/exportUtils.js")
+const { runPlacement } = require("./.compiled/src/engine/placementEngine.js")
+const { getManualMoveWarnings, getManualUnassignedWarnings } = require("./.compiled/src/utils/constraints.js")
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
@@ -200,7 +202,7 @@ const tests = [
     },
   },
   {
-    name: "loading a second student batch appends only new ids and preserves existing placements",
+    name: "loading a second student batch updates existing students and preserves existing placements",
     run: () => {
       const state = createState()
       state.classrooms = [
@@ -219,10 +221,85 @@ const tests = [
       })
 
       assert.deepEqual(next.allStudents.map((student) => student.id).sort((a, b) => a - b), [101, 102, 303, 404])
+      assert.equal(next.allStudents.find((student) => student.id === 101).firstName, "Duplicate Alpha")
       assert.deepEqual(next.classrooms[0].students.map((student) => student.id).sort((a, b) => a - b), [101, 404])
       assert.equal(next.classrooms[0].students.find((student) => student.id === 101).locked, true)
+      assert.equal(next.classrooms[0].students.find((student) => student.id === 101).firstName, "Duplicate Alpha")
       assert.equal(next.classrooms.some((classroom) => classroom.students.some((student) => student.id === 303)), false)
       assert.equal(next.relationshipRules.length, 1)
+    },
+  },
+  {
+    name: "teacher-fixed students stay unresolved when no matching classroom can take them",
+    run: () => {
+      const student = createStudent(601, { firstName: "Iris", preassignedTeacher: "Ms. Rivera", locked: true })
+      const state = {
+        ...clone(initialState),
+        allStudents: [student],
+        classrooms: [
+          createClassroom("1-A", [], { teacherName: "Ms. Stone" }),
+          createClassroom("1-B", [], { teacherName: "Ms. Patel" }),
+        ],
+        activeGrade: "1",
+      }
+
+      const result = runPlacement(
+        state.allStudents,
+        [],
+        state.classrooms,
+        "1",
+        state.weights,
+        state.gradeSettings["1"],
+        []
+      )
+
+      assert.equal(result.classrooms.some((classroom) => classroom.students.some((entry) => entry.id === 601)), false)
+      assert.equal(result.unresolved.some((entry) => entry.id === 601), true)
+      assert.match(result.unresolvedReasons[601][0], /does not have a matching classroom/i)
+    },
+  },
+  {
+    name: "manual move warnings include do-not-separate and teacher-fixed conflicts",
+    run: () => {
+      const teacherFixed = createStudent(701, { firstName: "Nova", preassignedTeacher: "Ms. Rivera", locked: true })
+      const peer = createStudent(702, { firstName: "Piper" })
+      const gradeRooms = [
+        createClassroom("1-A", [teacherFixed, peer], { teacherName: "Ms. Rivera" }),
+        createClassroom("1-B", [], { teacherName: "Ms. Stone" }),
+      ]
+      const warnings = getManualMoveWarnings(teacherFixed, gradeRooms[1], {
+        settings: createDefaultGradeSettingsMap()["1"],
+        relationshipRules: [
+          {
+            id: "rule-soft",
+            type: "DO_NOT_SEPARATE",
+            studentIds: [701, 702],
+            createdAt: 1,
+            grade: "1",
+          },
+        ],
+        gradeRooms,
+      })
+
+      assert.ok(warnings.some((warning) => /Do Not Separate/i.test(warning)))
+      assert.ok(warnings.some((warning) => /Assigned teacher is Ms\. Rivera/i.test(warning)))
+
+      const unassignedWarnings = getManualUnassignedWarnings(teacherFixed, {
+        settings: createDefaultGradeSettingsMap()["1"],
+        relationshipRules: [
+          {
+            id: "rule-soft",
+            type: "DO_NOT_SEPARATE",
+            studentIds: [701, 702],
+            createdAt: 1,
+            grade: "1",
+          },
+        ],
+        gradeRooms,
+      })
+
+      assert.ok(unassignedWarnings.some((warning) => /Do Not Separate/i.test(warning)))
+      assert.ok(unassignedWarnings.some((warning) => /teacher-fixed placement/i.test(warning)))
     },
   },
   {
@@ -329,7 +406,6 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
-
 
 
 

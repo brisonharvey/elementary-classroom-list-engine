@@ -53,6 +53,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
       : null
   const isPoorTeacherFit = Boolean(teacherFit?.isPoorFit)
   const isKindergarten = student.grade === "K"
+  const isTeacherFixed = Boolean(student.preassignedTeacher?.trim())
 
   const onMouseEnter = () => {
     timerRef.current = setTimeout(() => {
@@ -78,6 +79,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     specialEd.status === "IEP" ? "card-iep" : specialEd.status === "Referral" ? "card-referral" : "",
     locked ? "card-locked" : "",
     isPoorTeacherFit ? "card-poor-fit" : "",
+    isTeacherFixed ? "card-teacher-fixed" : "",
   ]
     .filter(Boolean)
     .join(" ")
@@ -189,6 +191,12 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </span>
               )}
 
+              {isTeacherFixed && (
+                <span className="badge badge-assigned-teacher" title={`Assigned teacher: ${student.preassignedTeacher}`}>
+                  Teacher Fixed
+                </span>
+              )}
+
               {isPoorTeacherFit && <span className="badge badge-poor-fit">Poor Fit</span>}
 
               {relatedRuleCount > 0 && <span className="badge badge-referrals" title={`${relatedRuleCount} relationship rule(s)`}>Link:{relatedRuleCount}</span>}
@@ -213,13 +221,14 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
             </button>
             <button
               className={`lock-btn ${locked ? "locked" : ""}`}
+              disabled={isTeacherFixed}
               draggable={false}
               onMouseDown={suppressCardDrag}
               onPointerDown={suppressCardDrag}
               onDragStart={suppressCardDrag}
               onClick={toggleLock}
-              title={locked ? "Unlock student (allow auto-placement)" : "Lock student (preserve placement)"}
-              aria-label={locked ? "Unlock" : "Lock"}
+              title={isTeacherFixed ? "Assigned teacher students stay locked until the assigned teacher is cleared in Edit." : locked ? "Unlock student (allow auto-placement)" : "Lock student (preserve placement)"}
+              aria-label={isTeacherFixed ? "Teacher-fixed lock" : locked ? "Unlock" : "Lock"}
             >
               {locked ? "\uD83D\uDD12" : "\uD83D\uDD13"}
             </button>
@@ -395,7 +404,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                   <hr className="tt-sep" />
                   <div className="tt-row">
                     <span className="tt-label">Placement</span>
-                    <span>Locked</span>
+                    <span>{isTeacherFixed ? `Teacher-fixed (${student.preassignedTeacher})` : "Locked"}</span>
                   </div>
                 </>
               )}
