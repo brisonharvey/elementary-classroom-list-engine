@@ -10,6 +10,8 @@ import { SummaryPanel } from "./components/SummaryPanel"
 import { SnapshotManager } from "./components/SnapshotManager"
 import { RelationshipManager } from "./components/RelationshipManager"
 import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
+import { QuickStartGuide } from "./components/QuickStartGuide"
+import { ClassroomDeleteDialog } from "./components/ClassroomDeleteDialog"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 import { getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "./utils/scoring"
 import { getGradeTagSupportLoadSummary, TAG_SUPPORT_LOAD_CATEGORY_LABELS, TagSupportLoadCategory } from "./utils/tagSupportLoad"
@@ -45,6 +47,9 @@ export default function App() {
   const [activePanel, setActivePanel] = useState<SlidePanel>("none")
   const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false)
   const [bottomPanelState, setBottomPanelState] = useState<"expanded" | "minimized" | "hidden">("hidden")
+  const [quickStartDismissed, setQuickStartDismissed] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedDeleteClassroomId, setSelectedDeleteClassroomId] = useState<string>("")
   const showSummaryButton = hasStudents && !summaryDrawerOpen
   const showSnapshotsButton = hasStudents && bottomPanelState === "hidden"
   const showFloatingActions = showSummaryButton || showSnapshotsButton
@@ -76,24 +81,20 @@ export default function App() {
       return state.showTeacherNames ? classroom.teacherName?.trim() || fallback : fallback
     })
 
-  const selectClassroomForDeletion = () => {
-    const rooms = state.classrooms.filter((classroom) => classroom.grade === state.activeGrade)
-    if (rooms.length === 0) return null
-    if (rooms.length === 1) return rooms[0]
+  const hasTeachers = state.teacherProfiles.length > 0
+  const showQuickStart = !quickStartDismissed && (!hasStudents || !hasTeachers)
+  const deleteCandidates = state.classrooms.filter((classroom) => classroom.grade === state.activeGrade)
 
-    const options = rooms
-      .map((room, index) => `${index + 1}. ${room.label}${room.teacherName.trim() ? ` - ${room.teacherName.trim()}` : ""} (${room.students.length}/${room.maxSize})`)
-      .join("\n")
-    const rawChoice = window.prompt(`Delete which Grade ${state.activeGrade} classroom?\n\n${options}\n\nEnter the room number or label.`)
-    if (!rawChoice) return null
+  const openDeleteDialog = () => {
+    if (deleteCandidates.length === 0) return
+    setSelectedDeleteClassroomId(deleteCandidates[0].id)
+    setDeleteDialogOpen(true)
+  }
 
-    const trimmedChoice = rawChoice.trim().toLowerCase()
-    const numericChoice = Number.parseInt(trimmedChoice, 10)
-    if (Number.isFinite(numericChoice) && numericChoice >= 1 && numericChoice <= rooms.length) {
-      return rooms[numericChoice - 1]
-    }
-
-    return rooms.find((room) => room.label.trim().toLowerCase() === trimmedChoice) ?? null
+  const confirmDeleteClassroom = () => {
+    if (!selectedDeleteClassroomId) return
+    dispatch({ type: "DELETE_CLASSROOM", payload: { classroomId: selectedDeleteClassroomId, moveToUnassigned: true } })
+    setDeleteDialogOpen(false)
   }
 
   return (
@@ -116,14 +117,8 @@ export default function App() {
           <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: "ADD_CLASSROOM", payload: { grade: state.activeGrade } })}>Add Classroom</button>
           <button
             className="btn btn-warning btn-sm"
-            onClick={() => {
-              const room = selectClassroomForDeletion()
-              if (!room) return
-              const moveToUnassigned = room.students.length > 0 && window.confirm("Room has students. Move them to Unassigned and delete?")
-              if (room.students.length === 0 || moveToUnassigned) {
-                dispatch({ type: "DELETE_CLASSROOM", payload: { classroomId: room.id, moveToUnassigned: true } })
-              }
-            }}
+            onClick={openDeleteDialog}
+            disabled={deleteCandidates.length === 0}
           >Delete Classroom</button>
           <button className={`btn btn-sm ${activePanel === "rules" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "rules" ? "none" : "rules"))}>No-contact Manager</button>
           <button className={`btn btn-sm ${activePanel === "settings" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "settings" ? "none" : "settings"))}>Settings</button>
@@ -131,9 +126,26 @@ export default function App() {
       </div>
 
       <div className="controls-row">
-        <ControlBar />
+        <ControlBar
+          onOpenImport={() => setActivePanel("import")}
+          onOpenRules={() => setActivePanel("rules")}
+          onOpenSettings={() => setActivePanel("settings")}
+          onShowSummary={() => setSummaryDrawerOpen(true)}
+        />
         <WeightSliders />
       </div>
+
+      {showQuickStart && (
+        <QuickStartGuide
+          hasStudents={hasStudents}
+          hasTeachers={hasTeachers}
+          activeGrade={state.activeGrade}
+          gradeRooms={gradeClassrooms}
+          onOpenImport={() => setActivePanel("import")}
+          onOpenSettings={() => setActivePanel("settings")}
+          onDismiss={() => setQuickStartDismissed(true)}
+        />
+      )}
 
       {hasStudents && (
         <details className="student-card-key">
@@ -235,6 +247,16 @@ export default function App() {
         {activePanel === "rules" && <RelationshipManager onClose={() => setActivePanel("none")} />}
         {activePanel === "settings" && <GradeSettingsPanel onClose={() => setActivePanel("none")} />}
       </aside>
+      {deleteDialogOpen && (
+        <ClassroomDeleteDialog
+          classrooms={deleteCandidates}
+          activeGrade={state.activeGrade}
+          selectedId={selectedDeleteClassroomId}
+          onSelect={setSelectedDeleteClassroomId}
+          onCancel={() => setDeleteDialogOpen(false)}
+          onConfirm={confirmDeleteClassroom}
+        />
+      )}
     </div>
   )
 }

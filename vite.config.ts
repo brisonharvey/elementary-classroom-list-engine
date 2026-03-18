@@ -8,10 +8,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/xlsx')) return 'xlsx'
+          if (id.includes('node_modules/exceljs')) return 'excel-import'
           if (id.includes('src/features/csv-import') || id.includes('src/lib/csv/spreadsheet')) return 'csv-import'
         },
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
 })

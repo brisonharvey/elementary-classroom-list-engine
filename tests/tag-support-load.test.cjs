@@ -8,7 +8,7 @@ const {
 } = require("./.compiled/src/utils/tagSupportLoad.js")
 const { getTagSupportLoadPenalty, getStudentSupportLoad, scoreStudentForRoom, computeRoomStats } = require("./.compiled/src/utils/scoring.js")
 const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
-const { buildPlacementCSV } = require("./.compiled/src/utils/exportUtils.js")
+const { buildPlacementCSV, buildGradePlacementPrintHtml } = require("./.compiled/src/utils/exportUtils.js")
 const {
   parseStudentCSVWithMapping,
   generateStudentTemplateCSV,
@@ -359,6 +359,29 @@ const tests = [
       const row = csv.split("\n")[1].split(",")
       assert.equal(row[13], "Reading - Tier 2; Math - Tier 3")
       assert.equal(row[14], "Check-In - Tier 2")
+    },
+  },
+  {
+    name: "grade print export includes a card key and omits teacher-rating language",
+    run: () => {
+      const student = createStudent({
+        firstName: "Ada",
+        lastName: "Stone",
+        tags: ["Needs strong routine", "Needs reassurance"],
+        preassignedTeacher: "Ms. Rivera",
+      })
+      const html = buildGradePlacementPrintHtml(
+        [createClassroom("1-A", [student])],
+        [student],
+        "1",
+        true
+      )
+
+      assert.match(html, /Teacher Packet Key/)
+      assert.match(html, /Student Characteristics Key/)
+      assert.match(html, /Teacher Fixed/)
+      assert.equal(/Poor Fit/.test(html), false)
+      assert.equal(/Instructional Expertise/i.test(html), false)
     },
   },
   {

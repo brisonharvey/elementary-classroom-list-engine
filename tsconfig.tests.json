@@ -15,6 +15,7 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
+    "src/types/exceljs-bare.d.ts",
     "src/types/index.ts",
     "src/utils/classroomInit.ts",
     "src/utils/coTeach.ts",

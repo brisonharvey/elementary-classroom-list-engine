@@ -1,5 +1,3 @@
-import * as XLSX from "xlsx"
-
 export interface RawSheetData {
   name: string
   rows: string[][]
@@ -109,15 +107,36 @@ function padRows(rows: string[][]): string[][] {
 
 export async function readSpreadsheetFile(file: File): Promise<RawSheetData[]> {
   if (file.name.toLowerCase().endsWith(".xlsx")) {
+    const excelModule = await import("exceljs/dist/exceljs.bare.min.js")
+    const Workbook = (excelModule as { Workbook?: typeof import("exceljs")["Workbook"] }).Workbook
+    if (!Workbook) {
+      throw new Error("Excel import library failed to load.")
+    }
     const buffer = await file.arrayBuffer()
-    const workbook = XLSX.read(buffer, { type: "array" })
+    const workbook = new Workbook()
+    await workbook.xlsx.load(buffer)
 
-    return workbook.SheetNames.map((name) => {
-      const sheet = workbook.Sheets[name]
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: "" }) as unknown[][]
+    return workbook.worksheets.map((worksheet) => {
+      const rows: string[][] = []
+      const maxColumnCount = worksheet.columnCount || 0
+
+      for (let rowIndex = 1; rowIndex <= worksheet.rowCount; rowIndex++) {
+        const row = worksheet.getRow(rowIndex)
+        const cells: string[] = []
+
+        for (let columnIndex = 1; columnIndex <= maxColumnCount; columnIndex++) {
+          const cell = row.getCell(columnIndex)
+          const text = typeof cell.text === "string" ? cell.text : ""
+          const value = text || stringifyCell(cell.value)
+          cells.push(stringifyCell(value))
+        }
+
+        rows.push(cells)
+      }
+
       return {
-        name,
-        rows: rows.map((row) => row.map(stringifyCell)),
+        name: worksheet.name,
+        rows,
       }
     })
   }

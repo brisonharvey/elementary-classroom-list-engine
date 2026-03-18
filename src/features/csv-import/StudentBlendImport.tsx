@@ -20,6 +20,7 @@ import {
 import { CsvValidationIssue } from "../../types/csvImport"
 import { Student } from "../../types"
 import { createDefaultPreprocessConfig, getPreprocessDefaults } from "./preprocess"
+import { collectAssignedTeacherPlacementIssues } from "../../utils/teacherAssignments"
 
 type Step = "upload" | "configure" | "review"
 type SourceKind = "master" | "supplement"
@@ -38,7 +39,9 @@ type SourceConfig = {
 
 type ReviewState = {
   studentsToImport: Student[]
+  newCount: number
   updateCount: number
+  teacherAssignmentIssueCount: number
   issues: CsvValidationIssue[]
   skipped: number
 }
@@ -231,10 +234,19 @@ export function StudentBlendImport() {
     const parsed = parseStudentCSVWithMapping(blend.csvText, EXACT_MAPPING)
     const existingIds = new Set(state.allStudents.map((student) => student.id))
     const updateCount = parsed.students.filter((student) => existingIds.has(student.id)).length
+    const nextRoster = [
+      ...state.allStudents.filter((student) => !parsed.students.some((importedStudent) => importedStudent.id === student.id)),
+      ...parsed.students,
+    ]
+    const teacherAssignmentIssueCount = Object.keys(
+      collectAssignedTeacherPlacementIssues(nextRoster, state.classrooms)
+    ).length
 
     setReview({
       studentsToImport: parsed.students,
+      newCount: parsed.students.length - updateCount,
       updateCount,
+      teacherAssignmentIssueCount,
       issues: [...blend.issues, ...parsed.issues],
       skipped: parsed.skipped,
     })
@@ -256,7 +268,7 @@ export function StudentBlendImport() {
     dispatch({ type: "LOAD_STUDENTS", payload: review.studentsToImport })
     reset({
       type: "success",
-      message: `Imported ${review.studentsToImport.length} student${review.studentsToImport.length === 1 ? "" : "s"} from the blended roster.${review.updateCount > 0 ? ` Updated ${review.updateCount} existing record${review.updateCount === 1 ? "" : "s"}.` : ""}`,
+      message: `Imported ${review.studentsToImport.length} student${review.studentsToImport.length === 1 ? "" : "s"} from the blended roster.${review.updateCount > 0 ? ` Updated ${review.updateCount} existing record${review.updateCount === 1 ? "" : "s"}.` : ""}${review.teacherAssignmentIssueCount > 0 ? ` ${review.teacherAssignmentIssueCount} teacher-fixed student${review.teacherAssignmentIssueCount === 1 ? "" : "s"} still need matching classrooms.` : ""}`,
     })
   }
 
@@ -528,8 +540,16 @@ export function StudentBlendImport() {
               <strong>{review.studentsToImport.length}</strong>
             </div>
             <div className="csv-import-review-card">
+              <span className="csv-import-review-label">Brand-new students</span>
+              <strong>{review.newCount}</strong>
+            </div>
+            <div className="csv-import-review-card">
               <span className="csv-import-review-label">Existing students updated</span>
               <strong>{review.updateCount}</strong>
+            </div>
+            <div className="csv-import-review-card">
+              <span className="csv-import-review-label">Teacher-fixed issues</span>
+              <strong>{review.teacherAssignmentIssueCount}</strong>
             </div>
             <div className="csv-import-review-card">
               <span className="csv-import-review-label">Warnings</span>
@@ -553,6 +573,11 @@ export function StudentBlendImport() {
                   <p>These include unmatched supplemental rows plus canonical student validation results.</p>
                 </div>
               </div>
+              {review.teacherAssignmentIssueCount > 0 && (
+                <div className="csv-import-note">
+                  Import health check: {review.teacherAssignmentIssueCount} teacher-fixed student{review.teacherAssignmentIssueCount === 1 ? "" : "s"} will still need a matching classroom after import.
+                </div>
+              )}
               <ul className="csv-import-issue-list">
                 {review.issues.map((issue, index) => (
                   <li key={`${issue.severity}-${index}`} className={`csv-import-issue csv-import-issue-${issue.severity}`}>

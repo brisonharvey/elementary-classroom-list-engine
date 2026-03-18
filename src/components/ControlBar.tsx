@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useApp } from "../store/AppContext"
-import { buildPlacementCSV, downloadFile } from "../utils/exportUtils"
+import { buildPlacementCSV, downloadFile, openGradePlacementPdf } from "../utils/exportUtils"
 
-export function ControlBar() {
+interface ControlBarProps {
+  onOpenImport: () => void
+  onOpenRules: () => void
+  onOpenSettings: () => void
+  onShowSummary: () => void
+}
+
+export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSummary }: ControlBarProps) {
   const { state, dispatch } = useApp()
   const [showWarnings, setShowWarnings] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
@@ -58,6 +65,10 @@ export function ControlBar() {
     downloadFile(csv, `placement-all-grades.csv`)
   }
 
+  const exportGradePdf = () => {
+    openGradePlacementPdf(state.classrooms, state.allStudents, state.activeGrade, state.showTeacherNames)
+  }
+
   const getWarningPos = (): React.CSSProperties => {
     if (!barRef.current) return { position: "fixed", top: 200, left: 20, zIndex: 1000 }
     const rect = barRef.current.getBoundingClientRect()
@@ -105,6 +116,14 @@ export function ControlBar() {
           </button>
           <button
             className="btn btn-ghost"
+            onClick={exportGradePdf}
+            disabled={!hasStudents}
+            title="Open a print-ready PDF layout for the current grade"
+          >
+            Print Grade PDF
+          </button>
+          <button
+            className="btn btn-ghost"
             onClick={exportAll}
             disabled={!hasStudents}
             title="Export all grades to CSV"
@@ -147,6 +166,12 @@ export function ControlBar() {
                 <li key={i}>{w}</li>
               ))}
             </ul>
+            <div className="warnings-actions">
+              <button className="btn btn-ghost btn-sm" onClick={onShowSummary}>Show Summary</button>
+              <button className="btn btn-ghost btn-sm" onClick={onOpenRules}>Open Rules</button>
+              <button className="btn btn-ghost btn-sm" onClick={onOpenImport}>Open Import</button>
+              <button className="btn btn-ghost btn-sm" onClick={onOpenSettings}>Open Settings</button>
+            </div>
           </div>,
           document.body
         )}

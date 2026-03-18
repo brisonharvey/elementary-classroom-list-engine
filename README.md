@@ -7,6 +7,7 @@ It supports:
 - student and teacher CSV import with column mapping
 - CSV and XLSX imports, including sheet selection and basic header-row preprocessing
 - student re-imports that update existing roster records by `id`
+- a guided setup panel for first-time roster building
 - teacher-fit aware auto-placement
 - hard no-contact rules and soft keep-together rules
 - co-teach coverage checks
@@ -14,19 +15,28 @@ It supports:
 - lockable placements
 - grade snapshots
 - CSV export for one grade or all grades
+- print-ready per-grade PDF packet export with a student-card key
 
 ## App workflow
 
-1. Import students.
-2. Import teachers.
-3. Choose the active grade.
-4. Review classrooms, room sizes, co-teach coverage, and relationship rules.
-5. Run auto-placement for that grade.
-6. Review warnings and the grade summary.
-7. Drag students manually as needed.
-8. Lock any placements you want preserved.
-9. Save a snapshot.
-10. Export the final roster.
+1. Follow the guided setup panel if you are starting from scratch.
+2. Import students.
+3. Import teachers.
+4. Choose the active grade.
+5. Review classrooms, room sizes, co-teach coverage, and relationship rules.
+6. Run auto-placement for that grade.
+7. Review warnings and the grade summary.
+8. Drag students manually as needed.
+9. Lock any placements you want preserved.
+10. Save a snapshot.
+11. Export the final roster.
+
+## Admin-friendly workflow additions
+
+- The import review screen now separates new students, updated students, warnings, and teacher-fixed issues.
+- Placement warnings include quick actions so staff can jump straight to import, rules, settings, or the summary drawer.
+- `Delete Classroom` now opens a selection dialog instead of deleting a room blindly.
+- `Print Grade PDF` opens a polished print view designed to keep one classroom per page when possible, followed by a final key page.
 
 ## Placement model
 
@@ -89,6 +99,7 @@ Important behavior:
 - Student re-imports refresh existing students when the same `id` appears again.
 - `assignedTeacher` creates a teacher-fixed placement when the matching classroom is available.
 - If a teacher-fixed student cannot be seated in the matching classroom, the app leaves that student unresolved and flags the reason instead of placing them elsewhere.
+- XLSX workbook reading is powered by `exceljs`, while the app’s grouped-header and preprocessing logic remains the same.
 - Kindergarten uses `briganceReadiness` in placement scoring instead of MAP/i-Ready.
 - `academicTier` and `behaviorTier` can be numeric or note text that contains one or more `Tier X` values.
 - `studentCharacteristics` accepts the current supported labels and also tolerates legacy aliases.

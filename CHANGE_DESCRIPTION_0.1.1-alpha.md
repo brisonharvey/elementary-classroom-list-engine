@@ -44,6 +44,7 @@ It also adds administrator-facing documentation and updates packaged release met
 - Updated student card presentation and supporting UI to make placement details easier to review
 - Refined classroom and settings panel interactions for day-to-day roster work
 - Added more regression coverage for student CRUD behavior and import matching
+- Swapped XLSX workbook parsing from `xlsx` to `exceljs` and cleared the prior npm audit findings
 
 ## Documentation Updates
 

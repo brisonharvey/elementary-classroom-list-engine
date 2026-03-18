@@ -10,12 +10,14 @@ You can:
 
 - import students and teachers from separate files
 - import either CSV or XLSX files
+- follow a built-in guided setup panel
 - auto-place one grade at a time
 - manage no-contact and keep-together rules
 - drag students manually between rooms
 - lock students in place
 - compare versions with snapshots
 - export final rosters to CSV
+- open a print-ready PDF packet for one grade level
 
 Your data is saved locally on the current computer.
 
@@ -40,6 +42,7 @@ Important reminders:
 - `Import CSV` opens the student and teacher import panel.
 - `Grade` selector changes the active grade.
 - `Auto-Place Grade`, `Reset Grade`, and export buttons are in the top controls.
+- the guided setup panel appears near the top when the app still needs student or teacher imports
 - `Unassigned` on the left holds students not currently in a room.
 - Classroom columns fill the center workspace.
 - `Show Summary` opens a grade summary drawer.
@@ -203,5 +206,8 @@ Use export when you are ready to share or archive results:
 
 - `Export Grade X`
 - `Export All`
+- `Print Grade PDF`
 
-Exports are CSV reports, not full backups of app state.
+`Print Grade PDF` opens a print view that is meant for teacher sharing. It hides teacher-rating details, includes a student-card key, and tries to keep one classroom per page.
+
+Exports are reports, not full backups of app state.

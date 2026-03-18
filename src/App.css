@@ -237,6 +237,92 @@ html, body, #root {
   min-height: 0;
 }
 
+.quick-start-guide {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.8fr);
+  gap: 16px;
+  margin: 10px 16px 0;
+  padding: 18px 20px;
+  border: 1px solid #d7e6f3;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f7fbff 0%, #ffffff 58%);
+  box-shadow: var(--shadow);
+}
+
+.quick-start-eyebrow {
+  display: inline-flex;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+  font-weight: 700;
+  color: #4d6b86;
+}
+
+.quick-start-copy h2 {
+  font-size: 22px;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  color: #16324f;
+}
+
+.quick-start-copy p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5c748d;
+}
+
+.quick-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.quick-start-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-start-check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #d7e6f3;
+  background: rgba(255, 255, 255, 0.8);
+  color: #35536e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quick-start-check.done {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.quick-start-check-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.quick-start-check.done .quick-start-check-mark {
+  background: #dcfce7;
+  color: #166534;
+}
+
 /* ── Bottom panels ── */
 .bottom-panels {
   display: flex;
@@ -621,6 +707,13 @@ html, body, #root {
   padding-left: 16px;
   color: #78350f;
   line-height: 1.5;
+}
+
+.warnings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 /* ══════════════════════════════════════════
@@ -1821,6 +1914,32 @@ input { font-family: inherit; }
   font-size: 11px;
 }
 
+.delete-classroom-modal {
+  max-width: 760px;
+}
+
+.delete-classroom-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.delete-classroom-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.delete-classroom-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
 .settings-section {
   display: flex;
   flex-direction: column;
@@ -2479,6 +2598,7 @@ input { font-family: inherit; }
 }
 
 @media (max-width: 900px) {
+  .quick-start-guide,
   .relationship-manager-grid {
     grid-template-columns: 1fr;
   }
@@ -2489,6 +2609,10 @@ input { font-family: inherit; }
 
   .relationship-item-actions {
     justify-content: flex-start;
+  }
+
+  .delete-classroom-list {
+    grid-template-columns: 1fr;
   }
 
   .student-modal-shell {

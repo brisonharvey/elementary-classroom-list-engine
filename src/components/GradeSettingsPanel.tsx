@@ -361,6 +361,10 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
       </div>
 
       <div className="settings-panel-note">
+        Most schools can stay close to the defaults here. Start with room limits only, then change formula weights only if you see a repeated pattern you need to correct.
+      </div>
+
+      <div className="settings-panel-note">
         Use <strong>0</strong> to turn off a soft rule or formula penalty.
       </div>
 
