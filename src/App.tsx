@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useState } from "react"
 import { useApp } from "./store/AppContext"
 import { DragProvider } from "./store/DragContext"
 import { GradeSelector } from "./components/GradeSelector"
@@ -12,9 +12,9 @@ import { RelationshipManager } from "./components/RelationshipManager"
 import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { QuickStartGuide } from "./components/QuickStartGuide"
 import { ClassroomDeleteDialog } from "./components/ClassroomDeleteDialog"
+import { StudentCardKey } from "./components/StudentCardKey"
 import { getClassroomsForGrade } from "./utils/classroomInit"
-import { getRoomMathAvg, getRoomReadingAvg, getRoomSupportLoad } from "./utils/scoring"
-import { getGradeTagSupportLoadSummary, TAG_SUPPORT_LOAD_CATEGORY_LABELS, TagSupportLoadCategory } from "./utils/tagSupportLoad"
+import { getGradeReviewWarnings } from "./utils/gradeReview"
 
 const CsvImportPanel = lazy(async () => {
   const module = await import("./features/csv-import")
@@ -58,32 +58,25 @@ export default function App() {
     [state.classrooms, state.activeGrade]
   )
   const settings = state.gradeSettings[state.activeGrade]
-  const range = (arr: number[]) => (arr.length < 2 ? 0 : Math.max(...arr) - Math.min(...arr))
-  const readingImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomReadingAvg(classroom))) > 0.75
-  const mathImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomMathAvg(classroom))) > 0.75
-  const supportImbalance = range(gradeClassrooms.filter((classroom) => classroom.students.length > 0).map((classroom) => getRoomSupportLoad(classroom))) > 4
-  const tagSummary = useMemo(() => getGradeTagSupportLoadSummary(gradeClassrooms, state.activeGrade), [gradeClassrooms, state.activeGrade])
-  const tagSupportImbalance = tagSummary.rangeTotal >= 6
-  const worstTagCategory = useMemo(() => {
-    const categories = Object.keys(tagSummary.rangeByCategory) as TagSupportLoadCategory[]
-    return categories.sort((a, b) => tagSummary.rangeByCategory[b] - tagSummary.rangeByCategory[a])[0] ?? "behavioral"
-  }, [tagSummary.rangeByCategory])
-  const categoryTagImbalance = tagSummary.rangeByCategory[worstTagCategory] >= 4
-  const isKindergarten = state.activeGrade === "K"
-  const genderWarningLabels = gradeClassrooms
-    .filter((classroom) => {
-      const maleCount = classroom.students.filter((student) => student.gender === "M").length
-      const femaleCount = classroom.students.filter((student) => student.gender === "F").length
-      return Math.abs(maleCount - femaleCount) > settings.genderBalanceTolerance
-    })
-    .map((classroom) => {
-      const fallback = `${classroom.grade}-${classroom.label}`
-      return state.showTeacherNames ? classroom.teacherName?.trim() || fallback : fallback
-    })
+  const gradeWarnings = useMemo(
+    () => getGradeReviewWarnings(gradeClassrooms, state.activeGrade, settings, state.showTeacherNames),
+    [gradeClassrooms, settings, state.activeGrade, state.showTeacherNames]
+  )
 
   const hasTeachers = state.teacherProfiles.length > 0
   const showQuickStart = !quickStartDismissed && (!hasStudents || !hasTeachers)
   const deleteCandidates = state.classrooms.filter((classroom) => classroom.grade === state.activeGrade)
+
+  useEffect(() => {
+    if (!hasStudents && !hasTeachers) {
+      setQuickStartDismissed(false)
+      setActivePanel("none")
+      setSummaryDrawerOpen(false)
+      setBottomPanelState("hidden")
+      setDeleteDialogOpen(false)
+      setSelectedDeleteClassroomId("")
+    }
+  }, [hasStudents, hasTeachers])
 
   const openDeleteDialog = () => {
     if (deleteCandidates.length === 0) return
@@ -148,43 +141,14 @@ export default function App() {
       )}
 
       {hasStudents && (
-        <details className="student-card-key">
-          <summary className="student-card-key-summary">Student Card Key</summary>
-          <div className="student-card-key-items" aria-label="Student card key">
-            <span className="student-card-key-item"><span className="badge badge-gender badge-f">F</span> Gender</span>
-            <span className="student-card-key-item"><span className="badge badge-sped badge-iep">IEP</span> Special education status</span>
-            <span className="student-card-key-item"><span className="badge badge-tier tier-2">ACA 2</span> Academic tier</span>
-            <span className="student-card-key-item"><span className="badge badge-tier tier-2">SEB 2</span> Social-emotional / behavior tier</span>
-            <span className="student-card-key-item"><span className="badge badge-map">MAP R:45</span> MAP Reading</span>
-            <span className="student-card-key-item"><span className="badge badge-map">MAP M:48</span> MAP Math</span>
-            <span className="student-card-key-item"><span className="badge badge-iready">IR:Mid 2</span> iReady Reading level</span>
-            <span className="student-card-key-item"><span className="badge badge-iready">IM:Late 1</span> iReady Math level</span>
-            <span className="student-card-key-item"><span className="badge badge-coteach-total">CT:60</span> Total co-teach minutes</span>
-            <span className="student-card-key-item"><span className="badge badge-coteach badge-coteach-reading">R:30</span> Co-teach area and minutes</span>
-            <span className="student-card-key-item"><span className="badge badge-tags">Chars:3</span> Student characteristics count</span>
-            <span className="student-card-key-item"><span className="badge badge-poor-fit">Poor Fit</span> Teacher fit warning</span>
-          </div>
-        </details>
+        <StudentCardKey />
       )}
 
-      {(readingImbalance || mathImbalance || supportImbalance || tagSupportImbalance || categoryTagImbalance || genderWarningLabels.length > 0) && (
+      {gradeWarnings.length > 0 && (
         <div className="main-warnings-row">
-          {genderWarningLabels.length > 0 && <div className="warning-chip">Gender imbalance beyond +/-{settings.genderBalanceTolerance}: {genderWarningLabels.join(", ")}</div>}
-          {isKindergarten ? (
-            readingImbalance && <div className="warning-chip">Brigance spread across classrooms</div>
-          ) : (
-            <>
-              {readingImbalance && <div className="warning-chip">Reading level spread across classrooms</div>}
-              {mathImbalance && <div className="warning-chip">Math level spread across classrooms</div>}
-            </>
-          )}
-          {supportImbalance && <div className="warning-chip">Support load imbalanced across classrooms</div>}
-          {tagSupportImbalance && <div className="warning-chip">Characteristic support load range is {tagSummary.rangeTotal.toFixed(1)} across classrooms</div>}
-          {categoryTagImbalance && (
-            <div className="warning-chip">
-              {TAG_SUPPORT_LOAD_CATEGORY_LABELS[worstTagCategory]} characteristic load is concentrated in one room group ({tagSummary.rangeByCategory[worstTagCategory].toFixed(1)} spread)
-            </div>
-          )}
+          {gradeWarnings.map((warning) => (
+            <div key={warning.key} className="warning-chip">{warning.label}</div>
+          ))}
         </div>
       )}
 

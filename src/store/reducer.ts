@@ -433,14 +433,12 @@ export function reducer(state: AppState, action: Action): AppState {
 
       const relationshipRules = state.relationshipRules.filter((rule) => !rule.studentIds.includes(studentId))
 
-      return {
+      return withTeacherAssignmentDiagnostics({
         ...state,
         allStudents,
         classrooms,
         relationshipRules,
-        unresolvedReasons: {},
-        placementWarnings: [],
-      }
+      })
     }
     case "SET_ACTIVE_GRADE":
       return { ...state, activeGrade: action.payload }
@@ -632,14 +630,12 @@ export function reducer(state: AppState, action: Action): AppState {
               ])
         : state.relationshipRules
 
-      return {
+      return withTeacherAssignmentDiagnostics({
         ...state,
         allStudents,
         classrooms,
         relationshipRules,
-        unresolvedReasons: {},
-        placementWarnings: [],
-      }
+      })
     }
     case "DELETE_NO_CONTACT_PAIR": {
       const pair = normalizePair(action.payload.studentIds)
@@ -651,14 +647,12 @@ export function reducer(state: AppState, action: Action): AppState {
         return existingPair[0] !== pair[0] || existingPair[1] !== pair[1]
       })
 
-      return {
+      return withTeacherAssignmentDiagnostics({
         ...state,
         allStudents,
         classrooms,
         relationshipRules,
-        unresolvedReasons: {},
-        placementWarnings: [],
-      }
+      })
     }
     case "UPDATE_GRADE_SETTINGS":
       return {

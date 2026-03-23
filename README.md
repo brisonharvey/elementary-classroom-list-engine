@@ -37,6 +37,7 @@ It supports:
 - Placement warnings include quick actions so staff can jump straight to import, rules, settings, or the summary drawer.
 - `Delete Classroom` now opens a selection dialog instead of deleting a room blindly.
 - `Print Grade PDF` opens a polished print view designed to keep one classroom per page when possible, followed by a final key page.
+- `Clear All` now returns the app to a clean first-run UI state, including the guided setup panel.
 
 ## Placement model
 
@@ -99,6 +100,7 @@ Important behavior:
 - Student re-imports refresh existing students when the same `id` appears again.
 - `assignedTeacher` creates a teacher-fixed placement when the matching classroom is available.
 - If a teacher-fixed student cannot be seated in the matching classroom, the app leaves that student unresolved and flags the reason instead of placing them elsewhere.
+- Teacher-fixed diagnostics stay visible after related student or rule edits, so unresolved placements do not silently disappear from review.
 - XLSX workbook reading is powered by `exceljs`, while the app’s grouped-header and preprocessing logic remains the same.
 - Kindergarten uses `briganceReadiness` in placement scoring instead of MAP/i-Ready.
 - `academicTier` and `behaviorTier` can be numeric or note text that contains one or more `Tier X` values.

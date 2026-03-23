@@ -592,7 +592,7 @@ export function StudentBlendImport() {
               <div className="csv-import-section-header">
                 <div>
                   <strong>Preview</strong>
-              <p>Showing the first blended students that will be imported or refreshed in the roster.</p>
+                  <p>Showing the first blended students that will be imported or refreshed in the roster.</p>
                 </div>
               </div>
               <div className="csv-import-preview-table-wrap">

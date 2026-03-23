@@ -36,6 +36,7 @@ It also adds administrator-facing documentation and updates packaged release met
 - Re-importing students by `id` now refreshes existing roster records while preserving classroom state where possible
 - Manual placement warnings now flag `Do Not Separate` conflicts and teacher-fixed overrides
 - Deleting a classroom now lets staff choose which active-grade room to remove
+- Teacher-fixed diagnostics now persist through student deletion and no-contact rule changes instead of disappearing until the next placement run
 
 ## UI and Workflow Updates
 
@@ -43,6 +44,7 @@ It also adds administrator-facing documentation and updates packaged release met
 - Expanded the no-contact manager into a fuller management view with better search and clearer rule presentation
 - Updated student card presentation and supporting UI to make placement details easier to review
 - Refined classroom and settings panel interactions for day-to-day roster work
+- Guided setup now resets cleanly after `Clear All`, making fresh roster starts less confusing for school staff
 - Added more regression coverage for student CRUD behavior and import matching
 - Swapped XLSX workbook parsing from `xlsx` to `exceljs` and cleared the prior npm audit findings
 

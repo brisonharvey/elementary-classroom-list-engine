@@ -35,7 +35,7 @@ Important reminders:
 - Each student needs a unique `id`.
 - Student re-imports update existing students when the same `id` appears again.
 - Teacher import does not move students by itself.
-- `Clear All` removes saved work and snapshots from this device.
+- `Clear All` removes saved work and snapshots from this device and brings back the guided setup panel.
 
 ## Main areas of the app
 
@@ -54,7 +54,7 @@ Important reminders:
 1. Import students.
 2. Import teachers.
 3. Choose the grade you want to work on.
-4. Review classrooms, room sizes, and co-teach coverage.
+4. Review classrooms, imported teacher names, room sizes, and co-teach coverage.
 5. Add no-contact or keep-together rules.
 6. Run auto-placement.
 7. Review warnings and the summary drawer.
@@ -166,6 +166,7 @@ The engine:
 
 Students with an `assignedTeacher` stay teacher-fixed.
 If the matching classroom is missing, full, or blocked by another hard rule, the app leaves that student unresolved and shows the reason.
+Those teacher-fixed warnings stay visible even if you later edit another student or relationship rule.
 
 Students that cannot be placed stay in `Unassigned` with reasons shown underneath.
 

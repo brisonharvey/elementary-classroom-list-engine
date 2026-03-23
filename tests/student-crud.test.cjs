@@ -187,6 +187,44 @@ const tests = [
     },
   },
   {
+    name: "student and rule edits preserve teacher-fixed diagnostics for other students",
+    run: () => {
+      const state = createState()
+      state.allStudents = [
+        createStudent(801, { firstName: "Locked", preassignedTeacher: "Ms. Rivera", locked: true }),
+        createStudent(802, { firstName: "Peer", noContactWith: [803] }),
+        createStudent(803, { firstName: "Other", noContactWith: [802] }),
+      ]
+      state.classrooms = [
+        createClassroom("1-A", [], { teacherName: "Ms. Stone" }),
+        createClassroom("1-B", []),
+      ]
+      state.relationshipRules = [
+        {
+          id: "rule-2",
+          type: "NO_CONTACT",
+          studentIds: [802, 803],
+          createdAt: 1,
+          grade: "1",
+        },
+      ]
+
+      const afterDelete = reducer(state, { type: "DELETE_STUDENT", payload: 802 })
+      assert.match(afterDelete.unresolvedReasons[801][0], /does not have a matching classroom/i)
+      assert.ok(afterDelete.placementWarnings.some((warning) => /Locked/.test(warning)))
+
+      const afterRuleDelete = reducer(state, {
+        type: "DELETE_NO_CONTACT_PAIR",
+        payload: {
+          grade: "1",
+          studentIds: [802, 803],
+        },
+      })
+      assert.match(afterRuleDelete.unresolvedReasons[801][0], /does not have a matching classroom/i)
+      assert.ok(afterRuleDelete.placementWarnings.some((warning) => /Locked/.test(warning)))
+    },
+  },
+  {
     name: "adding a student appends to the roster without auto-assigning a classroom",
     run: () => {
       const state = createState()
@@ -406,7 +444,6 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
-
 
 
 

@@ -19,10 +19,11 @@ export function QuickStartGuide({
   onOpenSettings,
   onDismiss,
 }: QuickStartGuideProps) {
+  const classroomsReviewed = hasTeachers && gradeRooms.some((room) => room.teacherName.trim())
   const checks = [
     { label: "Import students", done: hasStudents },
     { label: "Import teachers", done: hasTeachers },
-    { label: `Review Grade ${activeGrade} classrooms`, done: gradeRooms.length > 0 },
+    { label: `Review Grade ${activeGrade} classrooms`, done: classroomsReviewed },
   ]
 
   return (
@@ -31,7 +32,7 @@ export function QuickStartGuide({
         <span className="quick-start-eyebrow">Guided Setup</span>
         <h2>Start here for a low-stress roster build</h2>
         <p>
-          Follow these steps in order: import students, import teachers, check classroom sizes and co-teach coverage, then run auto-place for the grade you are working on.
+          Follow these steps in order: import students, import teachers, review the imported classrooms for size and co-teach coverage, then run auto-place for the grade you are working on.
         </p>
         <div className="quick-start-actions">
           <button className="btn btn-primary" onClick={onOpenImport}>Open Import</button>
@@ -50,4 +51,3 @@ export function QuickStartGuide({
     </section>
   )
 }
-
