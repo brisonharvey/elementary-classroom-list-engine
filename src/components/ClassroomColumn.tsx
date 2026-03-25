@@ -189,7 +189,10 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
       }
     }
 
-    dispatch({ type: "MOVE_STUDENT", payload: { studentId: drag.studentId, fromId: drag.fromId, toId: classroom.id } })
+    dispatch({
+      type: "MOVE_STUDENT",
+      payload: { studentId: drag.studentId, fromId: drag.fromId, toId: classroom.id, allowConstraintOverride: true },
+    })
     clearDrag()
   }
 
@@ -355,7 +358,6 @@ export const ClassroomColumn = memo(function ClassroomColumn({ classroom }: Clas
     </div>
   )
 })
-
 
 
 

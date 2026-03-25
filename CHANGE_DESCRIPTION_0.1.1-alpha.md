@@ -33,10 +33,17 @@ It also adds administrator-facing documentation and updates packaged release met
 - Teacher-fixed students now stay unresolved with explicit reasons when the matching classroom is missing, full, or blocked
 - Clearing a previously assigned teacher now unlocks the student correctly
 - Exports now fall back to a student's preassigned teacher when that student is still unassigned
+- Exports no longer leak internal classroom ids when a room has no teacher name yet
 - Re-importing students by `id` now refreshes existing roster records while preserving classroom state where possible
 - Manual placement warnings now flag `Do Not Separate` conflicts and teacher-fixed overrides
+- Reducer-level move validation now blocks cross-grade and over-capacity moves unless the UI has already confirmed an override
 - Deleting a classroom now lets staff choose which active-grade room to remove
 - Teacher-fixed diagnostics now persist through student deletion and no-contact rule changes instead of disappearing until the next placement run
+
+### Import validation and teacher sync fixes
+
+- Student and teacher imports now skip rows with invalid grades instead of silently coercing them to kindergarten
+- Teacher profile imports now preserve existing teacher-room matches by teacher name instead of reassigning rooms purely by file order
 
 ## UI and Workflow Updates
 

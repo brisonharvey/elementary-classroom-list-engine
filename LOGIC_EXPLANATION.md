@@ -108,13 +108,15 @@ Student import:
 
 - requires `id`, `grade`, `firstName`, and `lastName`
 - updates existing students when the same `id` is re-imported
+- skips rows with unrecognized grade values and reports them as import errors
 - can seed students into a matching teacher room using `assignedTeacher`
 - keeps teacher-fixed students unresolved when the matching room is unavailable instead of auto-placing them elsewhere
 - accepts `noContactWith` and `preferredWith` lists separated by commas, semicolons, pipes, or spaces
 
 Teacher import:
 
-- applies teachers in CSV order within each grade
+- preserves existing teacher-room matches by teacher name when possible
+- skips rows with unrecognized grade values and reports them as import errors
 - adds rooms when a grade imports more teachers than existing rooms
 - updates room teacher names without clearing current placements
 - supports XLSX sheet selection and header preprocessing before field mapping
@@ -138,5 +140,6 @@ They include:
 - relationship fields
 - assessments
 - demographics
+- assigned teacher names only when a room or roster record actually has one
 - staff notes
 - assigned teacher

@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict")
 
 const { reducer, initialState } = require("./.compiled/src/store/reducer.js")
-const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
+const { createDefaultGradeSettingsMap, syncClassroomsWithTeacherProfiles } = require("./.compiled/src/utils/classroomInit.js")
 const { buildPlacementCSV } = require("./.compiled/src/utils/exportUtils.js")
 const { runPlacement } = require("./.compiled/src/engine/placementEngine.js")
 const { getManualMoveWarnings, getManualUnassignedWarnings } = require("./.compiled/src/utils/constraints.js")
@@ -174,6 +174,15 @@ const tests = [
     },
   },
   {
+    name: "export leaves assigned teacher blank for unnamed rooms",
+    run: () => {
+      const student = createStudent(402, { firstName: "Nova" })
+      const csv = buildPlacementCSV([createClassroom("room-123", [student], { teacherName: "" })], [student], "1")
+      const row = csv.split("\n")[1].split(",")
+      assert.equal(row[row.length - 1], "")
+    },
+  },
+  {
     name: "deleting a student removes classroom placements, rules, and peer references",
     run: () => {
       const state = createState()
@@ -265,6 +274,75 @@ const tests = [
       assert.equal(next.classrooms[0].students.find((student) => student.id === 101).firstName, "Duplicate Alpha")
       assert.equal(next.classrooms.some((classroom) => classroom.students.some((student) => student.id === 303)), false)
       assert.equal(next.relationshipRules.length, 1)
+    },
+  },
+  {
+    name: "teacher sync preserves existing teacher-room matches when import order changes",
+    run: () => {
+      const classrooms = [
+        createClassroom("1-A", [createStudent(901, { firstName: "Ava" })], { teacherName: "Ms. Alpha" }),
+        createClassroom("1-B", [createStudent(902, { firstName: "Ben" })], { teacherName: "Ms. Beta" }),
+      ]
+
+      const synced = syncClassroomsWithTeacherProfiles(classrooms, [
+        {
+          id: "1:ms. beta",
+          grade: "1",
+          teacherName: "Ms. Beta",
+          characteristics: { structure: 3, regulationBehaviorSupport: 3, socialEmotionalSupport: 3, instructionalExpertise: 3 },
+        },
+        {
+          id: "1:ms. alpha",
+          grade: "1",
+          teacherName: "Ms. Alpha",
+          characteristics: { structure: 4, regulationBehaviorSupport: 4, socialEmotionalSupport: 4, instructionalExpertise: 4 },
+        },
+      ])
+
+      assert.equal(synced.find((room) => room.id === "1-A").teacherName, "Ms. Alpha")
+      assert.equal(synced.find((room) => room.id === "1-B").teacherName, "Ms. Beta")
+    },
+  },
+  {
+    name: "move student ignores cross-grade targets dispatched outside the drag UI",
+    run: () => {
+      const state = createState()
+      state.classrooms = [
+        createClassroom("1-A", [createStudent(101, { firstName: "Alpha" })]),
+        createClassroom("2-A", [], { grade: "2" }),
+      ]
+
+      const next = reducer(state, {
+        type: "MOVE_STUDENT",
+        payload: { studentId: 101, fromId: "1-A", toId: "2-A" },
+      })
+
+      assert.deepEqual(next.classrooms.find((room) => room.id === "1-A").students.map((student) => student.id), [101])
+      assert.deepEqual(next.classrooms.find((room) => room.id === "2-A").students, [])
+    },
+  },
+  {
+    name: "move student blocks full rooms unless override is explicitly allowed",
+    run: () => {
+      const state = createState()
+      state.classrooms = [
+        createClassroom("1-A", [createStudent(101, { firstName: "Alpha" })]),
+        createClassroom("1-B", [createStudent(103, { firstName: "Full" })], { maxSize: 1 }),
+      ]
+
+      const blocked = reducer(state, {
+        type: "MOVE_STUDENT",
+        payload: { studentId: 101, fromId: "1-A", toId: "1-B" },
+      })
+      assert.deepEqual(blocked.classrooms.find((room) => room.id === "1-A").students.map((student) => student.id), [101])
+      assert.deepEqual(blocked.classrooms.find((room) => room.id === "1-B").students.map((student) => student.id), [103])
+
+      const allowed = reducer(state, {
+        type: "MOVE_STUDENT",
+        payload: { studentId: 101, fromId: "1-A", toId: "1-B", allowConstraintOverride: true },
+      })
+      assert.deepEqual(allowed.classrooms.find((room) => room.id === "1-A").students, [])
+      assert.deepEqual(allowed.classrooms.find((room) => room.id === "1-B").students.map((student) => student.id).sort((a, b) => a - b), [101, 103])
     },
   },
   {
@@ -444,6 +522,5 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
-
 
 

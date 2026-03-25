@@ -98,6 +98,7 @@ Common optional columns:
 Important behavior:
 
 - Student re-imports refresh existing students when the same `id` appears again.
+- Student rows with unrecognized grade values are skipped with an import error instead of being forced into kindergarten.
 - `assignedTeacher` creates a teacher-fixed placement when the matching classroom is available.
 - If a teacher-fixed student cannot be seated in the matching classroom, the app leaves that student unresolved and flags the reason instead of placing them elsewhere.
 - Teacher-fixed diagnostics stay visible after related student or rule edits, so unresolved placements do not silently disappear from review.
@@ -120,7 +121,8 @@ Required columns:
 
 Important behavior:
 
-- Teacher rows are applied in CSV order within each grade.
+- Teacher imports preserve existing teacher-room matches by teacher name when possible, so reordering the file does not reshuffle already named classrooms.
+- Teacher rows with unrecognized grade values are skipped with an import error instead of being forced into kindergarten.
 - Importing more teachers than existing rooms automatically adds rooms.
 - Teacher profile scores are used internally for fit scoring and are hidden in the main UI after import.
 
@@ -157,6 +159,7 @@ Exported data includes:
 - staff notes
 
 Derived room metrics are not exported as extra columns.
+If a student is placed in a room with no teacher name, the exported `assignedTeacher` field stays blank unless the student also has a `preassignedTeacher`.
 
 ## Development
 

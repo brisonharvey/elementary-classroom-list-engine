@@ -137,6 +137,10 @@ export function getClassroomsForGrade(classrooms: Classroom[], grade: Grade): Cl
   return classrooms.filter((c) => c.grade === grade)
 }
 
+function normalizeTeacherName(name: string): string {
+  return name.trim().toLowerCase()
+}
+
 export function syncClassroomsWithTeacherProfiles(classrooms: Classroom[], teacherProfiles: TeacherProfile[]): Classroom[] {
   let next = classrooms.map((classroom) => ({ ...classroom, students: [...classroom.students] }))
 
@@ -144,23 +148,48 @@ export function syncClassroomsWithTeacherProfiles(classrooms: Classroom[], teach
     const gradeProfiles = teacherProfiles.filter((profile) => profile.grade === grade)
     if (gradeProfiles.length === 0) continue
 
-    let gradeRooms = getClassroomsForGrade(next, grade)
-    while (gradeRooms.length < gradeProfiles.length) {
-      next = [...next, createClassroom(grade, gradeRooms.length)]
-      gradeRooms = getClassroomsForGrade(next, grade)
+    const gradeRooms = getClassroomsForGrade(next, grade)
+    const matchedRoomIds = new Set<string>()
+    const assignments = new Map<string, string>()
+    const unmatchedProfiles: TeacherProfile[] = []
+
+    for (const profile of gradeProfiles) {
+      const exactRoom = gradeRooms.find(
+        (room) => !matchedRoomIds.has(room.id) && normalizeTeacherName(room.teacherName) === normalizeTeacherName(profile.teacherName)
+      )
+
+      if (exactRoom) {
+        matchedRoomIds.add(exactRoom.id)
+        assignments.set(exactRoom.id, profile.teacherName)
+        continue
+      }
+
+      unmatchedProfiles.push(profile)
     }
 
-    next = next.map((classroom) => {
-      if (classroom.grade !== grade) return classroom
-      const index = gradeRooms.findIndex((room) => room.id === classroom.id)
-      const teacherProfile = gradeProfiles[index]
-      return {
-        ...classroom,
-        teacherName: teacherProfile?.teacherName ?? "",
+    for (const profile of unmatchedProfiles) {
+      const blankRoom = gradeRooms.find((room) => !matchedRoomIds.has(room.id) && !room.teacherName.trim())
+      if (blankRoom) {
+        matchedRoomIds.add(blankRoom.id)
+        assignments.set(blankRoom.id, profile.teacherName)
+        continue
       }
-    })
+
+      const newRoom = createClassroom(grade, getClassroomsForGrade(next, grade).length)
+      matchedRoomIds.add(newRoom.id)
+      assignments.set(newRoom.id, profile.teacherName)
+      next = [...next, newRoom]
+    }
+
+    next = next.map((classroom) =>
+      classroom.grade !== grade || !assignments.has(classroom.id)
+        ? classroom
+        : {
+            ...classroom,
+            teacherName: assignments.get(classroom.id) ?? classroom.teacherName,
+          }
+    )
   }
 
   return next
 }
-

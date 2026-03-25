@@ -93,6 +93,7 @@ Helpful optional columns:
 Kindergarten tip:
 
 - Use `briganceReadiness` for kindergarten if you want readiness scores included in placement.
+- If a student row has an invalid grade label, the app skips that row and shows an import error instead of guessing.
 
 ## Teacher import
 
@@ -109,7 +110,8 @@ Required teacher columns:
 
 Teacher ratings are `1` to `5`.
 
-Teacher rows are applied in the order they appear in the file within each grade.
+Teacher imports try to preserve existing teacher-room matches by teacher name, so changing the row order does not normally rename filled classrooms.
+If a teacher row has an invalid grade label, the app skips that row and shows an import error.
 
 If you import an XLSX workbook, you can choose the sheet and adjust header-row preprocessing before mapping columns.
 
@@ -198,6 +200,7 @@ Student card actions:
 - teacher-fixed students stay locked until you clear `Assigned Teacher` in `Edit`
 
 Manual moves can show warnings before they are applied, including `Do Not Separate` soft-rule conflicts and teacher-fixed overrides.
+The app also blocks invalid reducer-level moves such as cross-grade drops or moves into full rooms unless the current drag flow has already confirmed an override.
 
 ## Snapshots and export
 
@@ -212,3 +215,4 @@ Use export when you are ready to share or archive results:
 `Print Grade PDF` opens a print view that is meant for teacher sharing. It hides teacher-rating details, includes a student-card key, and tries to keep one classroom per page.
 
 Exports are reports, not full backups of app state.
+If a room does not have a teacher name yet, exported `assignedTeacher` cells stay blank unless the student has an `assignedTeacher` value on the roster.

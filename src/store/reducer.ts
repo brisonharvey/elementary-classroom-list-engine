@@ -19,6 +19,7 @@ import {
 import { runPlacement } from "../engine/placementEngine"
 import { normalizeCoTeachMinutes } from "../utils/coTeach"
 import { collectAssignedTeacherPlacementIssues } from "../utils/teacherAssignments"
+import { checkHardConstraints } from "../utils/constraints"
 
 export type Action =
   | { type: "LOAD_STUDENTS"; payload: Student[] }
@@ -30,7 +31,7 @@ export type Action =
   | { type: "SET_WEIGHTS"; payload: Partial<Weights> }
   | { type: "SORT_CLASSROOMS_BY_LAST_NAME" }
   | { type: "AUTO_PLACE" }
-  | { type: "MOVE_STUDENT"; payload: { studentId: number; fromId: string | null; toId: string | null } }
+  | { type: "MOVE_STUDENT"; payload: { studentId: number; fromId: string | null; toId: string | null; allowConstraintOverride?: boolean } }
   | { type: "TOGGLE_LOCK"; payload: number }
   | { type: "UPDATE_CLASSROOM"; payload: Partial<Classroom> & { id: string } }
   | { type: "ADD_CLASSROOM"; payload: { grade: Grade } }
@@ -468,8 +469,34 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, classrooms, unresolvedReasons, placementWarnings: warnings }
     }
     case "MOVE_STUDENT": {
-      const { studentId, fromId, toId } = action.payload
+      const { studentId, fromId, toId, allowConstraintOverride = false } = action.payload
       if (fromId === toId) return state
+
+      const targetClassroom = toId == null ? null : state.classrooms.find((classroom) => classroom.id === toId)
+      if (toId !== null && !targetClassroom) return state
+
+      const sourceStudent =
+        state.classrooms.flatMap((classroom) => classroom.students).find((student) => student.id === studentId) ??
+        state.allStudents.find((student) => student.id === studentId) ??
+        null
+      if (!sourceStudent) return state
+
+      if (targetClassroom) {
+        if (targetClassroom.grade !== sourceStudent.grade) return state
+        if (targetClassroom.students.some((student) => student.id === studentId)) return state
+
+        if (!allowConstraintOverride) {
+          const proposedSize = targetClassroom.students.length
+          const { valid } = checkHardConstraints(sourceStudent, targetClassroom, proposedSize, {
+            settings: state.gradeSettings[targetClassroom.grade],
+            relationshipRules: state.relationshipRules,
+          })
+
+          if (!valid || proposedSize >= targetClassroom.maxSize) {
+            return state
+          }
+        }
+      }
 
       let movedStudent: Student | null = null
       let classrooms = state.classrooms.map((classroom) => {
@@ -692,4 +719,3 @@ export function reducer(state: AppState, action: Action): AppState {
       return state
   }
 }
-

@@ -64,7 +64,7 @@ export const UnassignedPanel = memo(function UnassignedPanel() {
 
     dispatch({
       type: "MOVE_STUDENT",
-      payload: { studentId: drag.studentId, fromId: drag.fromId, toId: null },
+      payload: { studentId: drag.studentId, fromId: drag.fromId, toId: null, allowConstraintOverride: true },
     })
     clearDrag()
   }

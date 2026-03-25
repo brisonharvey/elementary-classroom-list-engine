@@ -302,7 +302,7 @@ function parseStatus(value: string): "None" | "IEP" | "Referral" {
   return "None"
 }
 
-function parseGrade(value: string): Grade {
+function parseGrade(value: string): Grade | null {
   const normalized = value.trim()
   if (normalized === "K" || normalized === "1" || normalized === "2" || normalized === "3" || normalized === "4" || normalized === "5") return normalized
   if (/^\d{2}$/.test(normalized)) {
@@ -315,7 +315,7 @@ function parseGrade(value: string): Grade {
   if (upper === "KG" || upper.startsWith("KIND")) return "K"
   const ordinal = normalized.match(/^0?([1-5])(?:st|nd|rd|th)/i)
   if (ordinal) return ordinal[1] as Grade
-  return "K"
+  return null
 }
 
 function parseOptionalFloat(value: string): number | undefined {
@@ -460,9 +460,17 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       pushIssue(issues, "warning", `Row ${rowIndex + 2}: Unknown student characteristic(s): ${parsedTags.invalidTokens.join(", ")} - ignored.`)
     }
 
+    const rawGrade = get(values, "grade")
+    const grade = parseGrade(rawGrade)
+    if (grade == null) {
+      pushIssue(issues, "error", `Row ${rowIndex + 2}: Unrecognized grade "${rawGrade}" - skipped.`)
+      skipped++
+      continue
+    }
+
     students.push({
       id,
-      grade: parseGrade(get(values, "grade")),
+      grade,
       firstName: get(values, "firstName") || "Student",
       lastName: get(values, "lastName") || `${id}`,
       gender: get(values, "gender").toUpperCase() === "F" ? "F" : "M",

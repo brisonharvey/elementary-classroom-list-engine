@@ -44,6 +44,7 @@ Sample file:
 
 - `id` must be a unique positive integer.
 - `grade` accepts `K`, kindergarten-style values, and grades `1` through `5`.
+- Rows with unrecognized `grade` values are skipped and reported as import errors.
 - `academicTier` and `behaviorTier` can be plain numbers or note text containing `Tier 1`, `Tier 2`, or `Tier 3`.
 - `ell` accepts common truthy values plus `EL`, `ELL`, and `RFEP 1-4`.
 - Student re-imports update existing students when the same `id` appears again.
@@ -109,7 +110,8 @@ Teacher ratings are expected to be `1` through `5`.
 
 ### Teacher import behavior
 
-- Teachers are assigned to rooms in CSV order within each grade.
+- Teacher imports try to keep existing teacher-room matches by teacher name, even if the rows appear in a different order than before.
+- Rows with unrecognized `grade` values are skipped and reported as import errors.
 - If there are more teacher rows than rooms, the app creates extra rooms.
 - Teacher scores are kept for internal fit scoring and are not shown in the main UI after import.
 - Teacher imports also support XLSX files with sheet selection plus basic header-row/group-header preprocessing.

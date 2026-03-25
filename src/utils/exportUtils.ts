@@ -50,9 +50,11 @@ function tsvEscape(value: string | number | boolean | undefined): string {
 function buildAssignedTeacherByStudentId(classrooms: Classroom[]): Map<number, string> {
   const assignedTeacherByStudentId = new Map<number, string>()
   for (const classroom of classrooms) {
-    const teacherName = classroom.teacherName || classroom.id
+    const teacherName = classroom.teacherName.trim()
     for (const student of classroom.students) {
-      assignedTeacherByStudentId.set(student.id, teacherName)
+      if (teacherName) {
+        assignedTeacherByStudentId.set(student.id, teacherName)
+      }
     }
   }
   return assignedTeacherByStudentId

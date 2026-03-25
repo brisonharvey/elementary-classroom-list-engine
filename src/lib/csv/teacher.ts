@@ -72,13 +72,13 @@ function pushIssue(issues: CsvValidationIssue[], severity: CsvValidationIssue["s
   issues.push({ severity, message })
 }
 
-function parseGrade(value: string): Grade {
+function parseGrade(value: string): Grade | null {
   const normalized = value.trim()
   if (normalized === "K" || normalized === "1" || normalized === "2" || normalized === "3" || normalized === "4" || normalized === "5") return normalized
   if (normalized === "0" || normalized.toUpperCase() === "KG" || normalized.toUpperCase().startsWith("KIND")) return "K"
   const parsed = parseInt(normalized, 10)
   if (parsed >= 1 && parsed <= 5) return String(parsed) as Grade
-  return "K"
+  return null
 }
 
 function parseRating(raw: string, rowIndex: number, label: string, issues: CsvValidationIssue[]): 1 | 2 | 3 | 4 | 5 {
@@ -135,7 +135,13 @@ export function parseTeacherCSVWithMapping(text: string, mapping: TeacherCsvFiel
       continue
     }
 
-    const grade = parseGrade(get(values, "grade"))
+    const rawGrade = get(values, "grade")
+    const grade = parseGrade(rawGrade)
+    if (grade == null) {
+      pushIssue(issues, "error", `Row ${rowIndex + 2}: Unrecognized grade "${rawGrade}" - skipped.`)
+      skipped++
+      continue
+    }
     const id = `${grade}:${teacherName.trim().toLowerCase()}`
     if (seenTeacherIds.has(id)) {
       pushIssue(issues, "error", `Row ${rowIndex + 2}: Duplicate teacher "${teacherName}" in grade ${grade} - skipped.`)

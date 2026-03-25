@@ -137,6 +137,28 @@ const tests = [
     },
   },
   {
+    name: "teacher CSV parsing skips unrecognized grades instead of coercing them to kindergarten",
+    run: () => {
+      const csv = [
+        "grade,teacherName,structure,regulationBehaviorSupport,socialEmotionalSupport,instructionalExpertise",
+        "6,Ms. Maple,5,4,3,5",
+      ].join("\n")
+
+      const result = parseTeacherCSVWithMapping(csv, {
+        grade: "grade",
+        teacherName: "teacherName",
+        structure: "structure",
+        regulationBehaviorSupport: "regulationBehaviorSupport",
+        socialEmotionalSupport: "socialEmotionalSupport",
+        instructionalExpertise: "instructionalExpertise",
+      })
+
+      assert.equal(result.teachers.length, 0)
+      assert.equal(result.skipped, 1)
+      assert.match(result.errors[0], /unrecognized grade/i)
+    },
+  },
+  {
     name: "student characteristic load is derived from characteristic weights and categories",
     run: () => {
       const student = createStudent({
@@ -246,6 +268,26 @@ const tests = [
       assert.equal(result.students[0].ell, true)
       assert.equal(result.students[1].ell, true)
       assert.equal(result.students[2].ell, false)
+    },
+  },
+  {
+    name: "student CSV parsing skips unrecognized grades instead of coercing them to kindergarten",
+    run: () => {
+      const csv = [
+        "id,grade,firstName,lastName",
+        "101,6,Ada,Stone",
+      ].join("\n")
+
+      const result = parseStudentCSVWithMapping(csv, {
+        id: "id",
+        grade: "grade",
+        firstName: "firstName",
+        lastName: "lastName",
+      })
+
+      assert.equal(result.students.length, 0)
+      assert.equal(result.skipped, 1)
+      assert.match(result.errors[0], /unrecognized grade/i)
     },
   },
   {
@@ -507,7 +549,6 @@ main().catch((error) => {
   console.error(error)
   process.exit(1)
 })
-
 
 
 

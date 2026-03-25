@@ -49,6 +49,33 @@ export interface TableData {
   rows: string[][]
 }
 
+interface SpreadsheetCell {
+  text?: string
+  value?: unknown
+}
+
+interface SpreadsheetRow {
+  getCell(index: number): SpreadsheetCell
+}
+
+interface SpreadsheetWorksheet {
+  name: string
+  rowCount: number
+  columnCount: number
+  getRow(index: number): SpreadsheetRow
+}
+
+interface SpreadsheetWorkbook {
+  worksheets: SpreadsheetWorksheet[]
+  xlsx: {
+    load(buffer: ArrayBuffer): Promise<void>
+  }
+}
+
+interface SpreadsheetWorkbookConstructor {
+  new (): SpreadsheetWorkbook
+}
+
 function parseCsvText(text: string): string[][] {
   const rows: string[][] = []
   let currentRow: string[] = []
@@ -108,7 +135,7 @@ function padRows(rows: string[][]): string[][] {
 export async function readSpreadsheetFile(file: File): Promise<RawSheetData[]> {
   if (file.name.toLowerCase().endsWith(".xlsx")) {
     const excelModule = await import("exceljs/dist/exceljs.bare.min.js")
-    const Workbook = (excelModule as { Workbook?: typeof import("exceljs")["Workbook"] }).Workbook
+    const Workbook = (excelModule as { Workbook?: SpreadsheetWorkbookConstructor }).Workbook
     if (!Workbook) {
       throw new Error("Excel import library failed to load.")
     }
@@ -116,7 +143,7 @@ export async function readSpreadsheetFile(file: File): Promise<RawSheetData[]> {
     const workbook = new Workbook()
     await workbook.xlsx.load(buffer)
 
-    return workbook.worksheets.map((worksheet) => {
+    return workbook.worksheets.map((worksheet: SpreadsheetWorksheet) => {
       const rows: string[][] = []
       const maxColumnCount = worksheet.columnCount || 0
 
