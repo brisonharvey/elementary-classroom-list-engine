@@ -68,7 +68,7 @@ interface SpreadsheetWorksheet {
 interface SpreadsheetWorkbook {
   worksheets: SpreadsheetWorksheet[]
   xlsx: {
-    load(buffer: ArrayBuffer): Promise<void>
+    load(buffer: ArrayBuffer): Promise<unknown>
   }
 }
 

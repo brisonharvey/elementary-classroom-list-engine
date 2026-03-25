@@ -47,8 +47,9 @@ A room is rejected when placement would:
 - exceed `maxIEPPerRoom`
 - exceed `maxReferralsPerRoom`
 - violate a no-contact relationship
+- violate a student's blocked-teacher classroom restriction
 
-No-contact checks come from both student data and managed grade rules.
+No-contact checks come from both student data and managed rules. Managed no-contact rules can be grade-only or multi-year.
 
 ## Teacher fit
 
@@ -110,7 +111,8 @@ Student import:
 - updates existing students when the same `id` is re-imported
 - skips rows with unrecognized grade values and reports them as import errors
 - can seed students into a matching teacher room using `assignedTeacher`
-- keeps teacher-fixed students unresolved when the matching room is unavailable instead of auto-placing them elsewhere
+- can store blocked teacher classrooms through `avoidTeachers`
+- keeps teacher-fixed students unresolved when the matching room is unavailable or blocked instead of auto-placing them elsewhere
 - accepts `noContactWith` and `preferredWith` lists separated by commas, semicolons, pipes, or spaces
 
 Teacher import:
@@ -141,5 +143,6 @@ They include:
 - assessments
 - demographics
 - assigned teacher names only when a room or roster record actually has one
+- blocked teacher classroom lists
 - staff notes
 - assigned teacher

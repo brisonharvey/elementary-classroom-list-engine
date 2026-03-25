@@ -617,11 +617,7 @@ html, body, #root {
 }
 
 .slider-tooltip {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(100% + 8px);
-  z-index: 200;
+  z-index: 220;
   background: #1f2937;
   color: #fff;
   font-size: 11px;
@@ -629,18 +625,9 @@ html, body, #root {
   padding: 8px 10px;
   border-radius: 8px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(4px);
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  width: min(320px, calc(100vw - 16px));
   pointer-events: none;
-}
-
-.slider-group:hover .slider-tooltip,
-.slider-group:focus-within .slider-tooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  transform: translateY(-100%);
 }
 
 /* ══════════════════════════════════════════
@@ -2157,6 +2144,19 @@ input { font-family: inherit; }
   grid-column: 1 / -1;
 }
 
+.relationship-manager-check {
+  flex-direction: row;
+  align-items: center;
+}
+
+.relationship-manager-check span {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+}
+
 .relationship-manager-actions {
   display: flex;
   justify-content: flex-end;
@@ -3166,8 +3166,6 @@ input { font-family: inherit; }
     grid-template-columns: 1fr;
   }
 }
-
-
 
 
 

@@ -13,6 +13,15 @@ interface HardConstraintOptions {
   gradeRooms?: Classroom[]
 }
 
+function normalizeTeacherName(name: string): string {
+  return name.trim().toLowerCase()
+}
+
+function doesRuleApplyToStudentGrade(rule: RelationshipRule, grade: Student["grade"]): boolean {
+  if (rule.type === "NO_CONTACT" && rule.scope === "multiYear") return true
+  return rule.grade === grade
+}
+
 function isPairMatch(rule: RelationshipRule, studentA: number, studentB: number): boolean {
   const [a, b] = rule.studentIds
   return (a === studentA && b === studentB) || (a === studentB && b === studentA)
@@ -87,7 +96,7 @@ function getDoNotSeparateWarnings(
   const targetRoomId = classroom?.id ?? null
 
   for (const rule of options.relationshipRules) {
-    if (rule.type !== "DO_NOT_SEPARATE" || rule.grade !== student.grade) continue
+    if (rule.type !== "DO_NOT_SEPARATE" || !doesRuleApplyToStudentGrade(rule, student.grade)) continue
     if (!rule.studentIds.includes(student.id)) continue
 
     const peerId = rule.studentIds[0] === student.id ? rule.studentIds[1] : rule.studentIds[0]
@@ -123,6 +132,12 @@ export function checkHardConstraints(
     return { valid: false, reason: `Missing co-teach coverage: ${formatMissingCoverageWithMinutes(student, missingCoverage)}` }
   }
 
+  const blockedTeachers = new Set((student.avoidTeachers ?? []).map((name) => normalizeTeacherName(name)))
+  const classroomTeacher = normalizeTeacherName(classroom.teacherName)
+  if (classroomTeacher && blockedTeachers.has(classroomTeacher)) {
+    return { valid: false, reason: `Blocked teacher classroom: ${classroom.teacherName.trim()}` }
+  }
+
   const iepInRoom = classroom.students.filter((s) => s.specialEd.status === "IEP").length
   if (student.specialEd.status === "IEP" && iepInRoom + 1 > options.settings.maxIEPPerRoom) {
     return { valid: false, reason: `Would exceed max IEP cap (${options.settings.maxIEPPerRoom})` }
@@ -134,7 +149,7 @@ export function checkHardConstraints(
   }
 
   const studentNoContact = new Set(student.noContactWith ?? [])
-  const gradeRules = options.relationshipRules.filter((r) => r.grade === student.grade)
+  const gradeRules = options.relationshipRules.filter((r) => doesRuleApplyToStudentGrade(r, student.grade))
   for (const roomStudent of classroom.students) {
     if (studentNoContact.has(roomStudent.id) || (roomStudent.noContactWith ?? []).includes(student.id)) {
       return {
@@ -171,6 +186,12 @@ export function getManualMoveWarnings(
     warnings.push(`Missing co-teach coverage: ${formatMissingCoverageWithMinutes(student, missingCoverage)}`)
   }
 
+  const blockedTeachers = new Set((student.avoidTeachers ?? []).map((name) => normalizeTeacherName(name)))
+  const classroomTeacher = normalizeTeacherName(classroom.teacherName)
+  if (classroomTeacher && blockedTeachers.has(classroomTeacher)) {
+    warnings.push(`Teacher restriction blocks ${classroom.teacherName.trim()}.`)
+  }
+
   const iepInRoom = classroom.students.filter((s) => s.specialEd.status === "IEP").length
   if (student.specialEd.status === "IEP" && iepInRoom + 1 > options.settings.maxIEPPerRoom) {
     warnings.push(`Would exceed max IEP cap (${options.settings.maxIEPPerRoom})`)
@@ -188,7 +209,7 @@ export function getManualMoveWarnings(
     }
 
     const noContactRule = options.relationshipRules.find(
-      (r) => r.type === "NO_CONTACT" && r.grade === student.grade && isPairMatch(r, student.id, roomStudent.id)
+      (r) => r.type === "NO_CONTACT" && doesRuleApplyToStudentGrade(r, student.grade) && isPairMatch(r, student.id, roomStudent.id)
     )
     if (noContactRule) {
       warnings.push(`No-contact rule conflict with ${roomStudent.firstName} ${roomStudent.lastName}`)

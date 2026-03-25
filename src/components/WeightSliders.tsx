@@ -1,3 +1,5 @@
+import { useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useApp } from "../store/AppContext"
 
 interface SliderProps {
@@ -10,9 +12,43 @@ interface SliderProps {
 
 function Slider({ label, description, value, onChange, color }: SliderProps) {
   const tooltipId = `${label.toLowerCase().replace(/\s+/g, "-")}-desc`
+  const groupRef = useRef<HTMLDivElement>(null)
+  const [tooltipVisible, setTooltipVisible] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number; placement: "above" | "below" } | null>(null)
+
+  const showTooltip = () => {
+    const rect = groupRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    const estimatedWidth = Math.min(320, window.innerWidth - 16)
+    const left = Math.min(
+      Math.max(8, rect.left + rect.width / 2 - estimatedWidth / 2),
+      window.innerWidth - estimatedWidth - 8
+    )
+    const placement = rect.top < 140 ? "below" : "above"
+    const top = placement === "below" ? rect.bottom + 12 : rect.top - 12
+
+    setTooltipPosition({ top, left, placement })
+    setTooltipVisible(true)
+  }
+
+  const hideTooltip = () => {
+    setTooltipVisible(false)
+  }
 
   return (
-    <div className="slider-group">
+    <div
+      ref={groupRef}
+      className="slider-group"
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      onFocusCapture={showTooltip}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          hideTooltip()
+        }
+      }}
+    >
       <div className="slider-header">
         <span className="slider-label" style={{ color }}>
           {label}
@@ -42,10 +78,25 @@ function Slider({ label, description, value, onChange, color }: SliderProps) {
           aria-label={`${label} weight: ${value}`}
           aria-describedby={tooltipId}
         />
-        <div id={tooltipId} className="slider-tooltip" role="tooltip">
-          {description}
-        </div>
       </div>
+      {tooltipVisible && tooltipPosition
+        ? createPortal(
+            <div
+              id={tooltipId}
+              className="slider-tooltip"
+              role="tooltip"
+              style={{
+                position: "fixed",
+                top: tooltipPosition.top,
+                left: tooltipPosition.left,
+                transform: tooltipPosition.placement === "below" ? "none" : "translateY(-100%)",
+              }}
+            >
+              {description}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   )
 }
@@ -91,4 +142,3 @@ export function WeightSliders() {
     </div>
   )
 }
-

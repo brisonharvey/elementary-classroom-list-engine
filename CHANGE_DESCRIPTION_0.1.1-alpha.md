@@ -21,8 +21,10 @@ It also adds administrator-facing documentation and updates packaged release met
 
 ### Relationship and roster data fixes
 
-- The no-contact manager now surfaces imported no-contact pairs alongside manager-created rules
+- The Rules Manager now surfaces imported no-contact pairs alongside manager-created rules
 - Hard no-contact pairs can now be added and removed in a way that keeps student records, classroom copies, and relationship rules synchronized
+- No-contact pairs can now be marked as multi-year so they survive later grade changes for the same students
+- Students can now carry blocked-teacher classroom restrictions that placement and manual moves both honor
 - Updating a student ID now rewrites peer references and relationship rules correctly
 - Changing a student's grade clears incompatible relationship rules and removes the old classroom placement
 - Deleting a student now removes their classroom placement, rule references, and peer references cleanly
@@ -30,10 +32,11 @@ It also adds administrator-facing documentation and updates packaged release met
 ### Student editing and export behavior
 
 - Manually assigning a teacher through the student editor now places and locks that student into the matching classroom when possible
-- Teacher-fixed students now stay unresolved with explicit reasons when the matching classroom is missing, full, or blocked
+- Teacher-fixed students now stay unresolved with explicit reasons when the matching classroom is missing, full, or blocked, including blocked-teacher restrictions
 - Clearing a previously assigned teacher now unlocks the student correctly
 - Exports now fall back to a student's preassigned teacher when that student is still unassigned
 - Exports no longer leak internal classroom ids when a room has no teacher name yet
+- Student CSV import and export now include blocked teacher classroom lists
 - Re-importing students by `id` now refreshes existing roster records while preserving classroom state where possible
 - Manual placement warnings now flag `Do Not Separate` conflicts and teacher-fixed overrides
 - Reducer-level move validation now blocks cross-grade and over-capacity moves unless the UI has already confirmed an override
@@ -48,7 +51,7 @@ It also adds administrator-facing documentation and updates packaged release met
 ## UI and Workflow Updates
 
 - Refined the main workspace layout and styling in the app shell and CSS
-- Expanded the no-contact manager into a fuller management view with better search and clearer rule presentation
+- Expanded the no-contact manager into a fuller Rules Manager view with better search and clearer rule presentation
 - Updated student card presentation and supporting UI to make placement details easier to review
 - Refined classroom and settings panel interactions for day-to-day roster work
 - Guided setup now resets cleanly after `Clear All`, making fresh roster starts less confusing for school staff

@@ -31,6 +31,7 @@ export const STUDENT_CSV_FIELD_OPTIONS = [
   { key: "ireadyMath", label: "i-Ready math", required: false },
   { key: "referrals", label: "Referrals", required: false },
   { key: "assignedTeacher", label: "Assigned teacher", required: false },
+  { key: "avoidTeachers", label: "Blocked teacher classrooms", required: false },
   { key: "ell", label: "ELL", required: false },
   { key: "section504", label: "504 plan", required: false },
   { key: "raceEthnicity", label: "Race/ethnicity", required: false },
@@ -75,6 +76,7 @@ const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   ireadyMath: ["ireadymath", "ireadymathlevel", "winter(november16-march1)|overallplacement(diagnostic_results_math_confidential(1).csv)"],
   referrals: ["referrals", "referralcount", "disciplinereferrals", "disc.referrals"],
   assignedTeacher: ["assignedteacher", "assigned teacher", "teachername", "homeroomteacher", "classteacher", "classteacher(s)"],
+  avoidTeachers: ["avoidteachers", "blockedteacherclassrooms", "blockedteachers", "teacherstoavoid", "avoidteacherclassrooms", "avoid teacher classrooms"],
   ell: ["ell", "el", "englishlearner", "esl", "englishlanguagelearner"],
   section504: ["section504", "plan504", "program504", "504"],
   raceEthnicity: ["raceethnicity", "race/ethnicity", "ethnicity", "race", "studentrace", "studentethnicity"],
@@ -335,6 +337,22 @@ function parseOptionalString(value: string): string | undefined {
   return normalized || undefined
 }
 
+function parseTeacherList(value: string): string[] {
+  const unique: string[] = []
+  const seen = new Set<string>()
+
+  for (const rawToken of value.split(/[;,|\n]+/)) {
+    const trimmed = rawToken.trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(trimmed)
+  }
+
+  return unique
+}
+
 function parseCoTeachMinutes(raw: string, rowIndex: number, label: string, issues: CsvValidationIssue[]): number {
   if (!raw || !raw.trim()) return 0
   const parsed = Number(raw.trim())
@@ -486,6 +504,7 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       behaviorTierNotes: parsedBehaviorTier.notes,
       referrals: parseOptionalInt(get(values, "referrals")) ?? 0,
       preassignedTeacher: parseOptionalString(get(values, "assignedTeacher")),
+      avoidTeachers: parseTeacherList(get(values, "avoidTeachers")),
       briganceReadiness: parseOptionalFloat(get(values, "briganceReadiness")),
       mapReading: parseOptionalFloat(get(values, "mapReading")),
       mapMath: parseOptionalFloat(get(values, "mapMath")),
@@ -568,6 +587,7 @@ const STUDENT_TEMPLATE_HEADER = [
   "ireadyMath",
   "referrals",
   "assignedTeacher",
+  "avoidTeachers",
   "ell",
   "section504",
   "raceEthnicity",
@@ -618,6 +638,7 @@ export function generateStudentSampleCSV(): string {
       const ireadyReading = grade === "K" ? "" : ["Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2", "Early 3"][index]
       const ireadyMath = grade === "K" ? "" : ["Mid K", "Late K", "Early 1", "Mid 1", "Late 1", "Early 2", "Mid 2", "Late 2"][index]
       const assignedTeacher = `Ms. Grade${grade}${String.fromCharCode(65 + (index % 4))}`
+      const avoidTeachers = index === 6 ? `Ms. Grade${grade}A` : ""
       const ell = index % 4 === 0 ? "TRUE" : "FALSE"
       const section504 = index === 3 ? "TRUE" : "FALSE"
       const race = races[(index + grades.indexOf(grade)) % races.length]
@@ -648,6 +669,7 @@ export function generateStudentSampleCSV(): string {
         ireadyMath,
         referrals,
         assignedTeacher,
+        avoidTeachers,
         ell,
         section504,
         race,

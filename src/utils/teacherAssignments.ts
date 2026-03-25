@@ -4,6 +4,10 @@ function normalizeTeacherName(name: string): string {
   return name.trim().toLowerCase()
 }
 
+function isBlockedAssignedTeacher(student: Student, teacherName: string): boolean {
+  return (student.avoidTeachers ?? []).some((entry) => normalizeTeacherName(entry) === normalizeTeacherName(teacherName))
+}
+
 function getPlacedRoomForStudent(classrooms: Classroom[], studentId: number): Classroom | undefined {
   return classrooms.find((classroom) => classroom.students.some((student) => student.id === studentId))
 }
@@ -21,6 +25,10 @@ export function getMatchingTeacherClassrooms(classrooms: Classroom[], student: S
 export function getAssignedTeacherPlacementIssue(classrooms: Classroom[], student: Student): string | null {
   const teacherName = student.preassignedTeacher?.trim()
   if (!teacherName) return null
+
+  if (isBlockedAssignedTeacher(student, teacherName)) {
+    return `Assigned teacher ${teacherName} conflicts with this student's blocked-teacher restriction.`
+  }
 
   const placedRoom = getPlacedRoomForStudent(classrooms, student.id)
   const matchingRooms = getMatchingTeacherClassrooms(classrooms, student)
@@ -58,4 +66,3 @@ export function collectAssignedTeacherPlacementIssues(
 
   return issues
 }
-

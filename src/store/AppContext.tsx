@@ -1,5 +1,5 @@
 import React, { createContext, Dispatch, useContext, useEffect, useReducer } from "react"
-import { AppState, Classroom, LEGACY_STUDENT_TAG_ALIASES, Snapshot, STUDENT_TAGS, Student, TeacherProfile } from "../types"
+import { AppState, Classroom, LEGACY_STUDENT_TAG_ALIASES, RelationshipRule, Snapshot, STUDENT_TAGS, Student, TeacherProfile } from "../types"
 import {
   createDefaultGradeSettingsMap,
   getRoomLabelFromIndex,
@@ -53,12 +53,30 @@ function normalizeTagList(value: unknown): Student["tags"] {
   return Array.from(new Set(normalizedTags))
 }
 
-function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown; tags?: unknown }>(student: T): T {
+function normalizeTeacherList(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  const normalized: string[] = []
+  const seen = new Set<string>()
+
+  for (const entry of value) {
+    const trimmed = typeof entry === "string" ? entry.trim() : ""
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    normalized.push(trimmed)
+  }
+
+  return normalized
+}
+
+function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown; tags?: unknown; avoidTeachers?: unknown }>(student: T): T {
   return {
     ...student,
     noContactWith: normalizeIdList(student.noContactWith),
     preferredWith: normalizeIdList(student.preferredWith),
     tags: normalizeTagList(student.tags),
+    avoidTeachers: normalizeTeacherList(student.avoidTeachers),
   }
 }
 
@@ -82,6 +100,7 @@ function normalizeStudent(student: Student): Student {
     raceEthnicity: student.raceEthnicity?.trim() || undefined,
     coTeachMinutes: normalizeCoTeachMinutes(migratedMinutes),
     locked: Boolean(student.locked),
+    avoidTeachers: normalizeTeacherList(student.avoidTeachers),
   }
 }
 
@@ -171,6 +190,14 @@ function normalizeSnapshot(snapshot: Snapshot): Snapshot {
   }
 }
 
+function normalizeRelationshipRule(rule: RelationshipRule): RelationshipRule {
+  return {
+    ...rule,
+    note: rule.note?.trim() || undefined,
+    scope: rule.scope === "multiYear" ? "multiYear" : "grade",
+  }
+}
+
 function loadPersistedState(): AppState {
   try {
     const raw =
@@ -223,7 +250,7 @@ function loadPersistedState(): AppState {
       snapshots,
       gradeSettings: parsed.gradeSettings ? normalizeGradeSettingsMap(parsed.gradeSettings) : defaultSettings,
       unresolvedReasons: parsed.unresolvedReasons ?? {},
-      relationshipRules: parsed.relationshipRules ?? [],
+      relationshipRules: (parsed.relationshipRules ?? []).map((rule) => normalizeRelationshipRule(rule as RelationshipRule)),
       weights: { ...initialState.weights, ...(parsed.weights ?? {}) },
       placementWarnings: [...(parsed.placementWarnings ?? []), ...migrationWarnings],
     }

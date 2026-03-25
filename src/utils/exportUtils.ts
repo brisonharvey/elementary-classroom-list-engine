@@ -31,6 +31,7 @@ const EXPORT_HEADER = [
   "studentCharacteristics",
   "teacherNotes",
   "assignedTeacher",
+  "avoidTeachers",
 ]
 
 function csvEscape(value: string | number | boolean | undefined): string {
@@ -101,6 +102,7 @@ function buildStudentExportRow(student: Student, assignedTeacherByStudentId: Map
     (student.tags ?? []).join(";"),
     student.teacherNotes,
     assignedTeacherByStudentId.get(student.id) || student.preassignedTeacher || "",
+    (student.avoidTeachers ?? []).join(";"),
   ]
 }
 

@@ -84,6 +84,7 @@ export interface Student {
   section504?: boolean
   raceEthnicity?: string
   teacherNotes?: string
+  avoidTeachers?: string[]
 }
 
 export interface Classroom {
@@ -122,6 +123,7 @@ export interface RelationshipRule {
   note?: string
   createdAt: number
   grade: Grade
+  scope?: "grade" | "multiYear"
 }
 
 export interface GradeSettings {
@@ -192,4 +194,3 @@ export interface RoomStats {
   instructionalTagSupportLoad: number
   energyTagSupportLoad: number
 }
-

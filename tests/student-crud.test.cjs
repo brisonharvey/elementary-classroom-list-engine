@@ -143,6 +143,30 @@ const tests = [
     },
   },
   {
+    name: "assigned teacher does not place a student into a blocked teacher classroom",
+    run: () => {
+      const state = createState()
+      state.classrooms = [
+        createClassroom("1-A", [], { teacherName: "Ms. Rivera" }),
+      ]
+      state.allStudents = [createStudent(302, { firstName: "Harper" })]
+
+      const next = reducer(state, {
+        type: "UPSERT_STUDENT",
+        payload: {
+          student: createStudent(302, {
+            firstName: "Harper",
+            preassignedTeacher: "Ms. Rivera",
+            avoidTeachers: ["ms. rivera"],
+          }),
+        },
+      })
+
+      assert.equal(next.classrooms[0].students.length, 0)
+      assert.match(next.unresolvedReasons[302][0], /blocked-teacher restriction/i)
+    },
+  },
+  {
     name: "clearing assigned teacher in the student editor unlocks a previously teacher-fixed student",
     run: () => {
       const state = createState()
@@ -169,8 +193,10 @@ const tests = [
     run: () => {
       const student = createStudent(401, { firstName: "Delta", preassignedTeacher: "Ms. Lane" })
       const csv = buildPlacementCSV([createClassroom("1-A", [])], [student], "1")
-      const row = csv.split("\n")[1].split(",")
-      assert.equal(row[row.length - 1], "Ms. Lane")
+      const [headerLine, rowLine] = csv.split("\n")
+      const headers = headerLine.split(",")
+      const row = rowLine.split(",")
+      assert.equal(row[headers.indexOf("assignedTeacher")], "Ms. Lane")
     },
   },
   {
@@ -178,8 +204,10 @@ const tests = [
     run: () => {
       const student = createStudent(402, { firstName: "Nova" })
       const csv = buildPlacementCSV([createClassroom("room-123", [student], { teacherName: "" })], [student], "1")
-      const row = csv.split("\n")[1].split(",")
-      assert.equal(row[row.length - 1], "")
+      const [headerLine, rowLine] = csv.split("\n")
+      const headers = headerLine.split(",")
+      const row = rowLine.split(",")
+      assert.equal(row[headers.indexOf("assignedTeacher")], "")
     },
   },
   {
@@ -375,6 +403,33 @@ const tests = [
     },
   },
   {
+    name: "teacher classroom restrictions can leave a student unresolved during placement",
+    run: () => {
+      const student = createStudent(602, { firstName: "Wren", avoidTeachers: ["Ms. Stone"] })
+      const state = {
+        ...clone(initialState),
+        allStudents: [student],
+        classrooms: [
+          createClassroom("1-A", [], { teacherName: "Ms. Stone" }),
+        ],
+        activeGrade: "1",
+      }
+
+      const result = runPlacement(
+        state.allStudents,
+        [],
+        state.classrooms,
+        "1",
+        state.weights,
+        state.gradeSettings["1"],
+        []
+      )
+
+      assert.equal(result.unresolved.some((entry) => entry.id === 602), true)
+      assert.match(result.unresolvedReasons[602][0], /Blocked teacher classroom/i)
+    },
+  },
+  {
     name: "manual move warnings include do-not-separate and teacher-fixed conflicts",
     run: () => {
       const teacherFixed = createStudent(701, { firstName: "Nova", preassignedTeacher: "Ms. Rivera", locked: true })
@@ -419,6 +474,46 @@ const tests = [
     },
   },
   {
+    name: "manual move warnings include blocked teacher classroom restrictions",
+    run: () => {
+      const restrictedStudent = createStudent(711, {
+        firstName: "Sage",
+        avoidTeachers: ["Ms. Stone"],
+      })
+      const gradeRooms = [
+        createClassroom("1-A", [], { teacherName: "Ms. Stone" }),
+        createClassroom("1-B", [], { teacherName: "Ms. Rivera" }),
+      ]
+
+      const warnings = getManualMoveWarnings(restrictedStudent, gradeRooms[0], {
+        settings: createDefaultGradeSettingsMap()["1"],
+        relationshipRules: [],
+        gradeRooms,
+      })
+
+      assert.ok(warnings.some((warning) => /Teacher restriction blocks Ms\. Stone/i.test(warning)))
+    },
+  },
+  {
+    name: "teacher restrictions are deduped case-insensitively on student save",
+    run: () => {
+      const state = createState()
+      state.allStudents = [createStudent(713, { firstName: "Sage" })]
+
+      const next = reducer(state, {
+        type: "UPSERT_STUDENT",
+        payload: {
+          student: createStudent(713, {
+            firstName: "Sage",
+            avoidTeachers: ["Ms. Stone", "ms. stone", " Ms. Stone "],
+          }),
+        },
+      })
+
+      assert.deepEqual(next.allStudents[0].avoidTeachers, ["Ms. Stone"])
+    },
+  },
+  {
     name: "upserting a no-contact pair preserves imported links and adds a manager note",
     run: () => {
       const state = createState()
@@ -439,6 +534,45 @@ const tests = [
       assert.equal(next.relationshipRules.length, 1)
       assert.deepEqual(next.relationshipRules[0].studentIds, [101, 102])
       assert.equal(next.relationshipRules[0].note, "Family request")
+    },
+  },
+  {
+    name: "multi-year no-contact rules persist after students move into the next grade",
+    run: () => {
+      const state = createState()
+      state.relationshipRules = []
+
+      const withRule = reducer(state, {
+        type: "UPSERT_NO_CONTACT_PAIR",
+        payload: {
+          grade: "1",
+          studentIds: [102, 101],
+          note: "Keep apart next year too",
+          scope: "multiYear",
+        },
+      })
+
+      const afterAlphaGradeChange = reducer(withRule, {
+        type: "UPSERT_STUDENT",
+        payload: {
+          previousId: 101,
+          student: createStudent(101, { firstName: "Alpha", grade: "2", noContactWith: [102] }),
+        },
+      })
+
+      const afterBothGradeChange = reducer(afterAlphaGradeChange, {
+        type: "UPSERT_STUDENT",
+        payload: {
+          previousId: 102,
+          student: createStudent(102, { firstName: "Beta", grade: "2", noContactWith: [101] }),
+        },
+      })
+
+      assert.equal(afterBothGradeChange.relationshipRules.length, 1)
+      assert.equal(afterBothGradeChange.relationshipRules[0].scope, "multiYear")
+      assert.equal(afterBothGradeChange.relationshipRules[0].note, "Keep apart next year too")
+      assert.deepEqual(afterBothGradeChange.allStudents.find((student) => student.id === 101).noContactWith, [102])
+      assert.deepEqual(afterBothGradeChange.allStudents.find((student) => student.id === 102).noContactWith, [101])
     },
   },
   {
@@ -522,5 +656,3 @@ for (const entry of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} tests passed.`)
-
-

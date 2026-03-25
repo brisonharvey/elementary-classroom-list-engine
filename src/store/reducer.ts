@@ -44,7 +44,7 @@ export type Action =
   | { type: "DUPLICATE_SNAPSHOT"; payload: string }
   | { type: "UPSERT_RELATIONSHIP_RULE"; payload: RelationshipRule }
   | { type: "DELETE_RELATIONSHIP_RULE"; payload: string }
-  | { type: "UPSERT_NO_CONTACT_PAIR"; payload: { grade: Grade; studentIds: [number, number]; note?: string } }
+  | { type: "UPSERT_NO_CONTACT_PAIR"; payload: { grade: Grade; studentIds: [number, number]; note?: string; scope?: "grade" | "multiYear" } }
   | { type: "DELETE_NO_CONTACT_PAIR"; payload: { grade: Grade; studentIds: [number, number] } }
   | { type: "UPDATE_GRADE_SETTINGS"; payload: { grade: Grade; updates: Partial<AppState["gradeSettings"][Grade]> } }
   | { type: "APPLY_GRADE_SETTINGS_TO_ALL"; payload: GradeSettingsPayload }
@@ -84,6 +84,22 @@ function uniqueStudentIds(ids: number[] | undefined, selfId: number): number[] {
   return Array.from(new Set((ids ?? []).filter((id) => Number.isFinite(id) && id > 0 && id !== selfId)))
 }
 
+function uniqueTeacherNames(names: string[] | undefined): string[] {
+  const unique: string[] = []
+  const seen = new Set<string>()
+
+  for (const rawName of names ?? []) {
+    const trimmed = rawName.trim()
+    if (!trimmed) continue
+    const normalized = trimmed.toLowerCase()
+    if (seen.has(normalized)) continue
+    seen.add(normalized)
+    unique.push(trimmed)
+  }
+
+  return unique
+}
+
 function normalizeStudentRecord(student: Student): Student {
   return {
     ...student,
@@ -100,6 +116,7 @@ function normalizeStudentRecord(student: Student): Student {
     coTeachMinutes: normalizeCoTeachMinutes(student.coTeachMinutes),
     noContactWith: uniqueStudentIds(student.noContactWith, student.id),
     preferredWith: uniqueStudentIds(student.preferredWith, student.id),
+    avoidTeachers: uniqueTeacherNames(student.avoidTeachers),
     locked: Boolean(student.locked),
   }
 }
@@ -170,7 +187,10 @@ function findRelationshipRuleByPair(
   const pair = normalizePair(studentIds)
 
   return relationshipRules.find((rule) => {
-    if (rule.grade !== grade || rule.type !== type) return false
+    if (rule.type !== type) return false
+    if (type !== "NO_CONTACT" || rule.scope !== "multiYear") {
+      if (rule.grade !== grade) return false
+    }
     const existingPair = normalizePair(rule.studentIds)
     return existingPair[0] === pair[0] && existingPair[1] === pair[1]
   })
@@ -188,6 +208,9 @@ function assignStudentToTeacherClassroom(classrooms: Classroom[], student: Stude
 
   const teacherName = student.preassignedTeacher?.trim()
   if (!teacherName) return next
+  if ((student.avoidTeachers ?? []).some((entry) => entry.trim().toLowerCase() === teacherName.toLowerCase())) {
+    return next
+  }
 
   let target = next.find(
     (classroom) => classroom.grade === student.grade && classroom.teacherName.trim().toLowerCase() === teacherName.toLowerCase()
@@ -272,7 +295,9 @@ function applyUpsertStudentCore(state: AppState, studentInput: Student, previous
 
   let relationshipRules = state.relationshipRules
   if (existing && existing.grade !== nextStudent.grade) {
-    relationshipRules = relationshipRules.filter((rule) => !rule.studentIds.includes(previousStudentId))
+    relationshipRules = relationshipRules.filter(
+      (rule) => !rule.studentIds.includes(previousStudentId) || (rule.type === "NO_CONTACT" && rule.scope === "multiYear")
+    )
   } else if (existing && previousStudentId !== nextStudent.id) {
     relationshipRules = relationshipRules
       .map((rule) => ({
@@ -615,8 +640,8 @@ export function reducer(state: AppState, action: Action): AppState {
     case "UPSERT_RELATIONSHIP_RULE": {
       const existing = state.relationshipRules.find((rule) => rule.id === action.payload.id)
       const relationshipRules = existing
-        ? state.relationshipRules.map((rule) => (rule.id === action.payload.id ? action.payload : rule))
-        : [...state.relationshipRules, action.payload]
+        ? state.relationshipRules.map((rule) => (rule.id === action.payload.id ? { ...action.payload, scope: "grade" as const } : rule))
+        : [...state.relationshipRules, { ...action.payload, scope: "grade" as const }]
       return { ...state, relationshipRules }
     }
     case "DELETE_RELATIONSHIP_RULE":
@@ -632,7 +657,8 @@ export function reducer(state: AppState, action: Action): AppState {
       const classrooms = syncClassroomStudentCopies(state.classrooms, allStudents)
       const existing = findRelationshipRuleByPair(state.relationshipRules, action.payload.grade, "NO_CONTACT", pair)
       const trimmedNote = action.payload.note?.trim()
-      const shouldPersistRule = Boolean(trimmedNote) || existing != null
+      const scope: "grade" | "multiYear" = action.payload.scope === "multiYear" ? "multiYear" : "grade"
+      const shouldPersistRule = Boolean(trimmedNote) || existing != null || scope === "multiYear"
       const relationshipRules = shouldPersistRule
         ? (existing
             ? state.relationshipRules.map((rule) =>
@@ -641,6 +667,7 @@ export function reducer(state: AppState, action: Action): AppState {
                       ...rule,
                       studentIds: pair,
                       note: trimmedNote || undefined,
+                      scope,
                     }
                   : rule
               )
@@ -653,6 +680,7 @@ export function reducer(state: AppState, action: Action): AppState {
                   note: trimmedNote || undefined,
                   createdAt: Date.now(),
                   grade: action.payload.grade,
+                  scope,
                 },
               ])
         : state.relationshipRules
@@ -669,7 +697,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const allStudents = withNoContactPair(state.allStudents, pair, false)
       const classrooms = syncClassroomStudentCopies(state.classrooms, allStudents)
       const relationshipRules = state.relationshipRules.filter((rule) => {
-        if (rule.grade !== action.payload.grade || rule.type !== "NO_CONTACT") return true
+        if (rule.type !== "NO_CONTACT") return true
         const existingPair = normalizePair(rule.studentIds)
         return existingPair[0] !== pair[0] || existingPair[1] !== pair[1]
       })

@@ -9,7 +9,7 @@ It supports:
 - student re-imports that update existing roster records by `id`
 - a guided setup panel for first-time roster building
 - teacher-fit aware auto-placement
-- hard no-contact rules and soft keep-together rules
+- hard no-contact rules, soft keep-together rules, and blocked teacher classrooms
 - co-teach coverage checks
 - manual drag-and-drop adjustments
 - lockable placements
@@ -54,6 +54,7 @@ Hard constraints include:
 - max IEP count per room
 - max referral-heavy count per room
 - imported and managed no-contact conflicts
+- blocked teacher classrooms for individual students
 
 Soft balancing includes:
 
@@ -94,19 +95,22 @@ Common optional columns:
 - `studentCharacteristics`
 - `teacherNotes`
 - `assignedTeacher`
+- `avoidTeachers`
 
 Important behavior:
 
 - Student re-imports refresh existing students when the same `id` appears again.
 - Student rows with unrecognized grade values are skipped with an import error instead of being forced into kindergarten.
 - `assignedTeacher` creates a teacher-fixed placement when the matching classroom is available.
-- If a teacher-fixed student cannot be seated in the matching classroom, the app leaves that student unresolved and flags the reason instead of placing them elsewhere.
+- `avoidTeachers` keeps a student out of named teacher classrooms during auto-placement and manual moves.
+- If a teacher-fixed student cannot be seated in the matching classroom, including when that teacher is on the student's blocked list, the app leaves that student unresolved and flags the reason instead of placing them elsewhere.
 - Teacher-fixed diagnostics stay visible after related student or rule edits, so unresolved placements do not silently disappear from review.
 - XLSX workbook reading is powered by `exceljs`, while the app’s grouped-header and preprocessing logic remains the same.
 - Kindergarten uses `briganceReadiness` in placement scoring instead of MAP/i-Ready.
 - `academicTier` and `behaviorTier` can be numeric or note text that contains one or more `Tier X` values.
 - `studentCharacteristics` accepts the current supported labels and also tolerates legacy aliases.
 - `noContactWith` and `preferredWith` accept comma-, semicolon-, pipe-, or space-separated student IDs.
+- The Rules Manager can store no-contact pairs as either grade-only rules or multi-year rules that follow the same students into later grades.
 
 ## Teacher import notes
 
@@ -157,6 +161,7 @@ Exported data includes:
 - demographics
 - `studentCharacteristics`
 - staff notes
+- blocked teacher classrooms
 
 Derived room metrics are not exported as extra columns.
 If a student is placed in a room with no teacher name, the exported `assignedTeacher` field stays blank unless the student also has a `preassignedTeacher`.

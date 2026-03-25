@@ -113,7 +113,7 @@ export default function App() {
             onClick={openDeleteDialog}
             disabled={deleteCandidates.length === 0}
           >Delete Classroom</button>
-          <button className={`btn btn-sm ${activePanel === "rules" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "rules" ? "none" : "rules"))}>No-contact Manager</button>
+          <button className={`btn btn-sm ${activePanel === "rules" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "rules" ? "none" : "rules"))}>Rules Manager</button>
           <button className={`btn btn-sm ${activePanel === "settings" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "settings" ? "none" : "settings"))}>Settings</button>
         </div>
       </div>

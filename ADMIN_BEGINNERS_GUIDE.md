@@ -12,7 +12,7 @@ You can:
 - import either CSV or XLSX files
 - follow a built-in guided setup panel
 - auto-place one grade at a time
-- manage no-contact and keep-together rules
+- manage no-contact, keep-together, and blocked-teacher rules
 - drag students manually between rooms
 - lock students in place
 - compare versions with snapshots
@@ -47,7 +47,7 @@ Important reminders:
 - Classroom columns fill the center workspace.
 - `Show Summary` opens a grade summary drawer.
 - `Show Snapshots` opens the snapshot panel.
-- `No-contact Manager` and `Settings` open grade tools.
+- `Rules Manager` and `Settings` open grade tools.
 
 ## Recommended order
 
@@ -56,6 +56,7 @@ Important reminders:
 3. Choose the grade you want to work on.
 4. Review classrooms, imported teacher names, room sizes, and co-teach coverage.
 5. Add no-contact or keep-together rules.
+   Add blocked-teacher rules or multi-year no-contact rules if needed.
 6. Run auto-placement.
 7. Review warnings and the summary drawer.
 8. Make manual moves if needed.
@@ -89,6 +90,9 @@ Helpful optional columns:
 - `studentCharacteristics`
 - `teacherNotes`
 - `assignedTeacher`
+- `avoidTeachers`
+
+Use `avoidTeachers` when a student should not be placed with one or more specific teachers, even if those classrooms otherwise fit.
 
 Kindergarten tip:
 
@@ -133,14 +137,17 @@ Useful room controls:
 - edit room capacity
 - use the `Co-teach` menu in the room header
 
-## Relationship rules
+## Rules Manager
 
-Use `No-contact Manager` to review and add rules for the active grade.
+Use `Rules Manager` to review and add rules for the active grade.
 
 Rule types:
 
 - `No Contact`: hard rule, students cannot be placed together
 - `Do Not Separate`: soft rule, the engine tries to keep them together
+- `Teacher Restriction`: keeps one student out of a named teacher's classroom
+
+You can also mark a no-contact rule as multi-year so it stays attached to those same students after they move into later grades.
 
 Imported `noContactWith` values also appear here.
 Student ID lists in imports can use commas, semicolons, pipes, or spaces.
@@ -168,6 +175,7 @@ The engine:
 
 Students with an `assignedTeacher` stay teacher-fixed.
 If the matching classroom is missing, full, or blocked by another hard rule, the app leaves that student unresolved and shows the reason.
+Blocked teacher classrooms are also treated as hard rules during placement.
 Those teacher-fixed warnings stay visible even if you later edit another student or relationship rule.
 
 Students that cannot be placed stay in `Unassigned` with reasons shown underneath.
@@ -199,7 +207,7 @@ Student card actions:
 - lock/unlock preserves or releases a placement
 - teacher-fixed students stay locked until you clear `Assigned Teacher` in `Edit`
 
-Manual moves can show warnings before they are applied, including `Do Not Separate` soft-rule conflicts and teacher-fixed overrides.
+Manual moves can show warnings before they are applied, including `Do Not Separate` soft-rule conflicts, blocked teacher classrooms, and teacher-fixed overrides.
 The app also blocks invalid reducer-level moves such as cross-grade drops or moves into full rooms unless the current drag flow has already confirmed an override.
 
 ## Snapshots and export
@@ -216,3 +224,4 @@ Use export when you are ready to share or archive results:
 
 Exports are reports, not full backups of app state.
 If a room does not have a teacher name yet, exported `assignedTeacher` cells stay blank unless the student has an `assignedTeacher` value on the roster.
+Blocked teacher classroom lists are exported as `avoidTeachers` so the restriction can travel with the student roster.

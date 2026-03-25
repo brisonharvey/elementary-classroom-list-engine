@@ -32,6 +32,7 @@ interface StudentFormState {
   raceEthnicity: string
   teacherNotes: string
   preassignedTeacher: string
+  avoidTeachers: string
   noContactWith: string
   preferredWith: string
   tags: StudentTag[]
@@ -76,6 +77,7 @@ function buildInitialFormState(student: Student | undefined, defaultGrade: Grade
     raceEthnicity: student?.raceEthnicity ?? "",
     teacherNotes: student?.teacherNotes ?? "",
     preassignedTeacher: student?.preassignedTeacher ?? "",
+    avoidTeachers: (student?.avoidTeachers ?? []).join("; "),
     noContactWith: (student?.noContactWith ?? []).join(";"),
     preferredWith: (student?.preferredWith ?? []).join(";"),
     tags: student?.tags ? [...student.tags] : [],
@@ -116,6 +118,22 @@ function parseIdInput(value: string): { ids: number[]; invalidTokens: string[] }
   }
 
   return { ids: Array.from(new Set(ids)), invalidTokens }
+}
+
+function parseTeacherListInput(value: string): string[] {
+  const unique: string[] = []
+  const seen = new Set<string>()
+
+  for (const token of value.split(/[;,|\n]+/)) {
+    const trimmed = token.trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(trimmed)
+  }
+
+  return unique
 }
 
 export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEditorModalProps) {
@@ -201,6 +219,7 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
 
     const parsedNoContact = parseIdInput(form.noContactWith)
     const parsedPreferred = parseIdInput(form.preferredWith)
+    const avoidTeachers = parseTeacherListInput(form.avoidTeachers)
     if (parsedNoContact.invalidTokens.length > 0 || parsedPreferred.invalidTokens.length > 0) {
       setError("No-contact and preferred-with fields accept only positive student IDs separated by commas, spaces, or semicolons.")
       return
@@ -258,6 +277,7 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
       raceEthnicity: form.raceEthnicity.trim() || undefined,
       teacherNotes: form.teacherNotes.trim() || undefined,
       preassignedTeacher: form.preassignedTeacher.trim() || undefined,
+      avoidTeachers,
     }
 
     dispatch({
@@ -433,6 +453,15 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
             <div className="student-form-section-title">Relationships And Notes</div>
             <div className="student-form-grid">
               <label className="student-field student-field-wide">
+                <span>Blocked Teacher Classrooms</span>
+                <input
+                  className="snapshot-input"
+                  value={form.avoidTeachers}
+                  onChange={(e) => setField("avoidTeachers", e.target.value)}
+                  placeholder="Teacher names separated by semicolons"
+                />
+              </label>
+              <label className="student-field student-field-wide">
                 <span>No-Contact IDs</span>
                 <input
                   className="snapshot-input"
@@ -488,7 +517,5 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
     document.body
   )
 }
-
-
 
 

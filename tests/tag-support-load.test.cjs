@@ -271,6 +271,26 @@ const tests = [
     },
   },
   {
+    name: "student CSV parsing reads blocked teacher classrooms",
+    run: () => {
+      const csv = [
+        "id,grade,firstName,lastName,avoidTeachers",
+        '101,1,Ada,Stone,"Ms. Rivera; ms. rivera; Ms. Stone"',
+      ].join("\n")
+
+      const result = parseStudentCSVWithMapping(csv, {
+        id: "id",
+        grade: "grade",
+        firstName: "firstName",
+        lastName: "lastName",
+        avoidTeachers: "avoidTeachers",
+      })
+
+      assert.equal(result.errors.length, 0)
+      assert.deepEqual(result.students[0].avoidTeachers, ["Ms. Rivera", "Ms. Stone"])
+    },
+  },
+  {
     name: "student CSV parsing skips unrecognized grades instead of coercing them to kindergarten",
     run: () => {
       const csv = [
@@ -401,6 +421,18 @@ const tests = [
       const row = csv.split("\n")[1].split(",")
       assert.equal(row[13], "Reading - Tier 2; Math - Tier 3")
       assert.equal(row[14], "Check-In - Tier 2")
+    },
+  },
+  {
+    name: "student export includes blocked teacher classrooms",
+    run: () => {
+      const student = createStudent({
+        avoidTeachers: ["Ms. Rivera", "Ms. Stone"],
+      })
+
+      const csv = buildPlacementCSV([createClassroom("1-A", [student])], [student], "1")
+      const row = csv.split("\n")[1].split(",")
+      assert.equal(row[row.length - 1], "Ms. Rivera;Ms. Stone")
     },
   },
   {
@@ -549,7 +581,6 @@ main().catch((error) => {
   console.error(error)
   process.exit(1)
 })
-
 
 
 

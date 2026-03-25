@@ -39,6 +39,7 @@ Sample file:
 - `studentCharacteristics`
 - `teacherNotes`
 - `assignedTeacher`
+- `avoidTeachers`
 
 ### Student import behavior
 
@@ -49,6 +50,9 @@ Sample file:
 - `ell` accepts common truthy values plus `EL`, `ELL`, and `RFEP 1-4`.
 - Student re-imports update existing students when the same `id` appears again.
 - `assignedTeacher` creates a teacher-fixed placement when a matching room is available.
+- `avoidTeachers` accepts teacher names separated by semicolons, commas, pipes, or line breaks.
+- Students with `avoidTeachers` stay out of matching teacher classrooms during placement unless a manual override is confirmed.
+- If `assignedTeacher` and `avoidTeachers` conflict, the student stays unresolved instead of being force-placed into that blocked classroom.
 - If a teacher-fixed student cannot be seated in the matching room, the app keeps that student unresolved and flags the reason instead of placing the student somewhere else.
 
 ### Relationship columns
@@ -59,6 +63,7 @@ Use student IDs separated by commas, semicolons, pipes, or spaces.
 - `preferredWith`
 
 `preferredWith` is limited to same-grade peers.
+Multi-year no-contact rules are managed in the app UI rather than the CSV template so they can continue following the same students after grade changes.
 
 ### Kindergarten note
 
