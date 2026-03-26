@@ -66,6 +66,8 @@ Soft balancing includes:
 - do-not-separate pairs
 - characteristic-based support load
 
+The `Class Size + Demographics` slider controls both class-size balancing and demographic balancing pressure during placement.
+
 ## Student import notes
 
 Required columns:
@@ -111,6 +113,19 @@ Important behavior:
 - `studentCharacteristics` accepts the current supported labels and also tolerates legacy aliases.
 - `noContactWith` and `preferredWith` accept comma-, semicolon-, pipe-, or space-separated student IDs.
 - The Rules Manager can store no-contact pairs as either grade-only rules or multi-year rules that follow the same students into later grades.
+
+## Student blend import notes
+
+When you use the multi-file student blend flow, the master roster must map:
+
+- `id`
+- `firstName`
+- `lastName`
+- `Person ID`
+- `State ID`
+- `Student ID / Number`
+
+`grade` and `gender` are optional in the master roster. If `grade` is not in the master file, map it from a supplemental file before import.
 
 ## Teacher import notes
 

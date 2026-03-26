@@ -336,7 +336,7 @@ export function scoreStudentForRoom(
   context: PlacementSoftContext = {}
 ): number {
   const settings = getPlacementSettings(context.gradeSettings)
-  const loadScore = getRoomFillPenalty(classroom, stats, context.gradeRooms, settings)
+  const classSizePenalty = getRoomFillPenalty(classroom, stats, context.gradeRooms, settings) * (weights.demographic / 100)
 
   const roomAcademicAvg =
     classroom.students.length > 0
@@ -359,7 +359,7 @@ export function scoreStudentForRoom(
     : 0
 
   return (
-    loadScore +
+    classSizePenalty +
     academicPenalty +
     behavioralPenalty +
     demographicPenalty +

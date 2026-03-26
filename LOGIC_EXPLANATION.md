@@ -68,7 +68,7 @@ If profiles exist but a room does not match one, that room gets a neutral-but-no
 
 The weighted scoring layer balances:
 
-- room fill pressure
+- class size pressure
 - academic need
 - behavior need
 - demographic balance
@@ -76,7 +76,7 @@ The weighted scoring layer balances:
 - do-not-separate rules
 - characteristic-based support load
 
-The top-level weight sliders control academic, behavioral, demographic, and characteristic-load pressure.
+The top-level weight sliders control academic, behavioral, class-size-plus-demographic, and characteristic-load pressure.
 
 ## Characteristic-based support load
 

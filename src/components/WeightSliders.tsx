@@ -126,8 +126,8 @@ export function WeightSliders() {
         color="#f97316"
       />
       <Slider
-        label="Demographic Needs"
-        description="Higher values prioritize balancing student demographic groups (gender, ELL, 504, and special education status) across classes."
+        label="Class Size + Demographics"
+        description="Higher values prioritize keeping class sizes close while also balancing student demographic groups like gender, ELL, 504, and special education status across classes."
         value={weights.demographic}
         onChange={update("demographic")}
         color="#8b5cf6"

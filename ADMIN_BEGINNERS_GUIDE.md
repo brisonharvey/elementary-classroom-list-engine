@@ -92,6 +92,17 @@ Helpful optional columns:
 - `assignedTeacher`
 - `avoidTeachers`
 
+If you are using the student blend import with a master roster plus extra files, the master roster must include:
+
+- `id`
+- `firstName`
+- `lastName`
+- `Person ID`
+- `State ID`
+- `Student ID / Number`
+
+`grade` and `gender` are optional in that master file. If the master file does not have grade, map it from one of the other student files before importing.
+
 Use `avoidTeachers` when a student should not be placed with one or more specific teachers, even if those classrooms otherwise fit.
 
 Kindergarten tip:

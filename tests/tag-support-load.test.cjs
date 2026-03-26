@@ -408,6 +408,115 @@ const tests = [
     },
   },
   {
+    name: "blend builder does not require gender in the master roster",
+    run: () => {
+      const result = buildBlendedStudentCsv(
+        {
+          id: "master-2",
+          name: "master.csv",
+          table: {
+            headers: ["id", "grade", "firstName", "lastName", "personId", "stateId", "studentNumber"],
+            rows: [["101", "1", "Ada", "Stone", "P-101", "S-101", "N-101"]],
+          },
+          matchColumn: "",
+          fieldMapping: {
+            id: "id",
+            grade: "grade",
+            firstName: "firstName",
+            lastName: "lastName",
+          },
+          masterIdColumns: {
+            personId: "personId",
+            stateId: "stateId",
+            studentNumber: "studentNumber",
+          },
+        },
+        []
+      )
+
+      assert.equal(result.issues.some((issue) => /gender/i.test(issue.message)), false)
+    },
+  },
+  {
+    name: "blend builder does not require grade in the master roster",
+    run: () => {
+      const result = buildBlendedStudentCsv(
+        {
+          id: "master-3",
+          name: "master.csv",
+          table: {
+            headers: ["id", "firstName", "lastName", "personId", "stateId", "studentNumber"],
+            rows: [["101", "Ada", "Stone", "P-101", "S-101", "N-101"]],
+          },
+          matchColumn: "",
+          fieldMapping: {
+            id: "id",
+            firstName: "firstName",
+            lastName: "lastName",
+          },
+          masterIdColumns: {
+            personId: "personId",
+            stateId: "stateId",
+            studentNumber: "studentNumber",
+          },
+        },
+        []
+      )
+
+      assert.equal(result.issues.some((issue) => /grade/i.test(issue.message)), false)
+    },
+  },
+  {
+    name: "blend builder only exports master students that matched a supplemental file",
+    run: () => {
+      const result = buildBlendedStudentCsv(
+        {
+          id: "master-4",
+          name: "master.csv",
+          table: {
+            headers: ["id", "firstName", "lastName", "personId", "stateId", "studentNumber"],
+            rows: [
+              ["101", "Ada", "Stone", "P-101", "S-101", "N-101"],
+              ["102", "Ben", "Reed", "P-102", "S-102", "N-102"],
+            ],
+          },
+          matchColumn: "",
+          fieldMapping: {
+            id: "id",
+            firstName: "firstName",
+            lastName: "lastName",
+          },
+          masterIdColumns: {
+            personId: "personId",
+            stateId: "stateId",
+            studentNumber: "studentNumber",
+          },
+        },
+        [
+          {
+            id: "supp-1",
+            name: "supplement.csv",
+            table: {
+              headers: ["studentNumber", "grade"],
+              rows: [["N-101", "1"]],
+            },
+            matchColumn: "studentNumber",
+            matchType: "studentNumber",
+            fieldMapping: {
+              grade: "grade",
+            },
+          },
+        ]
+      )
+
+      const lines = result.csvText.trim().split("\n")
+      assert.equal(lines.length, 2)
+      assert.match(lines[1], /^101,1,Ada,Stone,/)
+      assert.equal(result.issues.some((issue) => issue.severity === "warning" && /did not match any supplemental file and was skipped/i.test(issue.message)), true)
+      assert.equal(result.issues.some((issue) => issue.severity === "error"), false)
+    },
+  },
+  {
     name: "student export keeps tier note text when present",
     run: () => {
       const student = createStudent({
@@ -520,7 +629,7 @@ const tests = [
         createStudent({ id: 6 }),
       ])
       const gradeRooms = [fullerRoom, smallerRoom]
-      const weights = { academic: 0, behavioral: 0, demographic: 0, tagSupportLoad: 0 }
+      const weights = { academic: 0, behavioral: 0, demographic: 100, tagSupportLoad: 0 }
       const settings = createDefaultGradeSettingsMap()["1"]
 
       const fullerScore = scoreStudentForRoom(candidate, fullerRoom, computeRoomStats(fullerRoom), weights, {
@@ -533,6 +642,34 @@ const tests = [
       })
 
       assert.ok(smallerScore < fullerScore)
+    },
+  },
+  {
+    name: "class-size balancing turns off when the class size and demographics slider is zero",
+    run: () => {
+      const candidate = createStudent({ id: 51 })
+      const fullerRoom = createClassroom("1-A", [
+        createStudent({ id: 1 }),
+        createStudent({ id: 2 }),
+        createStudent({ id: 3 }),
+      ])
+      const smallerRoom = createClassroom("1-B", [
+        createStudent({ id: 4 }),
+      ])
+      const gradeRooms = [fullerRoom, smallerRoom]
+      const weights = { academic: 0, behavioral: 0, demographic: 0, tagSupportLoad: 0 }
+      const settings = createDefaultGradeSettingsMap()["1"]
+
+      const fullerScore = scoreStudentForRoom(candidate, fullerRoom, computeRoomStats(fullerRoom), weights, {
+        gradeSettings: settings,
+        gradeRooms,
+      })
+      const smallerScore = scoreStudentForRoom(candidate, smallerRoom, computeRoomStats(smallerRoom), weights, {
+        gradeSettings: settings,
+        gradeRooms,
+      })
+
+      assert.equal(fullerScore, smallerScore)
     },
   },
   {

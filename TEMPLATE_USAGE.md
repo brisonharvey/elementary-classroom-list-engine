@@ -55,6 +55,19 @@ Sample file:
 - If `assignedTeacher` and `avoidTeachers` conflict, the student stays unresolved instead of being force-placed into that blocked classroom.
 - If a teacher-fixed student cannot be seated in the matching room, the app keeps that student unresolved and flags the reason instead of placing the student somewhere else.
 
+### Master roster blend requirement
+
+If you are combining multiple student files, the master roster only needs to provide:
+
+- `id`
+- `firstName`
+- `lastName`
+- `Person ID`
+- `State ID`
+- `Student ID / Number`
+
+`grade` and `gender` are optional in the master roster for blend imports. If the master file does not contain `grade`, map it from one of the supplemental files.
+
 ### Relationship columns
 
 Use student IDs separated by commas, semicolons, pipes, or spaces.

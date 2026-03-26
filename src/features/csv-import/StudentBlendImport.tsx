@@ -46,7 +46,7 @@ type ReviewState = {
   skipped: number
 }
 
-const MASTER_REQUIRED_FIELDS: StudentCsvFieldKey[] = ["id", "grade", "firstName", "lastName"]
+const MASTER_REQUIRED_FIELDS: StudentCsvFieldKey[] = ["id", "firstName", "lastName"]
 const IDENTITY_TYPES: Array<{ key: StudentMatchType; label: string }> = [
   { key: "personId", label: "Person ID" },
   { key: "stateId", label: "State ID" },
@@ -285,7 +285,7 @@ export function StudentBlendImport() {
         <div className="csv-import-guide">
           <strong>Recommended order</strong>
           <ol className="csv-import-guide-list">
-            <li>Upload the master roster and map the core student columns plus all three ID columns.</li>
+            <li>Upload the master roster and map `id`, `firstName`, `lastName`, plus all three ID columns.</li>
             <li>Add one supplemental file at a time.</li>
             <li>For each supplemental file, choose the file’s match column and which ID type it should use.</li>
             <li>Map only the extra fields that file contributes, then review the blended result.</li>
@@ -316,7 +316,7 @@ export function StudentBlendImport() {
               <div className={`csv-import-progress-card ${masterReady ? "complete" : ""}`}>
                 <span className="csv-import-progress-label">Master roster</span>
                 <strong>{masterReady ? "Ready" : "Needs setup"}</strong>
-                <span>Required student fields and all three ID columns must be mapped.</span>
+                <span>`id`, `firstName`, `lastName`, and all three ID columns must be mapped.</span>
               </div>
               <div className={`csv-import-progress-card ${supplements.length > 0 && readySupplementCount === supplements.length ? "complete" : ""}`}>
                 <span className="csv-import-progress-label">Supplemental files</span>
@@ -363,7 +363,7 @@ export function StudentBlendImport() {
 
                 <div className="csv-import-note">
                   {selectedSource.kind === "master"
-                    ? "This file is the hub for student identity. It should include Person ID, State ID, Student ID / Number, and the core student roster fields."
+                    ? "This file is the hub for student identity. It should include Person ID, State ID, Student ID / Number, plus id, first name, and last name."
                     : "This file is a spoke. Choose which column identifies the student in this file, then choose which master-roster ID type it matches."}
                 </div>
 
@@ -468,7 +468,7 @@ export function StudentBlendImport() {
 
                 <div className="csv-import-note">
                   Mapping progress: {countMappedFields(selectedSource.fieldMapping)} field{countMappedFields(selectedSource.fieldMapping) === 1 ? "" : "s"} mapped.
-                  {selectedSource.kind === "master" ? " The four required student fields must be mapped before blending." : " Map only the extra fields this file contributes. The importer will try to pre-fill likely matches first."}
+                  {selectedSource.kind === "master" ? " The master file must map id, first name, last name, and all three ID types before blending." : " Map any extra fields this file contributes, including grade if the master file does not have it. The importer will try to pre-fill likely matches first."}
                 </div>
 
                 <div className="csv-import-mapping-grid">

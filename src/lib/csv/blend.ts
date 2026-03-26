@@ -22,7 +22,7 @@ export interface StudentBlendResult {
   headers: StudentCsvFieldKey[]
 }
 
-const REQUIRED_MASTER_FIELDS: StudentCsvFieldKey[] = ["id", "grade", "firstName", "lastName"]
+const REQUIRED_MASTER_FIELDS: StudentCsvFieldKey[] = ["id", "firstName", "lastName"]
 const REQUIRED_MASTER_IDS: StudentMatchType[] = ["personId", "stateId", "studentNumber"]
 
 function escapeCsvCell(value: string): string {
@@ -105,6 +105,7 @@ export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: 
       rowIndex,
       row,
       record,
+      matchedSupplement: false,
     }
   })
 
@@ -146,6 +147,7 @@ export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: 
       }
 
       const target = matches[0]
+      target.matchedSupplement = true
       for (const [field, column] of Object.entries(supplement.fieldMapping) as Array<[StudentCsvFieldKey, string | undefined]>) {
         const value = getRowValue(supplement.table.headers, row, column)
         if (!value) continue
@@ -154,7 +156,21 @@ export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: 
     })
   }
 
-  const csvRows = masterRecords.map((entry) =>
+  const recordsToExport = supplements.length > 0
+    ? masterRecords.filter((entry) => entry.matchedSupplement)
+    : masterRecords
+
+  if (supplements.length > 0) {
+    const skippedMasterRecords = masterRecords.filter((entry) => !entry.matchedSupplement)
+    skippedMasterRecords.forEach((entry, index) => {
+      issues.push({
+        severity: "warning",
+        message: `Master roster row ${entry.rowIndex + 2} did not match any supplemental file and was skipped (${index + 1} of ${skippedMasterRecords.length}).`,
+      })
+    })
+  }
+
+  const csvRows = recordsToExport.map((entry) =>
     canonicalHeaders.map((header) => escapeCsvCell(entry.record[header] ?? "")).join(",")
   )
 

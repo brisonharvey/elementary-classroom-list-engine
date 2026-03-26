@@ -452,8 +452,8 @@ const tests = [
         gradeRooms,
       })
 
-      assert.ok(warnings.some((warning) => /Do Not Separate/i.test(warning)))
-      assert.ok(warnings.some((warning) => /Assigned teacher is Ms\. Rivera/i.test(warning)))
+      assert.ok(warnings.some((warning) => /separate this student from Piper/i.test(warning)))
+      assert.ok(warnings.some((warning) => /assigned to Ms\. Rivera/i.test(warning)))
 
       const unassignedWarnings = getManualUnassignedWarnings(teacherFixed, {
         settings: createDefaultGradeSettingsMap()["1"],
@@ -469,8 +469,8 @@ const tests = [
         gradeRooms,
       })
 
-      assert.ok(unassignedWarnings.some((warning) => /Do Not Separate/i.test(warning)))
-      assert.ok(unassignedWarnings.some((warning) => /teacher-fixed placement/i.test(warning)))
+      assert.ok(unassignedWarnings.some((warning) => /separate this student from Piper/i.test(warning)))
+      assert.ok(unassignedWarnings.some((warning) => /leaving them unassigned would break that placement/i.test(warning)))
     },
   },
   {
@@ -491,7 +491,7 @@ const tests = [
         gradeRooms,
       })
 
-      assert.ok(warnings.some((warning) => /Teacher restriction blocks Ms\. Stone/i.test(warning)))
+      assert.ok(warnings.some((warning) => /should not be placed with Ms\. Stone/i.test(warning)))
     },
   },
   {

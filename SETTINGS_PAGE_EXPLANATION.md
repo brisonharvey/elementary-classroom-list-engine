@@ -63,6 +63,8 @@ These tune the main soft-scoring pass.
 
 These settings matter after hard constraints pass.
 
+The `Class Size + Demographics` slider in the main controls now scales both class-size balancing and demographic balancing together.
+
 ### Characteristic load formula
 
 These control how strongly the engine spreads `studentCharacteristics` across rooms.
