@@ -49,6 +49,12 @@ Important reminders:
 - `Show Snapshots` opens the snapshot panel.
 - `Rules Manager` and `Settings` open grade tools.
 
+Reference screenshots:
+
+![Workspace overview](docs/reference/app-overview.png)
+
+![Rules Manager](docs/reference/rules-manager.png)
+
 ## Recommended order
 
 1. Import students.

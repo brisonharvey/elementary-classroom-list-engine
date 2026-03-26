@@ -181,6 +181,22 @@ Exported data includes:
 Derived room metrics are not exported as extra columns.
 If a student is placed in a room with no teacher name, the exported `assignedTeacher` field stays blank unless the student also has a `preassignedTeacher`.
 
+## Reference screenshots
+
+App overview:
+
+![App overview](docs/reference/app-overview.png)
+
+Grade summary drawer:
+
+![Grade summary drawer](docs/reference/summary-drawer.png)
+
+Rules Manager:
+
+![Rules Manager](docs/reference/rules-manager.png)
+
+More screenshot notes live in [docs/reference/README.md](docs/reference/README.md).
+
 ## Development
 
 ### Prerequisites

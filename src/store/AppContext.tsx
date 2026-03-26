@@ -16,7 +16,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-const STORAGE_KEY = "classroom-placement-state-v5"
+export const STORAGE_KEY = "classroom-placement-state-v5"
 
 type LegacyTeacherCharacteristics = {
   classroomStructure?: unknown

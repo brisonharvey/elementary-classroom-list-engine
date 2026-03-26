@@ -15,6 +15,7 @@ import { ClassroomDeleteDialog } from "./components/ClassroomDeleteDialog"
 import { StudentCardKey } from "./components/StudentCardKey"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 import { getGradeReviewWarnings } from "./utils/gradeReview"
+import { getReferenceViewFromLocation } from "./referenceSeed"
 
 const CsvImportPanel = lazy(async () => {
   const module = await import("./features/csv-import")
@@ -43,9 +44,10 @@ function PlacementWorkspace() {
 
 export default function App() {
   const { state, dispatch } = useApp()
+  const referenceView = useMemo(() => getReferenceViewFromLocation(), [])
   const hasStudents = state.allStudents.length > 0
-  const [activePanel, setActivePanel] = useState<SlidePanel>("none")
-  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false)
+  const [activePanel, setActivePanel] = useState<SlidePanel>(referenceView.panel)
+  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(referenceView.summaryOpen)
   const [bottomPanelState, setBottomPanelState] = useState<"expanded" | "minimized" | "hidden">("hidden")
   const [quickStartDismissed, setQuickStartDismissed] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
