@@ -94,6 +94,7 @@ Use the `studentCharacteristics` column with these exact labels:
 - `Struggles with peer conflict`
 - `High energy`
 - `Needs movement breaks`
+- `Extended time for assignments`
 - `Needs enrichment`
 - `Independent worker`
 - `Low academic confidence`
@@ -144,6 +145,7 @@ Teacher ratings are expected to be `1` through `5`.
 - `Struggles with peer conflict` -> `Social/Emotional Support`, `Regulation/Behavior Support`
 - `High energy` -> `Regulation/Behavior Support`, `Structure`
 - `Needs movement breaks` -> `Regulation/Behavior Support`, `Structure`
+- `Extended time for assignments` -> `Instructional Expertise`, `Structure`
 - `Needs enrichment` -> `Instructional Expertise`, `Structure`
 - `Independent worker` -> `Instructional Expertise`, `Structure`
 - `Low academic confidence` -> `Social/Emotional Support`, `Instructional Expertise`

@@ -6,6 +6,7 @@ It supports:
 
 - student and teacher CSV import with column mapping
 - CSV and XLSX imports, including sheet selection and basic header-row preprocessing
+- school name and school-year tracking for each placement file
 - student re-imports that update existing roster records by `id`
 - a guided setup panel for first-time roster building
 - teacher-fit aware auto-placement
@@ -114,7 +115,11 @@ Important behavior:
 - `noContactWith` and `preferredWith` accept comma-, semicolon-, pipe-, or space-separated student IDs.
 - The Rules Manager can store no-contact pairs as either grade-only rules or multi-year rules that follow the same students into later grades.
 
+To update an existing student, either edit the student directly in the app or re-import that student with the same `id`.
+
 ## Student blend import notes
+
+Before the first student import, the app now asks you to name the school and school year for the placement file.
 
 When you use the multi-file student blend flow, the master roster must map:
 
@@ -126,6 +131,8 @@ When you use the multi-file student blend flow, the master roster must map:
 - `Student ID / Number`
 
 `grade` and `gender` are optional in the master roster. If `grade` is not in the master file, map it from a supplemental file before import.
+
+That saved school/year context stays with the local placement file so rules, snapshots, and later re-import work stay tied to the correct school year.
 
 ## Teacher import notes
 
@@ -157,6 +164,7 @@ Supported `studentCharacteristics` values:
 - `Struggles with peer conflict`
 - `High energy`
 - `Needs movement breaks`
+- `Extended time for assignments`
 - `Needs enrichment`
 - `Independent worker`
 - `Low academic confidence`

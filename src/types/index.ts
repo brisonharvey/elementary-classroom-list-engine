@@ -21,6 +21,7 @@ export const STUDENT_TAGS = [
   "Struggles with peer conflict",
   "High energy",
   "Needs movement breaks",
+  "Extended time for assignments",
   "Needs enrichment",
   "Independent worker",
   "Low academic confidence",
@@ -163,6 +164,8 @@ export interface AppState {
   allStudents: Student[]
   teacherProfiles: TeacherProfile[]
   classrooms: Classroom[]
+  schoolName: string
+  schoolYear: string
   activeGrade: Grade
   showTeacherNames: boolean
   weights: Weights

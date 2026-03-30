@@ -77,6 +77,21 @@ function createState() {
 
 const tests = [
   {
+    name: "placement context stores school name and school year",
+    run: () => {
+      const next = reducer(initialState, {
+        type: "SET_PLACEMENT_CONTEXT",
+        payload: {
+          schoolName: "Lincoln Elementary",
+          schoolYear: "2026-2027",
+        },
+      })
+
+      assert.equal(next.schoolName, "Lincoln Elementary")
+      assert.equal(next.schoolYear, "2026-2027")
+    },
+  },
+  {
     name: "upserting a student with a new id rewrites references and keeps classroom placement",
     run: () => {
       const state = createState()
@@ -302,6 +317,39 @@ const tests = [
       assert.equal(next.classrooms[0].students.find((student) => student.id === 101).firstName, "Duplicate Alpha")
       assert.equal(next.classrooms.some((classroom) => classroom.students.some((student) => student.id === 303)), false)
       assert.equal(next.relationshipRules.length, 1)
+    },
+  },
+  {
+    name: "loading a student re-import with no tags clears existing tags on that student",
+    run: () => {
+      const state = createState()
+      state.allStudents = [
+        createStudent(101, {
+          firstName: "Alpha",
+          tags: ["Needs reassurance", "Extended time for assignments"],
+        }),
+      ]
+      state.classrooms = [
+        createClassroom("1-A", [
+          createStudent(101, {
+            firstName: "Alpha",
+            tags: ["Needs reassurance", "Extended time for assignments"],
+          }),
+        ]),
+      ]
+
+      const next = reducer(state, {
+        type: "LOAD_STUDENTS",
+        payload: [
+          createStudent(101, {
+            firstName: "Alpha",
+            tags: [],
+          }),
+        ],
+      })
+
+      assert.deepEqual(next.allStudents[0].tags, [])
+      assert.deepEqual(next.classrooms[0].students[0].tags, [])
     },
   },
   {
@@ -573,6 +621,71 @@ const tests = [
       assert.equal(afterBothGradeChange.relationshipRules[0].note, "Keep apart next year too")
       assert.deepEqual(afterBothGradeChange.allStudents.find((student) => student.id === 101).noContactWith, [102])
       assert.deepEqual(afterBothGradeChange.allStudents.find((student) => student.id === 102).noContactWith, [101])
+    },
+  },
+  {
+    name: "multi-year no-contact rules persist within the same school placement file across school years",
+    run: () => {
+      const state = reducer(initialState, {
+        type: "SET_PLACEMENT_CONTEXT",
+        payload: {
+          schoolName: "Lincoln Elementary",
+          schoolYear: "2026-2027",
+        },
+      })
+
+      state.allStudents = [
+        createStudent(101, { firstName: "Alpha", grade: "1" }),
+        createStudent(102, { firstName: "Beta", grade: "1" }),
+      ]
+      state.classrooms = [
+        createClassroom("1-A", [createStudent(101, { firstName: "Alpha", grade: "1" })]),
+        createClassroom("1-B", [createStudent(102, { firstName: "Beta", grade: "1" })]),
+        createClassroom("2-A", [], { grade: "2" }),
+        createClassroom("2-B", [], { grade: "2" }),
+      ]
+
+      const withRule = reducer(state, {
+        type: "UPSERT_NO_CONTACT_PAIR",
+        payload: {
+          grade: "1",
+          studentIds: [101, 102],
+          note: "Carry forward in the same school file",
+          scope: "multiYear",
+        },
+      })
+
+      const nextSchoolYearSameSchool = reducer(withRule, {
+        type: "SET_PLACEMENT_CONTEXT",
+        payload: {
+          schoolName: "Lincoln Elementary",
+          schoolYear: "2027-2028",
+        },
+      })
+
+      const afterPromotion = reducer(nextSchoolYearSameSchool, {
+        type: "UPSERT_STUDENT",
+        payload: {
+          previousId: 101,
+          student: createStudent(101, { firstName: "Alpha", grade: "2", noContactWith: [102] }),
+        },
+      })
+
+      const afterBothPromotion = reducer(afterPromotion, {
+        type: "UPSERT_STUDENT",
+        payload: {
+          previousId: 102,
+          student: createStudent(102, { firstName: "Beta", grade: "2", noContactWith: [101] }),
+        },
+      })
+
+      assert.equal(afterBothPromotion.schoolName, "Lincoln Elementary")
+      assert.equal(afterBothPromotion.schoolYear, "2027-2028")
+      assert.equal(afterBothPromotion.relationshipRules.length, 1)
+      assert.equal(afterBothPromotion.relationshipRules[0].scope, "multiYear")
+      assert.equal(afterBothPromotion.relationshipRules[0].note, "Carry forward in the same school file")
+      assert.deepEqual(afterBothPromotion.allStudents.find((student) => student.id === 101).noContactWith, [102])
+      assert.deepEqual(afterBothPromotion.allStudents.find((student) => student.id === 102).noContactWith, [101])
     },
   },
   {

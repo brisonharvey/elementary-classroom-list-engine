@@ -21,6 +21,7 @@ export const STUDENT_TAG_TEACHER_CHARACTERISTIC_REQUIREMENTS: Record<
   "Struggles with peer conflict": { socialEmotionalSupport: 1.2, regulationBehaviorSupport: 0.8 },
   "High energy": { regulationBehaviorSupport: 1.4, structure: 0.6 },
   "Needs movement breaks": { regulationBehaviorSupport: 1.5, structure: 0.5 },
+  "Extended time for assignments": { instructionalExpertise: 1.6, structure: 0.4 },
   "Needs enrichment": { instructionalExpertise: 1.7, structure: 0.3 },
   "Independent worker": { instructionalExpertise: 1.1, structure: 0.9 },
   "Low academic confidence": { socialEmotionalSupport: 1.2, instructionalExpertise: 0.8 },
@@ -35,6 +36,7 @@ export const STUDENT_TAG_SUPPORT_WEIGHTS: Record<StudentTag, number> = {
   "Struggles with peer conflict": 3,
   "High energy": 2,
   "Needs movement breaks": 2,
+  "Extended time for assignments": 2,
   "Needs enrichment": 1,
   "Independent worker": -1,
   "Low academic confidence": 2,
@@ -43,7 +45,7 @@ export const STUDENT_TAG_SUPPORT_WEIGHTS: Record<StudentTag, number> = {
 export const TAG_SUPPORT_LOAD_CATEGORIES: Record<TagSupportLoadCategory, StudentTag[]> = {
   behavioral: ["Needs strong routine", "Needs frequent redirection", "Struggles with peer conflict"],
   emotional: ["Easily frustrated", "Needs reassurance", "Sensitive to correction", "Low academic confidence"],
-  instructional: ["Needs enrichment", "Independent worker"],
+  instructional: ["Extended time for assignments", "Needs enrichment", "Independent worker"],
   energy: ["High energy", "Needs movement breaks"],
 }
 

@@ -12,6 +12,8 @@ export function CsvImportPanel({ onClose }: { onClose: () => void }) {
         <div>
           <strong>CSV Import</strong>
           <p className="csv-import-subtitle">Students use a master-roster blend flow. Teachers still import as a single preprocessed file.</p>
+          {mode === "students" ? <p className="csv-import-subtitle">To update existing students in bulk, re-import them with the same student `id` values.</p> : null}
+          {mode === "students" ? <p className="csv-import-subtitle">The first student import should also set the school name and school year for this placement file.</p> : null}
         </div>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
       </div>

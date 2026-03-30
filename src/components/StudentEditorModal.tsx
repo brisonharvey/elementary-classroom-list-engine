@@ -312,6 +312,11 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
                   : "Currently unassigned."
                 : "New students start unassigned until you drag or auto-place them."}
             </p>
+            <p>
+              {student
+                ? "Use this form to update one student's information directly."
+                : "To update many students at once, use Import CSV and keep the same student IDs."}
+            </p>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
         </div>

@@ -132,6 +132,8 @@ export function StudentBlendImport() {
   const { state, dispatch } = useApp()
   const [step, setStep] = useState<Step>("upload")
   const [status, setStatus] = useState<{ type: "idle" | "success" | "error"; message: string }>({ type: "idle", message: "" })
+  const [schoolNameDraft, setSchoolNameDraft] = useState(state.schoolName)
+  const [schoolYearDraft, setSchoolYearDraft] = useState(state.schoolYear)
   const [master, setMaster] = useState<SourceConfig | null>(null)
   const [supplements, setSupplements] = useState<SourceConfig[]>([])
   const [selectedId, setSelectedId] = useState<string>("")
@@ -144,6 +146,8 @@ export function StudentBlendImport() {
   const reviewSummary = useMemo(() => countIssues(review?.issues ?? []), [review])
   const masterReady = useMemo(() => isMasterReady(master), [master])
   const readySupplementCount = useMemo(() => supplements.filter((source) => isSupplementReady(source)).length, [supplements])
+  const placementContextReady = Boolean(schoolNameDraft.trim()) && Boolean(schoolYearDraft.trim())
+  const hasSavedPlacementContext = Boolean(state.schoolName.trim()) && Boolean(state.schoolYear.trim())
 
   function reset(statusMessage: { type: "idle" | "success" | "error"; message: string } = { type: "idle", message: "" }) {
     setStep("upload")
@@ -154,7 +158,37 @@ export function StudentBlendImport() {
     setReview(null)
   }
 
+  function savePlacementContext() {
+    if (!placementContextReady) {
+      setStatus({ type: "error", message: "Enter both a school name and a school year before starting the placement file." })
+      return
+    }
+
+    dispatch({
+      type: "SET_PLACEMENT_CONTEXT",
+      payload: {
+        schoolName: schoolNameDraft,
+        schoolYear: schoolYearDraft,
+      },
+    })
+    setStatus({ type: "success", message: `Saved placement file for ${schoolNameDraft.trim()} (${schoolYearDraft.trim()}).` })
+  }
+
   async function loadSource(file: File, kind: SourceKind) {
+    if (kind === "master" && !hasSavedPlacementContext && !placementContextReady) {
+      setStatus({ type: "error", message: "Name the school and school year before uploading the first master roster." })
+      return
+    }
+    if (kind === "master" && !hasSavedPlacementContext && placementContextReady) {
+      dispatch({
+        type: "SET_PLACEMENT_CONTEXT",
+        payload: {
+          schoolName: schoolNameDraft,
+          schoolYear: schoolYearDraft,
+        },
+      })
+    }
+
     const sheets = await readSpreadsheetFile(file)
     const defaults = getPreprocessDefaults(file.name)
     const nextSource = applyAutoSuggestions({
@@ -279,6 +313,33 @@ export function StudentBlendImport() {
           <div>
             <strong>Student Blend Import</strong>
             <p>Start with one master roster that contains all three ID types. Then add supporting files and tell the app which ID type each file uses.</p>
+          </div>
+        </div>
+
+        <div className="csv-import-context-card">
+          <div className="csv-import-context-copy">
+            <strong>Placement file identity</strong>
+            <p>Name the school and school year before the first student import so rules, snapshots, and re-import work stay tied to the correct placement file.</p>
+          </div>
+          <div className="csv-import-context-grid">
+            <label className="csv-import-field">
+              <span>School name</span>
+              <input value={schoolNameDraft} onChange={(event) => setSchoolNameDraft(event.target.value)} placeholder="Example: Lincoln Elementary" />
+            </label>
+            <label className="csv-import-field">
+              <span>School year</span>
+              <input value={schoolYearDraft} onChange={(event) => setSchoolYearDraft(event.target.value)} placeholder="Example: 2026-2027" />
+            </label>
+          </div>
+          <div className="csv-import-context-actions">
+            <button className="btn btn-ghost btn-sm" onClick={savePlacementContext} disabled={!placementContextReady}>
+              Save School And Year
+            </button>
+            {state.schoolName.trim() && state.schoolYear.trim() ? (
+              <span className="csv-import-context-status">Current file: {state.schoolName} ({state.schoolYear})</span>
+            ) : (
+              <span className="csv-import-context-status">School and school year are required before the first master roster upload.</span>
+            )}
           </div>
         </div>
 

@@ -24,6 +24,7 @@ import { checkHardConstraints } from "../utils/constraints"
 export type Action =
   | { type: "LOAD_STUDENTS"; payload: Student[] }
   | { type: "LOAD_TEACHERS"; payload: TeacherProfile[] }
+  | { type: "SET_PLACEMENT_CONTEXT"; payload: { schoolName: string; schoolYear: string } }
   | { type: "UPSERT_STUDENT"; payload: { student: Student; previousId?: number } }
   | { type: "DELETE_STUDENT"; payload: number }
   | { type: "SET_ACTIVE_GRADE"; payload: Grade }
@@ -58,6 +59,8 @@ export const initialState: AppState = {
   allStudents: [],
   teacherProfiles: [],
   classrooms: initializeClassrooms(),
+  schoolName: "",
+  schoolYear: "",
   activeGrade: "K",
   showTeacherNames: true,
   weights: { academic: 50, behavioral: 50, demographic: 50, tagSupportLoad: 50 },
@@ -436,6 +439,12 @@ export function reducer(state: AppState, action: Action): AppState {
         classrooms,
       })
     }
+    case "SET_PLACEMENT_CONTEXT":
+      return {
+        ...state,
+        schoolName: action.payload.schoolName.trim(),
+        schoolYear: action.payload.schoolYear.trim(),
+      }
     case "UPSERT_STUDENT":
       return withTeacherAssignmentDiagnostics(applyUpsertStudentCore(state, action.payload.student, action.payload.previousId))
     case "DELETE_STUDENT": {

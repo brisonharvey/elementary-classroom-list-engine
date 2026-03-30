@@ -16,7 +16,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-export const STORAGE_KEY = "classroom-placement-state-v5"
+export const STORAGE_KEY = "classroom-placement-state-v6"
 
 type LegacyTeacherCharacteristics = {
   classroomStructure?: unknown
@@ -202,6 +202,7 @@ function loadPersistedState(): AppState {
   try {
     const raw =
       window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem("classroom-placement-state-v5") ??
       window.localStorage.getItem("classroom-placement-state-v4") ??
       window.localStorage.getItem("classroom-placement-state-v3") ??
       window.localStorage.getItem("classroom-placement-state-v2") ??
@@ -248,6 +249,8 @@ function loadPersistedState(): AppState {
       teacherProfiles,
       classrooms,
       snapshots,
+      schoolName: typeof parsed.schoolName === "string" ? parsed.schoolName.trim() : "",
+      schoolYear: typeof parsed.schoolYear === "string" ? parsed.schoolYear.trim() : "",
       gradeSettings: parsed.gradeSettings ? normalizeGradeSettingsMap(parsed.gradeSettings) : defaultSettings,
       unresolvedReasons: parsed.unresolvedReasons ?? {},
       relationshipRules: (parsed.relationshipRules ?? []).map((rule) => normalizeRelationshipRule(rule as RelationshipRule)),

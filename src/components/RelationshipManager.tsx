@@ -330,8 +330,14 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
       </div>
 
       <p className="relationship-manager-intro">
-        Manage hard no-contact pairs, soft keep-together pairs, blocked teacher classrooms, and multi-year no-contact rules that should follow students into future grades.
+        Manage hard no-contact pairs, soft keep-together pairs, blocked teacher classrooms, and multi-year no-contact rules that should follow students into future grades within this placement file.
       </p>
+      {(state.schoolName.trim() || state.schoolYear.trim()) && (
+        <div className="relationship-manager-context">
+          <strong>Current placement file:</strong> {state.schoolName.trim() || "Unnamed school"}{state.schoolYear.trim() ? ` (${state.schoolYear.trim()})` : ""}
+          <span>Multi-year no-contact rules stay with the same students as they move to later grades inside this school-year workspace.</span>
+        </div>
+      )}
 
       <section className="relationship-manager-form" aria-label="Add student pair rule">
         <div className="relationship-manager-grid">

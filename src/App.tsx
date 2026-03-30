@@ -96,7 +96,12 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <h1 className="app-title">Classroom Placement Engine</h1>
+          <h1 className="app-title">Classroom Placement Engine</h1>
+          {(state.schoolName.trim() || state.schoolYear.trim()) && (
+            <div className="app-subtitle">
+              {(state.schoolName.trim() || "Unnamed school")}{state.schoolYear.trim() ? ` • ${state.schoolYear.trim()}` : ""}
+            </div>
+          )}
         </div>
         <div className="header-right">
           <button className={`btn btn-sm ${activePanel === "import" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "import" ? "none" : "import"))}>

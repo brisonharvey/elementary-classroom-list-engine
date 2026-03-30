@@ -33,6 +33,7 @@ Have these ready:
 Important reminders:
 
 - Each student needs a unique `id`.
+- Before the first student import, name the school and school year for the placement file.
 - Student re-imports update existing students when the same `id` appears again.
 - Teacher import does not move students by itself.
 - `Clear All` removes saved work and snapshots from this device and brings back the guided setup panel.
@@ -109,12 +110,49 @@ If you are using the student blend import with a master roster plus extra files,
 
 `grade` and `gender` are optional in that master file. If the master file does not have grade, map it from one of the other student files before importing.
 
+The app also asks for the school name and school year before the first student import.
+That helps keep saved rules, snapshots, and re-import work attached to the correct placement file.
+
 Use `avoidTeachers` when a student should not be placed with one or more specific teachers, even if those classrooms otherwise fit.
 
 Kindergarten tip:
 
 - Use `briganceReadiness` for kindergarten if you want readiness scores included in placement.
 - If a student row has an invalid grade label, the app skips that row and shows an import error instead of guessing.
+
+## Updating existing students
+
+You can update students in two ways.
+
+### Option 1: Edit one student in the app
+
+Use this when you only need to change one student or a small number of students.
+
+1. Find the student card in a classroom or in `Unassigned`.
+2. Click `Edit`.
+3. Update the student's information.
+4. Click `Save Changes`.
+
+This updates the current roster record directly.
+
+### Option 2: Re-import students from a file
+
+Use this when you need to update many students at once.
+
+1. Open `Import CSV`.
+2. Upload and map the student file.
+3. Make sure each returning student keeps the same `id` already used in the app.
+4. Build the review screen.
+5. Check the `Existing students updated` count before confirming.
+6. Confirm the import.
+
+If the same `id` appears again, the app updates that student instead of creating a second copy.
+
+Important reminders:
+
+- Changing a student's `id` makes the app treat that record as a different student.
+- Re-importing is best for bulk updates like tags, notes, tiers, assessment data, teacher assignment, or restrictions.
+- Manual `Edit` is usually best for one-off fixes.
 
 ## Teacher import
 
@@ -135,6 +173,115 @@ Teacher imports try to preserve existing teacher-room matches by teacher name, s
 If a teacher row has an invalid grade label, the app skips that row and shows an import error.
 
 If you import an XLSX workbook, you can choose the sheet and adjust header-row preprocessing before mapping columns.
+
+## Teacher characteristic reference
+
+Teacher ratings describe strengths the placement engine uses when it compares student characteristics to classrooms.
+
+Think of each rating as a practical classroom disposition, not a judgment about the teacher as a whole.
+
+### `Structure`
+
+This strength reflects how predictable, organized, and steady a classroom feels from the student's point of view.
+
+Teachers rated higher in `Structure` usually:
+
+- keep routines consistent
+- make directions clear and repeatable
+- build transitions that students can anticipate
+- set up work systems that reduce ambiguity
+- help students know what to do next without constant reteaching
+
+This strength especially supports students tagged with:
+
+- `Needs strong routine`
+- `Needs frequent redirection`
+- `High energy`
+- `Needs movement breaks`
+- `Extended time for assignments`
+- `Needs enrichment`
+- `Independent worker`
+
+In practice, a strong `Structure` rating fits teachers who provide calm pacing, visible routines, organized materials, and a room where students can settle into expectations quickly.
+
+### `Regulation/Behavior Support`
+
+This strength reflects how well a teacher helps students regulate attention, impulses, movement, and behavior during the day.
+
+Teachers rated higher in `Regulation/Behavior Support` usually:
+
+- respond calmly to dysregulation
+- redirect quickly without escalating students
+- prevent small issues from becoming larger ones
+- build behavior supports into normal instruction
+- handle active or impulsive students with steadiness and consistency
+
+This strength especially supports students tagged with:
+
+- `Needs strong routine`
+- `Needs frequent redirection`
+- `Easily frustrated`
+- `Struggles with peer conflict`
+- `High energy`
+- `Needs movement breaks`
+
+In practice, a strong `Regulation/Behavior Support` rating fits teachers who stay composed under pressure, notice early warning signs, and can keep students engaged without relying on constant correction.
+
+### `Social/Emotional Support`
+
+This strength reflects how well a teacher creates emotional safety, trust, and relationship-based support for students.
+
+Teachers rated higher in `Social/Emotional Support` usually:
+
+- respond with empathy
+- repair student stress without shame
+- coach students through frustration or conflict
+- help sensitive students stay connected after mistakes
+- build a classroom tone where students feel safe asking for help
+
+This strength especially supports students tagged with:
+
+- `Easily frustrated`
+- `Needs reassurance`
+- `Sensitive to correction`
+- `Struggles with peer conflict`
+- `Low academic confidence`
+
+In practice, a strong `Social/Emotional Support` rating fits teachers who are warm, patient, relational, and skilled at helping students recover emotionally while staying part of instruction.
+
+### `Instructional Expertise`
+
+This strength reflects how well a teacher adjusts instruction so students can access work at the right level and with the right supports.
+
+Teachers rated higher in `Instructional Expertise` usually:
+
+- scaffold tasks without lowering expectations too far
+- differentiate pacing, complexity, and supports
+- explain concepts in more than one way
+- recognize when a student needs extra processing time or another entry point
+- support both confidence-building and stretch learning
+
+This strength especially supports students tagged with:
+
+- `Needs reassurance`
+- `Sensitive to correction`
+- `Extended time for assignments`
+- `Needs enrichment`
+- `Independent worker`
+- `Low academic confidence`
+
+In practice, a strong `Instructional Expertise` rating fits teachers who can adapt lessons thoughtfully, stretch advanced students, support hesitant learners, and make assignments accessible without making them feel watered down.
+
+## How the app uses these ratings
+
+The app compares student tags to these four teacher characteristics during teacher-fit scoring.
+
+- Each student tag points to one or two teacher strengths.
+- Some links are stronger than others, so the app weights them differently.
+- Higher teacher ratings lower the fit penalty for students whose tags depend on that strength.
+- Students with no tags do not add teacher-fit pressure.
+
+This means the ratings work best when they reflect real classroom dispositions and day-to-day teaching habits rather than general popularity or effort.
 
 ## Before auto-placement
 
@@ -165,6 +312,9 @@ Rule types:
 - `Teacher Restriction`: keeps one student out of a named teacher's classroom
 
 You can also mark a no-contact rule as multi-year so it stays attached to those same students after they move into later grades.
+
+`Multi-year` means the rule carries forward inside the same saved school-year placement file as those students move from one grade to the next.
+It is meant to clarify year-to-year planning within one placement workspace, not to mix rules between different schools or separate school-year files.
 
 Imported `noContactWith` values also appear here.
 Student ID lists in imports can use commas, semicolons, pipes, or spaces.

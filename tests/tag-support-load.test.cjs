@@ -6,6 +6,7 @@ const {
   getStudentTagSupportLoadBreakdown,
   getClassroomTagSupportLoadBreakdown,
 } = require("./.compiled/src/utils/tagSupportLoad.js")
+const { assessStudentTeacherFit } = require("./.compiled/src/utils/teacherFit.js")
 const { getTagSupportLoadPenalty, getStudentSupportLoad, scoreStudentForRoom, computeRoomStats } = require("./.compiled/src/utils/scoring.js")
 const { createDefaultGradeSettingsMap } = require("./.compiled/src/utils/classroomInit.js")
 const { buildPlacementCSV, buildGradePlacementPrintHtml } = require("./.compiled/src/utils/exportUtils.js")
@@ -202,6 +203,50 @@ const tests = [
     },
   },
   {
+    name: "extended time for assignments contributes instructional support load and teacher fit expectations",
+    run: () => {
+      const student = createStudent({
+        tags: ["Extended time for assignments"],
+      })
+
+      const breakdown = getStudentTagSupportLoadBreakdown(student)
+      assert.equal(breakdown.total, 2)
+      assert.equal(breakdown.instructional, 2)
+      assert.equal(breakdown.behavioral, 0)
+      assert.equal(breakdown.emotional, 0)
+      assert.equal(breakdown.energy, 0)
+
+      const strongerTeacher = {
+        id: "1:ms. strong",
+        grade: "1",
+        teacherName: "Ms. Strong",
+        characteristics: {
+          structure: 4,
+          regulationBehaviorSupport: 3,
+          socialEmotionalSupport: 3,
+          instructionalExpertise: 5,
+        },
+      }
+      const weakerTeacher = {
+        ...strongerTeacher,
+        id: "1:ms. weak",
+        teacherName: "Ms. Weak",
+        characteristics: {
+          structure: 2,
+          regulationBehaviorSupport: 3,
+          socialEmotionalSupport: 3,
+          instructionalExpertise: 1,
+        },
+      }
+
+      const strongFit = assessStudentTeacherFit(student, strongerTeacher, true)
+      const weakFit = assessStudentTeacherFit(student, weakerTeacher, true)
+
+      assert.ok(strongFit.penalty < weakFit.penalty)
+      assert.deepEqual(strongFit.matchedTags, ["Extended time for assignments"])
+    },
+  },
+  {
     name: "projected characteristic load penalty is higher for an already overloaded room",
     run: () => {
       const candidate = createStudent({
@@ -244,6 +289,27 @@ const tests = [
       assert.equal(result.errors.length, 0)
       assert.deepEqual(result.students[0].tags, ["Needs strong routine", "Needs reassurance"])
       assert.deepEqual(result.students[1].tags, ["Struggles with peer conflict"])
+    },
+  },
+  {
+    name: "student characteristic CSV parsing accepts extended time for assignments",
+    run: () => {
+      const csv = [
+        "id,grade,firstName,lastName,studentCharacteristics",
+        '101,1,Ada,Stone,"Extended time for assignments"',
+      ].join("\n")
+
+      const result = parseStudentCSVWithMapping(csv, {
+        id: "id",
+        grade: "grade",
+        firstName: "firstName",
+        lastName: "lastName",
+        studentTags: "studentCharacteristics",
+      })
+
+      assert.equal(result.skipped, 0)
+      assert.equal(result.errors.length, 0)
+      assert.deepEqual(result.students[0].tags, ["Extended time for assignments"])
     },
   },
   {

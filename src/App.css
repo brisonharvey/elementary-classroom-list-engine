@@ -2109,6 +2109,19 @@ input { font-family: inherit; }
   line-height: 1.55;
 }
 
+.relationship-manager-context {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .relationship-manager-form {
   display: flex;
   flex-direction: column;
@@ -2599,6 +2612,7 @@ input { font-family: inherit; }
 
 @media (max-width: 900px) {
   .quick-start-guide,
+  .csv-import-context-grid,
   .relationship-manager-grid {
     grid-template-columns: 1fr;
   }
@@ -2669,6 +2683,49 @@ input { font-family: inherit; }
   border: 1px solid #bfdbfe;
   border-radius: 12px;
   background: #eff6ff;
+}
+
+.csv-import-context-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.csv-import-context-copy strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.csv-import-context-copy p {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.csv-import-context-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.csv-import-context-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.csv-import-context-status {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .csv-import-guide strong {
