@@ -48,7 +48,7 @@
 html, body, #root {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text);
   background: var(--bg);
   overflow: visible;
@@ -152,11 +152,10 @@ html, body, #root {
 /* ── Controls row ── */
 .controls-row {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
   padding: 8px 16px;
-  min-height: var(--controls-h);
   background: var(--surface);
   border-bottom: 2px solid var(--border);
   flex-shrink: 0;
@@ -182,7 +181,7 @@ html, body, #root {
   gap: 6px;
   list-style: none;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   padding: 4px 0;
@@ -220,7 +219,7 @@ html, body, #root {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -267,7 +266,7 @@ html, body, #root {
 }
 
 .quick-start-copy p {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   color: #5c748d;
 }
@@ -294,7 +293,7 @@ html, body, #root {
   border: 1px solid #d7e6f3;
   background: rgba(255, 255, 255, 0.8);
   color: #35536e;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -313,7 +312,7 @@ html, body, #root {
   border-radius: 999px;
   background: #e2e8f0;
   color: #334155;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -358,7 +357,7 @@ html, body, #root {
   border-top: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 12px;
   text-align: left;
   padding: 14px 16px 10px;
   cursor: pointer;
@@ -375,8 +374,8 @@ html, body, #root {
   top: calc(var(--header-h) + var(--toolbar-h) + var(--controls-h) + 6px);
   right: 0;
   bottom: 0;
-  width: min(720px, 56vw);
-  min-width: 460px;
+  width: min(760px, 60vw);
+  min-width: 500px;
   background: var(--surface);
   border-left: 1px solid var(--border);
   box-shadow: -10px 0 24px rgba(15, 23, 42, 0.12);
@@ -403,7 +402,7 @@ html, body, #root {
 }
 
 .summary-drawer-header strong {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -444,7 +443,7 @@ html, body, #root {
   border: 1px solid var(--primary);
   background: var(--primary);
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   border-radius: 999px;
   padding: 8px 12px;
@@ -528,10 +527,94 @@ html, body, #root {
   display: flex;
   gap: 24px;
   align-items: flex-start;
-  padding: 0 20px;
-  flex: 1;
+  padding: 0;
+  width: 100%;
   flex-wrap: wrap;
-  min-width: 320px;
+  min-width: 0;
+}
+
+.weight-sliders-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 280px;
+  padding: 2px 0 0 0;
+}
+
+.weight-sliders-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.weight-sliders-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.weight-sliders-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.weight-sliders-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.weight-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.weight-summary-pill-academic {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.weight-summary-pill-behavioral {
+  background: #ffedd5;
+  border-color: #fdba74;
+  color: #c2410c;
+}
+
+.weight-summary-pill-demographic {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  color: #7c3aed;
+}
+
+.weight-summary-pill-support {
+  background: #ccfbf1;
+  border-color: #5eead4;
+  color: #0f766e;
+}
+
+.weight-sliders-toggle {
+  margin-left: auto;
+}
+
+.weight-sliders-panel.collapsed {
+  justify-content: center;
 }
 
 .slider-group {
@@ -637,7 +720,7 @@ html, body, #root {
 .control-bar {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   padding-right: 20px;
   border-right: 1px solid var(--border);
   flex-shrink: 0;
@@ -653,7 +736,7 @@ html, body, #root {
 
 .control-group {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   padding-right: 10px;
   margin-right: 2px;
@@ -673,10 +756,10 @@ html, body, #root {
   background: var(--warning-light);
   border: 1px solid var(--warning);
   border-radius: var(--radius);
-  padding: 6px 10px;
+  padding: 8px 12px;
   max-width: 480px;
   min-width: 280px;
-  font-size: 11px;
+  font-size: 12px;
   box-shadow: var(--shadow-md);
 }
 
@@ -711,16 +794,16 @@ html, body, #root {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 14px;
+  padding: 7px 14px;
   border-radius: var(--radius);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   border: 1.5px solid transparent;
   transition: all .15s ease;
   white-space: nowrap;
-  line-height: 1;
+  line-height: 1.15;
 }
 
 .btn:disabled {
@@ -728,7 +811,7 @@ html, body, #root {
   cursor: not-allowed;
 }
 
-.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
 
 .btn-primary {
   background: var(--primary);
@@ -1242,7 +1325,7 @@ html, body, #root {
 }
 
 .summary-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -1253,8 +1336,8 @@ html, body, #root {
 }
 
 .total-pill {
-  font-size: 11px;
-  padding: 2px 8px;
+  font-size: 12px;
+  padding: 3px 9px;
   border-radius: 10px;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -1265,9 +1348,9 @@ html, body, #root {
 .total-pill.pill-ref { background: var(--warning-light); color: #92400e; border-color: #fcd34d; }
 .race-pill {
   display: inline-block;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 10px;
   border: 1px solid var(--border);
   white-space: nowrap;
@@ -1284,8 +1367,8 @@ html, body, #root {
 }
 
 .warning-chip {
-  font-size: 11px;
-  padding: 2px 8px;
+  font-size: 12px;
+  padding: 3px 9px;
   background: var(--warning-light);
   color: #92400e;
   border: 1px solid var(--warning);
@@ -1368,6 +1451,11 @@ html, body, #root {
     min-width: 0;
     width: 100%;
     padding: 0;
+  }
+
+  .weight-sliders-panel {
+    width: 100%;
+    min-width: 0;
   }
 
   .summary-drawer {
@@ -1480,6 +1568,14 @@ html, body, #root {
     justify-content: center;
   }
 
+  .weight-sliders-toolbar {
+    align-items: flex-start;
+  }
+
+  .weight-sliders-toggle {
+    margin-left: 0;
+  }
+
   .grade-selector {
     flex-wrap: wrap;
   }
@@ -1530,18 +1626,18 @@ html, body, #root {
 .summary-room-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 10px 12px;
+  gap: 10px;
+  padding: 10px 12px 14px;
 }
 
 .summary-room-card {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
-  padding: 8px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .summary-room-card-warn {
@@ -1559,32 +1655,32 @@ html, body, #root {
 .summary-room-title {
   font-weight: 700;
   color: var(--primary-dark);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .summary-room-teacher {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .summary-room-size {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .summary-room-metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
 }
 
 .summary-metric {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 3px 7px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface-2);
@@ -1612,11 +1708,11 @@ html, body, #root {
 .summary-room-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .summary-room-section-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -2391,7 +2487,7 @@ input { font-family: inherit; }
 .summary-room-tag-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
 }
 
 .summary-metric-tag {
@@ -3223,6 +3319,4 @@ input { font-family: inherit; }
     grid-template-columns: 1fr;
   }
 }
-
-
 

@@ -124,6 +124,8 @@ export function buildReferenceAppState(): AppState {
       createTeacher("Ms. Ross", 5, 3, 4, 4),
     ],
     classrooms,
+    schoolName: "Reference Elementary",
+    schoolYear: "2026-2027",
     activeGrade: "3",
     showTeacherNames: true,
     weights: { academic: 55, behavioral: 45, demographic: 50, tagSupportLoad: 60 },

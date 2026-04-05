@@ -104,41 +104,68 @@ function Slider({ label, description, value, onChange, color }: SliderProps) {
 export function WeightSliders() {
   const { state, dispatch } = useApp()
   const { weights } = state
+  const [collapsed, setCollapsed] = useState(true)
 
   const update = (key: keyof typeof weights) => (v: number) => {
     dispatch({ type: "SET_WEIGHTS", payload: { [key]: v } })
   }
 
   return (
-    <div className="weight-sliders">
-      <Slider
-        label="Academic Needs"
-        description="Higher values prioritize balancing academic need levels (academic tier and assessment profile) evenly across classes."
-        value={weights.academic}
-        onChange={update("academic")}
-        color="#3b82f6"
-      />
-      <Slider
-        label="Behavioral Needs"
-        description="Higher values prioritize balancing behavioral support intensity (behavior tier and referrals) between classes."
-        value={weights.behavioral}
-        onChange={update("behavioral")}
-        color="#f97316"
-      />
-      <Slider
-        label="Class Size + Demographics"
-        description="Higher values prioritize keeping class sizes close while also balancing student demographic groups like gender, ELL, 504, and special education status across classes."
-        value={weights.demographic}
-        onChange={update("demographic")}
-        color="#8b5cf6"
-      />
-      <Slider
-        label="Characteristic Support Load"
-        description="Higher values prioritize balancing the derived characteristic-based classroom support-load index and its behavioral, emotional, instructional, and energy subtotals."
-        value={weights.tagSupportLoad}
-        onChange={update("tagSupportLoad")}
-        color="#0f766e"
-      />
-    </div>
+    <section className={`weight-sliders-panel ${collapsed ? "collapsed" : "expanded"}`} aria-label="Placement weights">
+      <div className="weight-sliders-toolbar">
+        <div className="weight-sliders-title-wrap">
+          <span className="weight-sliders-title">Placement Weights</span>
+          {collapsed && (
+            <div className="weight-sliders-summary" aria-label="Current placement weights">
+              <span className="weight-summary-pill weight-summary-pill-academic">Acad {weights.academic}</span>
+              <span className="weight-summary-pill weight-summary-pill-behavioral">Beh {weights.behavioral}</span>
+              <span className="weight-summary-pill weight-summary-pill-demographic">Size/Demo {weights.demographic}</span>
+              <span className="weight-summary-pill weight-summary-pill-support">Load {weights.tagSupportLoad}</span>
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm weight-sliders-toggle"
+          onClick={() => setCollapsed((value) => !value)}
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? "Show Weights" : "Hide Weights"}
+        </button>
+      </div>
+
+      {!collapsed && (
+        <div className="weight-sliders">
+          <Slider
+            label="Academic Needs"
+            description="Higher values prioritize balancing academic need levels (academic tier and assessment profile) evenly across classes."
+            value={weights.academic}
+            onChange={update("academic")}
+            color="#3b82f6"
+          />
+          <Slider
+            label="Behavioral Needs"
+            description="Higher values prioritize balancing behavioral support intensity (behavior tier and referrals) between classes."
+            value={weights.behavioral}
+            onChange={update("behavioral")}
+            color="#f97316"
+          />
+          <Slider
+            label="Class Size + Demographics"
+            description="Higher values prioritize keeping class sizes close while also balancing student demographic groups like gender, ELL, 504, and special education status across classes."
+            value={weights.demographic}
+            onChange={update("demographic")}
+            color="#8b5cf6"
+          />
+          <Slider
+            label="Characteristic Support Load"
+            description="Higher values prioritize balancing the derived characteristic-based classroom support-load index and its behavioral, emotional, instructional, and energy subtotals."
+            value={weights.tagSupportLoad}
+            onChange={update("tagSupportLoad")}
+            color="#0f766e"
+          />
+        </div>
+      )}
+    </section>
   )
 }
