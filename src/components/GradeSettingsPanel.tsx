@@ -431,6 +431,28 @@ export function GradeSettingsPanel({ onClose }: GradeSettingsPanelProps) {
       </div>
 
       {saveMessage && <div className="settings-status">{saveMessage}</div>}
+
+      <section className="settings-reset-section">
+        <div className="settings-section-header">
+          <h4 className="settings-section-title">Reset</h4>
+          <p className="settings-section-copy">Permanently removes all students, placements, snapshots, and settings from this device.</p>
+        </div>
+        <button
+          className="btn btn-danger btn-sm"
+          disabled={!state.allStudents.length && !state.snapshots.length}
+          onClick={() => {
+            const ok = window.confirm(
+              "Clear ALL app data? This removes loaded students, placements, and all snapshots. This cannot be undone."
+            )
+            if (ok) {
+              dispatch({ type: "CLEAR_ALL" })
+              onClose()
+            }
+          }}
+        >
+          Clear All Data
+        </button>
+      </section>
     </div>
   )
 }
