@@ -5,14 +5,23 @@ export function StudentCardKey() {
       <div className="student-card-key-items" aria-label="Student card key">
         <span className="student-card-key-item"><span className="badge badge-gender badge-f">F</span> Gender</span>
         <span className="student-card-key-item"><span className="badge badge-sped badge-iep">IEP</span> Special education status</span>
-        <span className="student-card-key-item"><span className="badge badge-tier tier-2">ACA 2</span> Academic tier</span>
-        <span className="student-card-key-item"><span className="badge badge-tier tier-2">SEB 2</span> Social-emotional / behavior tier</span>
-        <span className="student-card-key-item"><span className="badge badge-map">MAP R:45</span> MAP Reading</span>
-        <span className="student-card-key-item"><span className="badge badge-map">MAP M:48</span> MAP Math</span>
-        <span className="student-card-key-item"><span className="badge badge-iready">IR:Mid 2</span> iReady Reading level</span>
-        <span className="student-card-key-item"><span className="badge badge-iready">IM:Late 1</span> iReady Math level</span>
-        <span className="student-card-key-item"><span className="badge badge-coteach-total">CT:60</span> Total co-teach minutes</span>
-        <span className="student-card-key-item"><span className="badge badge-coteach badge-coteach-reading">R:30</span> Co-teach area and minutes</span>
+        <span className="student-card-key-item">
+          <span className="tier-pips tier-pips-1" style={{ display: "inline-flex" }}>
+            <span className="tier-pip-label">ACA</span>
+            <span className="tier-pip filled" /><span className="tier-pip" /><span className="tier-pip" />
+          </span>
+          {" "}Academic tier (1–3 dots; green=1, amber=2, red=3)
+        </span>
+        <span className="student-card-key-item">
+          <span className="tier-pips tier-pips-2" style={{ display: "inline-flex" }}>
+            <span className="tier-pip-label">SEB</span>
+            <span className="tier-pip filled" /><span className="tier-pip filled" /><span className="tier-pip" />
+          </span>
+          {" "}Behavior tier (1–3 dots)
+        </span>
+        <span className="student-card-key-item"><span className="badge badge-ell">EL</span> English Language Learner</span>
+        <span className="student-card-key-item"><span className="badge badge-504">504</span> Section 504 plan</span>
+        <span className="student-card-key-item"><span className="badge badge-coteach-total">CT:60</span> Co-teach minutes required</span>
         <span className="student-card-key-item"><span className="badge badge-tags">Chars:3</span> Student characteristics count</span>
         <span className="student-card-key-item"><span className="badge badge-poor-fit">Poor Fit</span> Teacher fit warning</span>
       </div>

@@ -519,6 +519,17 @@ html, body, #root {
 
 .grade-btn.active .grade-btn-count { opacity: 0.85; }
 
+/* Grade completion status indicators (non-active state only) */
+.grade-btn-complete:not(.active) {
+  border-bottom: 3px solid var(--success);
+}
+.grade-btn-warning:not(.active) {
+  border-bottom: 3px solid var(--warning);
+}
+.grade-btn-error:not(.active) {
+  border-bottom: 3px solid var(--danger);
+}
+
 /* ══════════════════════════════════════════
    WEIGHT SLIDERS
 ══════════════════════════════════════════ */
@@ -1271,6 +1282,41 @@ html, body, #root {
 .badge-referrals { background: #fef2f2; color: #b91c1c; }
 .badge-map { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
 .badge-iready { background: #ecfccb; color: #3f6212; border: 1px solid #bef264; }
+.badge-ell { background: #d1fae5; color: #065f46; }
+.badge-504 { background: #e0f2fe; color: #075985; }
+
+/* ── Tier pips ── */
+.tier-pips {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.tier-pip-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  margin-right: 1px;
+  line-height: 1;
+}
+
+.tier-pip {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.tier-pips-1 .tier-pip.filled { background: var(--success); }
+.tier-pips-2 .tier-pip.filled { background: var(--warning); }
+.tier-pips-3 .tier-pip.filled { background: var(--danger); }
 
 .student-card-coteach-row {
   display: flex;
@@ -1303,6 +1349,59 @@ html, body, #root {
 .lock-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* Expand button */
+.expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 2px 3px;
+  line-height: 1;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.expand-btn:hover,
+.expand-btn.expanded { opacity: 1; color: var(--primary); }
+
+/* Expanded card detail */
+.card-expanded-detail {
+  border-top: 1px solid var(--border);
+  padding: 5px 8px 6px 24px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  background: var(--surface-2);
+  border-radius: 0 0 4px 4px;
+}
+
+.card-detail-row {
+  display: contents;
+}
+
+.card-detail-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding: 1px 0;
+  align-self: start;
+}
+
+.card-detail-value {
+  font-size: 11px;
+  color: var(--text);
+  padding: 1px 0;
+  word-break: break-word;
+}
+
+.card-detail-flag {
+  color: var(--danger);
+  font-weight: 600;
 }
 
 /* ══════════════════════════════════════════
@@ -3318,5 +3417,172 @@ input { font-family: inherit; }
   .csv-import-review-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ══════════════════════════════════════════
+   SCHOOL OVERVIEW PANEL
+══════════════════════════════════════════ */
+
+.overview-school-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+
+.overview-pill-complete {
+  background: var(--success-light);
+  border-color: var(--success);
+  color: #14532d;
+}
+
+.overview-pill-error {
+  background: var(--danger-light);
+  border-color: var(--danger);
+  color: #991b1b;
+}
+
+.overview-grade-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.overview-grade-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overview-grade-complete {
+  border-left: 4px solid var(--success);
+}
+
+.overview-grade-warning {
+  border-left: 4px solid var(--warning);
+}
+
+.overview-grade-error {
+  border-left: 4px solid var(--danger);
+}
+
+.overview-grade-empty {
+  opacity: 0.55;
+}
+
+.overview-grade-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.overview-grade-label {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.overview-grade-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.overview-badge-complete {
+  background: var(--success-light);
+  color: #14532d;
+}
+
+.overview-badge-warning {
+  background: var(--warning-light);
+  color: #78350f;
+}
+
+.overview-badge-error {
+  background: var(--danger-light);
+  color: #991b1b;
+}
+
+.overview-badge-empty {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.overview-grade-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.overview-stat {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.overview-stat-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.overview-stat-warning {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.overview-grade-progress {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.overview-grade-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width .3s ease;
+}
+
+.overview-go-btn {
+  align-self: flex-start;
+}
+
+.overview-all-done {
+  padding: 12px 16px;
+  background: var(--success-light);
+  border: 1px solid var(--success);
+  border-radius: var(--radius);
+  color: #14532d;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.overview-empty-state {
+  padding: 24px 16px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.overview-no-students {
+  font-size: 12px;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* ── Settings Reset Section ── */
+.settings-reset-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 

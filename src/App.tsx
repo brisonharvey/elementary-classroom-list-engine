@@ -13,6 +13,7 @@ import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { QuickStartGuide } from "./components/QuickStartGuide"
 import { ClassroomDeleteDialog } from "./components/ClassroomDeleteDialog"
 import { StudentCardKey } from "./components/StudentCardKey"
+import { SchoolOverviewPanel } from "./components/SchoolOverviewPanel"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 import { getGradeReviewWarnings } from "./utils/gradeReview"
 import { getReferenceViewFromLocation } from "./referenceSeed"
@@ -22,7 +23,7 @@ const CsvImportPanel = lazy(async () => {
   return { default: module.CsvImportPanel }
 })
 
-type SlidePanel = "none" | "import" | "rules" | "settings"
+type SlidePanel = "none" | "import" | "rules" | "settings" | "overview"
 
 function PlacementWorkspace() {
   const { state } = useApp()
@@ -122,6 +123,7 @@ export default function App() {
           >Delete Classroom</button>
           <button className={`btn btn-sm ${activePanel === "rules" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "rules" ? "none" : "rules"))}>Rules Manager</button>
           <button className={`btn btn-sm ${activePanel === "settings" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "settings" ? "none" : "settings"))}>Settings</button>
+          <button className={`btn btn-sm ${activePanel === "overview" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "overview" ? "none" : "overview"))}>School Overview</button>
         </div>
       </div>
 
@@ -217,6 +219,15 @@ export default function App() {
         )}
         {activePanel === "rules" && <RelationshipManager onClose={() => setActivePanel("none")} />}
         {activePanel === "settings" && <GradeSettingsPanel onClose={() => setActivePanel("none")} />}
+        {activePanel === "overview" && (
+          <SchoolOverviewPanel
+            onClose={() => setActivePanel("none")}
+            onNavigateToGrade={(grade) => {
+              dispatch({ type: "SET_ACTIVE_GRADE", payload: grade })
+              setActivePanel("none")
+            }}
+          />
+        )}
       </aside>
       {deleteDialogOpen && (
         <ClassroomDeleteDialog

@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { CoTeachCategory, Student } from "../types"
+import { Student } from "../types"
 import { CO_TEACH_LABELS, getStudentCoTeachTotal, getStudentRequiredCoTeachCategories } from "../utils/coTeach"
 import { useApp } from "../store/AppContext"
 import { useDrag } from "../store/DragContext"
@@ -12,20 +12,17 @@ interface StudentCardProps {
   classroomId: string | null
 }
 
-function tierClass(tier: number): string {
-  if (tier >= 3) return "tier-3"
-  if (tier >= 2) return "tier-2"
-  return "tier-1"
-}
-
-const CO_TEACH_ABBREVIATIONS: Record<CoTeachCategory, string> = {
-  reading: "R",
-  writing: "W",
-  scienceSocialStudies: "SS",
-  math: "M",
-  behavior: "B",
-  social: "Soc",
-  vocational: "Voc",
+function TierPips({ tier, label }: { tier: number; label: string }) {
+  const clampedTier = Math.min(Math.max(tier, 1), 3)
+  const title = `${label === "ACA" ? "Academic" : "Behavior"} Tier ${tier}`
+  return (
+    <span className={`tier-pips tier-pips-${clampedTier}`} title={title}>
+      <span className="tier-pip-label">{label}</span>
+      {[1, 2, 3].map((i) => (
+        <span key={i} className={`tier-pip${i <= tier ? " filled" : ""}`} />
+      ))}
+    </span>
+  )
 }
 
 export const StudentCard = memo(function StudentCard({ student, classroomId }: StudentCardProps) {
@@ -38,6 +35,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
   const [editingStudent, setEditingStudent] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     return () => clearTimeout(timerRef.current)
@@ -52,7 +50,6 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
       ? getStudentTeacherFitForClassroom(student, currentClassroom, state.teacherProfiles)
       : null
   const isPoorTeacherFit = Boolean(teacherFit?.isPoorFit)
-  const isKindergarten = student.grade === "K"
   const isTeacherFixed = Boolean(student.preassignedTeacher?.trim())
 
   const onMouseEnter = () => {
@@ -65,7 +62,7 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
       if (x + tooltipWidth > window.innerWidth - 8) x = rect.left - tooltipWidth - 8
       let y = rect.top
       if (y + tooltipHeight > window.innerHeight - 8) y = window.innerHeight - tooltipHeight - 8
-      if (!editingStudent) setTooltip({ x, y })
+      if (!editingStudent && !expanded) setTooltip({ x, y })
     }, 500)
   }
 
@@ -108,16 +105,15 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
   const relatedRuleCount = state.relationshipRules.filter((rule) => rule.grade === student.grade && rule.studentIds.includes(student.id)).length
   const coTeachCategories = getStudentRequiredCoTeachCategories(student)
   const totalCoTeachMinutes = getStudentCoTeachTotal(student)
-  const coTeachBadges = coTeachCategories.map((category) => ({
-    category,
-    abbreviation: CO_TEACH_ABBREVIATIONS[category],
-    minutes: student.coTeachMinutes[category] ?? 0,
-    label: CO_TEACH_LABELS[category],
-  }))
   const noContactNames = (student.noContactWith ?? []).map((id) => {
     const noContact = state.allStudents.find((entry) => entry.id === id)
     return noContact ? `${noContact.firstName} ${noContact.lastName}` : `#${id}`
   })
+
+  // Build co-teach detail string for tooltip
+  const coTeachDetailString = coTeachCategories
+    .map((cat) => `${CO_TEACH_LABELS[cat]} (${student.coTeachMinutes[cat]}m)`)
+    .join(", ")
 
   return (
     <>
@@ -145,13 +141,11 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 <span className={`badge badge-sped badge-${specialEd.status.toLowerCase()}`}>{specialEd.status}</span>
               )}
 
-              <span className={`badge badge-tier ${tierClass(intervention.academicTier)}`} title={`Academic Tier ${intervention.academicTier}`}>
-                ACA {intervention.academicTier}
-              </span>
+              <TierPips tier={intervention.academicTier} label="ACA" />
+              <TierPips tier={behaviorTier} label="SEB" />
 
-              <span className={`badge badge-tier ${tierClass(behaviorTier)}`} title={`Behavior Tier ${behaviorTier}`}>
-                SEB {behaviorTier}
-              </span>
+              {student.ell && <span className="badge badge-ell" title="English Language Learner">EL</span>}
+              {student.section504 && <span className="badge badge-504" title="Section 504 plan">504</span>}
 
               {(student.referrals ?? 0) > 0 && (
                 <span className="badge badge-referrals" title={`${student.referrals} referral(s)`}>
@@ -159,32 +153,15 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </span>
               )}
 
-              {isKindergarten && student.briganceReadiness !== undefined && (
-                <span className="badge badge-map" title={`Brigance readiness: ${student.briganceReadiness}`}>
-                  BR:{student.briganceReadiness}
+              {totalCoTeachMinutes > 0 && (
+                <span
+                  className="badge badge-coteach-total"
+                  title={`Co-teach required: ${totalCoTeachMinutes} minutes total${coTeachDetailString ? ` — ${coTeachDetailString}` : ""}`}
+                >
+                  CT:{totalCoTeachMinutes}
                 </span>
               )}
 
-              {!isKindergarten && student.mapReading !== undefined && (
-                <span className="badge badge-map" title={`MAP Reading: ${student.mapReading}`}>
-                  MAP R:{student.mapReading}
-                </span>
-              )}
-              {!isKindergarten && student.mapMath !== undefined && (
-                <span className="badge badge-map" title={`MAP Math: ${student.mapMath}`}>
-                  MAP M:{student.mapMath}
-                </span>
-              )}
-              {!isKindergarten && student.ireadyReading && (
-                <span className="badge badge-iready" title={`iReady Reading: ${student.ireadyReading}`}>
-                  IR:{student.ireadyReading}
-                </span>
-              )}
-              {!isKindergarten && student.ireadyMath && (
-                <span className="badge badge-iready" title={`iReady Math: ${student.ireadyMath}`}>
-                  IM:{student.ireadyMath}
-                </span>
-              )}
               {(student.tags?.length ?? 0) > 0 && (
                 <span className="badge badge-tags" title={(student.tags ?? []).join(", ")}>
                   Chars:{student.tags!.length}
@@ -232,30 +209,104 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
             >
               {locked ? "\uD83D\uDD12" : "\uD83D\uDD13"}
             </button>
+            <button
+              className={`expand-btn ${expanded ? "expanded" : ""}`}
+              draggable={false}
+              onMouseDown={suppressCardDrag}
+              onPointerDown={suppressCardDrag}
+              onDragStart={suppressCardDrag}
+              onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
+              title={expanded ? "Collapse details" : "Expand details"}
+              aria-label={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? "▴" : "▾"}
+            </button>
           </div>
         </div>
 
-        {coTeachBadges.length > 0 && (
-          <div className="student-card-coteach-row">
-            <span className="badge badge-coteach-total" title={`Co-teach required: ${totalCoTeachMinutes} minutes total`}>
-              CT:{totalCoTeachMinutes}
-            </span>
-            {coTeachBadges.map((entry) => (
-              <span
-                key={entry.category}
-                className={`badge badge-coteach badge-coteach-${entry.category}`}
-                title={`${entry.label}: ${entry.minutes} minute${entry.minutes === 1 ? "" : "s"}`}
-              >
-                {entry.abbreviation}:{entry.minutes}
-              </span>
-            ))}
+        {expanded && (
+          <div className="card-expanded-detail">
+            {coTeachDetailString && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Co-teach</span>
+                <span className="card-detail-value">{coTeachDetailString}</span>
+              </div>
+            )}
+            {student.briganceReadiness !== undefined && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Brigance</span>
+                <span className="card-detail-value">{student.briganceReadiness}</span>
+              </div>
+            )}
+            {student.mapReading !== undefined && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">MAP R</span>
+                <span className="card-detail-value">{student.mapReading}</span>
+              </div>
+            )}
+            {student.mapMath !== undefined && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">MAP M</span>
+                <span className="card-detail-value">{student.mapMath}</span>
+              </div>
+            )}
+            {student.ireadyReading && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">iR Read</span>
+                <span className="card-detail-value">{student.ireadyReading}</span>
+              </div>
+            )}
+            {student.ireadyMath && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">iR Math</span>
+                <span className="card-detail-value">{student.ireadyMath}</span>
+              </div>
+            )}
+            {student.academicTierNotes && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Acad. Notes</span>
+                <span className="card-detail-value">{student.academicTierNotes}</span>
+              </div>
+            )}
+            {student.behaviorTierNotes && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Beh. Notes</span>
+                <span className="card-detail-value">{student.behaviorTierNotes}</span>
+              </div>
+            )}
+            {(student.tags?.length ?? 0) > 0 && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Chars</span>
+                <span className="card-detail-value">{student.tags!.join(", ")}</span>
+              </div>
+            )}
+            {showTeacherDetails && teacherFit && currentClassroom && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Teacher Fit</span>
+                <span className={`card-detail-value ${teacherFit.isPoorFit ? "card-detail-flag" : ""}`}>
+                  {teacherFit.isPoorFit ? "Poor fit" : teacherFit.missingProfile ? "No profile" : "OK"}
+                </span>
+              </div>
+            )}
+            {student.teacherNotes && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Notes</span>
+                <span className="card-detail-value">{student.teacherNotes}</span>
+              </div>
+            )}
+            {noContactNames.length > 0 && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">No-contact</span>
+                <span className="card-detail-value card-detail-flag">{noContactNames.join(", ")}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {editingStudent && <StudentEditorModal student={student} defaultGrade={student.grade} onClose={() => setEditingStudent(false)} />}
 
-      {tooltip && !editingStudent &&
+      {tooltip && !editingStudent && !expanded &&
         createPortal(
           <div className="student-tooltip" style={{ position: "fixed", top: tooltip.y, left: tooltip.x }}>
             <div className="tt-header">
@@ -277,10 +328,22 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                   {specialEd.status === "None" ? "General Ed" : specialEd.status}
                 </span>
               </div>
+              {student.ell && (
+                <div className="tt-row">
+                  <span className="tt-label">EL</span>
+                  <span>English Language Learner</span>
+                </div>
+              )}
+              {student.section504 && (
+                <div className="tt-row">
+                  <span className="tt-label">504</span>
+                  <span>Section 504 plan</span>
+                </div>
+              )}
               {coTeachCategories.length > 0 && (
                 <div className="tt-row">
                   <span className="tt-label">Co-teach</span>
-                  <span>{coTeachCategories.map((category) => `${CO_TEACH_LABELS[category]} (${student.coTeachMinutes[category]}m)`).join(", ")}</span>
+                  <span>{coTeachDetailString}</span>
                 </div>
               )}
               <div className="tt-row">
@@ -310,35 +373,35 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </div>
               )}
 
-              {((isKindergarten && student.briganceReadiness !== undefined) ||
-                (!isKindergarten && (student.mapReading !== undefined || student.mapMath !== undefined || student.ireadyReading || student.ireadyMath))) && (
+              {((student.briganceReadiness !== undefined) ||
+                (student.mapReading !== undefined || student.mapMath !== undefined || student.ireadyReading || student.ireadyMath)) && (
                 <>
                   <hr className="tt-sep" />
-                  {isKindergarten && student.briganceReadiness !== undefined && (
+                  {student.briganceReadiness !== undefined && (
                     <div className="tt-row">
                       <span className="tt-label">Brigance</span>
                       <span>{student.briganceReadiness}</span>
                     </div>
                   )}
-                  {!isKindergarten && student.mapReading !== undefined && (
+                  {student.mapReading !== undefined && (
                     <div className="tt-row">
                       <span className="tt-label">MAP Reading</span>
                       <span>{student.mapReading}</span>
                     </div>
                   )}
-                  {!isKindergarten && student.mapMath !== undefined && (
+                  {student.mapMath !== undefined && (
                     <div className="tt-row">
                       <span className="tt-label">MAP Math</span>
                       <span>{student.mapMath}</span>
                     </div>
                   )}
-                  {!isKindergarten && student.ireadyReading && (
+                  {student.ireadyReading && (
                     <div className="tt-row">
                       <span className="tt-label">iReady Read</span>
                       <span>{student.ireadyReading}</span>
                     </div>
                   )}
-                  {!isKindergarten && student.ireadyMath && (
+                  {student.ireadyMath && (
                     <div className="tt-row">
                       <span className="tt-label">iReady Math</span>
                       <span>{student.ireadyMath}</span>
@@ -415,10 +478,3 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     </>
   )
 })
-
-
-
-
-
-
-

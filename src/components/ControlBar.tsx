@@ -45,16 +45,6 @@ export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSu
   }
 
 
-  const clearAll = () => {
-    const ok = window.confirm(
-      "Clear ALL app data? This removes loaded students, placements, and all snapshots. This cannot be undone."
-    )
-    if (ok) {
-      dispatch({ type: "CLEAR_ALL" })
-      setShowWarnings(false)
-    }
-  }
-
   const exportGrade = () => {
     const csv = buildPlacementCSV(state.classrooms, state.allStudents, state.activeGrade)
     downloadFile(csv, `placement-grade-${state.activeGrade}.csv`)
@@ -139,14 +129,6 @@ export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSu
             title="Toggle teacher names and teacher-fit details throughout the app"
           >
             {state.showTeacherNames ? "Hide Teacher Names" : "Show Teacher Names"}
-          </button>
-          <button
-            className="btn btn-danger"
-            onClick={clearAll}
-            disabled={!hasStudents && state.snapshots.length === 0}
-            title="Clear all app state"
-          >
-            Clear All
           </button>
         </div>
       </div>
