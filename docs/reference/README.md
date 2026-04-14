@@ -2,9 +2,11 @@
 
 These screenshots show the current app UI using a built-in reference seed so the docs stay consistent.
 
+The reference seed bypasses the normal collaboration boot flow, so you can capture docs screenshots without signing in or running Postgres.
+
 ## Included images
 
-- `app-overview.png`: populated grade workspace with warnings, controls, sliders, and classroom columns
+- `app-overview.png`: populated grade workspace with warnings, collaboration controls, compact weight controls, and classroom columns
 - `summary-drawer.png`: the right-side grade summary drawer open over the same seeded roster
 - `rules-manager.png`: the Rules Manager with no-contact, keep-together, and blocked-teacher examples
 

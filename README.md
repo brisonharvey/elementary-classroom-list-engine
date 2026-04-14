@@ -1,6 +1,6 @@
 # Elementary Classroom List Engine
 
-Elementary Classroom List Engine is a React + Electron app for building balanced K-5 classroom rosters from separate student and teacher imports.
+Elementary Classroom List Engine is a React app with an Electron wrapper and a collaborative Fastify + Postgres backend for building balanced K-5 classroom rosters from separate student and teacher imports.
 
 It supports:
 
@@ -17,20 +17,37 @@ It supports:
 - grade snapshots
 - CSV export for one grade or all grades
 - print-ready per-grade PDF packet export with a student-card key
+- shared workspaces with invite-based collaboration
+- optimistic concurrency protection and workspace edit locks
 
 ## App workflow
 
-1. Follow the guided setup panel if you are starting from scratch.
-2. Import students.
-3. Import teachers.
-4. Choose the active grade.
-5. Review classrooms, room sizes, co-teach coverage, and relationship rules.
-6. Run auto-placement for that grade.
-7. Review warnings and the grade summary.
-8. Drag students manually as needed.
-9. Lock any placements you want preserved.
-10. Save a snapshot.
-11. Export the final roster.
+1. Sign in and open a workspace.
+2. Acquire the workspace edit lock if you plan to make shared changes.
+3. Follow the guided setup panel if you are starting from scratch.
+4. Import students.
+5. Import teachers.
+6. Choose the active grade.
+7. Review classrooms, room sizes, co-teach coverage, and relationship rules.
+8. Run auto-placement for that grade.
+9. Review warnings and the grade summary.
+10. Drag students manually as needed.
+11. Lock any placements you want preserved.
+12. Save a snapshot.
+13. Export the final roster.
+
+## Collaboration model
+
+This branch is web-first and supports multiple users in the same workspace.
+
+- Shared placement data is stored on the backend in Postgres.
+- Each workspace has roles: `owner`, `editor`, and `viewer`.
+- Only one editor can hold the workspace edit lock at a time.
+- Other users can still open the workspace in read-only mode while the lock is held.
+- Saves use document version checks so stale browser copies fail with a conflict instead of silently overwriting newer work.
+- Imports and exports still run in the browser, but successful shared changes are persisted through the backend.
+
+In this branch, browser `localStorage` is only used for local UI preferences such as the active grade and whether teacher names are shown.
 
 ## Admin-friendly workflow additions
 
@@ -132,7 +149,7 @@ When you use the multi-file student blend flow, the master roster must map:
 
 `grade` and `gender` are optional in the master roster. If `grade` is not in the master file, map it from a supplemental file before import.
 
-That saved school/year context stays with the local placement file so rules, snapshots, and later re-import work stay tied to the correct school year.
+That saved school/year context stays with the shared workspace document so rules, snapshots, and later re-import work stay tied to the correct school year.
 
 ## Teacher import notes
 
@@ -211,6 +228,20 @@ More screenshot notes live in [docs/reference/README.md](docs/reference/README.m
 
 - Node.js 18+
 - npm
+- PostgreSQL 16+ for collaborative mode
+
+### Environment
+
+The backend reads these environment variables:
+
+- `DATABASE_URL`
+- `SESSION_SECRET`
+- `COOKIE_SECURE`
+- `APP_BASE_URL`
+- `APP_ALLOWED_ORIGINS`
+- `BOOTSTRAP_ADMIN_USERNAME`
+- `BOOTSTRAP_ADMIN_PASSWORD`
+- `BOOTSTRAP_ADMIN_DISPLAY_NAME`
 
 ### Install
 
@@ -218,11 +249,21 @@ More screenshot notes live in [docs/reference/README.md](docs/reference/README.m
 npm install
 ```
 
-### Run the web app
+### Run the collaborative web app
+
+```bash
+npm run dev:full
+```
+
+That starts both the Vite frontend and the Fastify backend.
+
+### Run the frontend only
 
 ```bash
 npm run dev
 ```
+
+This is mainly useful for reference-seed screenshots or UI-only work that does not require the backend.
 
 ### Run the desktop app
 
@@ -230,9 +271,29 @@ npm run dev
 npm run dev:desktop
 ```
 
+Desktop packaging still exists, but this branch’s collaboration flow is web-first and expects the backend to be available.
+
+### Run with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Default local services:
+
+- frontend: `http://localhost:8080`
+- backend API: proxied through the frontend at `/api`
+- Postgres: `localhost:5432`
+
+The default Compose file bootstraps an admin user:
+
+- username: `admin`
+- password: `change-me-now`
+
 ### Verify
 
 ```bash
+npm run server:check
 npm run lint
 npm run test
 npm run build
@@ -244,14 +305,18 @@ npm run build
 - `src/engine/` auto-placement engine
 - `src/features/csv-import/` import flows and preprocessing UI
 - `src/lib/csv/` CSV and spreadsheet parsing helpers
+- `src/lib/api.ts` typed browser API client for auth, workspaces, documents, locks, and audit data
+- `src/shared/` shared collaboration types used by both frontend and backend
 - `src/store/` reducer and persisted app state
 - `src/utils/` balancing, exports, teacher fit, constraints, and classroom setup
+- `server/` Fastify app, Drizzle schema, migrations, auth, locking, and persistence
 - `public/` import templates and sample CSVs
 - `tests/` lightweight logic tests
 
 ## Additional docs
 
 - [ADMIN_BEGINNERS_GUIDE.md](ADMIN_BEGINNERS_GUIDE.md)
+- [SERVER_SETUP_GUIDE.md](SERVER_SETUP_GUIDE.md)
 - [TEMPLATE_USAGE.md](TEMPLATE_USAGE.md)
 - [SETTINGS_PAGE_EXPLANATION.md](SETTINGS_PAGE_EXPLANATION.md)
 - [LOGIC_EXPLANATION.md](LOGIC_EXPLANATION.md)

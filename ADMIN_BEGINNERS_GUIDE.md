@@ -11,6 +11,7 @@ You can:
 - import students and teachers from separate files
 - import either CSV or XLSX files
 - follow a built-in guided setup panel
+- sign in to a shared workspace
 - auto-place one grade at a time
 - manage no-contact, keep-together, and blocked-teacher rules
 - drag students manually between rooms
@@ -19,7 +20,7 @@ You can:
 - export final rosters to CSV
 - open a print-ready PDF packet for one grade level
 
-Your data is saved locally on the current computer.
+On this branch, roster data is saved in a shared workspace on the server. Your browser still remembers a few local preferences, but the placement file itself is no longer limited to one computer.
 
 ## Before you start
 
@@ -29,6 +30,7 @@ Have these ready:
 - a teacher CSV
 - any no-contact pairs or important pairings
 - rough decisions about number of classrooms by grade
+- a workspace login from the person managing the server
 
 Important reminders:
 
@@ -36,7 +38,8 @@ Important reminders:
 - Before the first student import, name the school and school year for the placement file.
 - Student re-imports update existing students when the same `id` appears again.
 - Teacher import does not move students by itself.
-- `Clear All` removes saved work and snapshots from this device and brings back the guided setup panel.
+- Only one person can hold the workspace edit lock at a time.
+- `Clear All` affects the shared workspace, not just the current browser.
 
 ## Main areas of the app
 
@@ -49,6 +52,7 @@ Important reminders:
 - `Show Summary` opens a grade summary drawer.
 - `Show Snapshots` opens the snapshot panel.
 - `Rules Manager` and `Settings` open grade tools.
+- the collaboration controls show who last saved, who currently holds the lock, and whether you are read-only
 
 Reference screenshots:
 
@@ -70,6 +74,16 @@ Reference screenshots:
 9. Lock placements you want to preserve.
 10. Save a snapshot.
 11. Export the roster.
+
+## Working with other people
+
+This branch supports shared editing, but it is not live co-editing in the Google Docs sense.
+
+- Open the same workspace to review the current roster.
+- Acquire the workspace lock before making changes.
+- If someone else holds the lock, you can still review in read-only mode.
+- If your browser falls behind the latest saved version, the app will ask you to reload instead of overwriting newer work.
+- Owners can create invite links or tokens for additional editors and viewers.
 
 ## Student import
 
