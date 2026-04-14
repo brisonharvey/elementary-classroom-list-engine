@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, or } from "drizzle-orm"
+import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm"
 import { CollaborativePlacementState, AuthUser, EditLockStatus, WorkspaceMember, WorkspaceRole, WorkspaceSummary } from "../src/shared/collaboration"
 import * as schema from "./db/schema"
 import { createEmptyCollaborativeState } from "../src/shared/collaboration"
@@ -6,6 +6,32 @@ import { createId, createToken, hashPassword, hashToken, verifyPassword } from "
 import { Database } from "./types"
 import { LOCK_TTL_MS } from "./config"
 import { normalizeCollaborativeState, reduceCollaborativeState } from "./collaboration"
+
+type InviteAcceptanceResult =
+  | { status: "accepted"; user: AuthUser }
+  | { status: "invalid" }
+  | { status: "duplicate"; field: "username" | "email"; message: string }
+
+function isUniqueViolation(error: unknown): error is { code: string; constraint?: string } {
+  return typeof error === "object" && error != null && "code" in error && (error as { code?: string }).code === "23505"
+}
+
+function getInviteDuplicateResult(error: unknown): InviteAcceptanceResult {
+  const constraint = isUniqueViolation(error) ? error.constraint : undefined
+  if (constraint === "users_email_unique") {
+    return {
+      status: "duplicate",
+      field: "email",
+      message: "That email address is already in use.",
+    }
+  }
+
+  return {
+    status: "duplicate",
+    field: "username",
+    message: "That username is already in use.",
+  }
+}
 
 function mapUser(row: typeof schema.users.$inferSelect): AuthUser {
   return {
@@ -263,46 +289,56 @@ export async function acceptInvite(
   password: string,
   displayName: string,
   email?: string
-): Promise<AuthUser | null> {
+): Promise<InviteAcceptanceResult> {
   const invite = await db.query.invites.findFirst({
     where: and(eq(schema.invites.tokenHash, hashToken(token)), isNull(schema.invites.acceptedAt), gt(schema.invites.expiresAt, new Date())),
   })
-  if (!invite) return null
+  if (!invite) return { status: "invalid" }
 
   const userId = createId("user")
   const passwordHash = await hashPassword(password)
 
-  await db.transaction(async (tx) => {
-    await tx.insert(schema.users).values({
+  try {
+    await db.transaction(async (tx) => {
+      await tx.insert(schema.users).values({
+        id: userId,
+        username,
+        displayName,
+        email,
+        passwordHash,
+      })
+      await tx.insert(schema.workspaceMembers).values({
+        workspaceId: invite.workspaceId,
+        userId,
+        role: invite.role,
+      }).onConflictDoNothing()
+      await tx.update(schema.invites).set({
+        acceptedAt: new Date(),
+        acceptedBy: userId,
+      }).where(eq(schema.invites.id, invite.id))
+      await tx.insert(schema.auditEvents).values({
+        id: createId("audit"),
+        workspaceId: invite.workspaceId,
+        userId,
+        action: "invite.accepted",
+        details: { role: invite.role },
+      })
+    })
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return getInviteDuplicateResult(error)
+    }
+    throw error
+  }
+
+  return {
+    status: "accepted",
+    user: {
       id: userId,
       username,
       displayName,
       email,
-      passwordHash,
-    })
-    await tx.insert(schema.workspaceMembers).values({
-      workspaceId: invite.workspaceId,
-      userId,
-      role: invite.role,
-    }).onConflictDoNothing()
-    await tx.update(schema.invites).set({
-      acceptedAt: new Date(),
-      acceptedBy: userId,
-    }).where(eq(schema.invites.id, invite.id))
-    await tx.insert(schema.auditEvents).values({
-      id: createId("audit"),
-      workspaceId: invite.workspaceId,
-      userId,
-      action: "invite.accepted",
-      details: { role: invite.role },
-    })
-  })
-
-  return {
-    id: userId,
-    username,
-    displayName,
-    email,
+    },
   }
 }
 
@@ -369,13 +405,31 @@ export async function saveDocument(
   const nextVersion = version + 1
   const normalized = normalizeCollaborativeState(document)
 
-  await db.transaction(async (tx) => {
-    await tx.update(schema.placementDocuments).set({
+  return db.transaction(async (tx) => {
+    const updatedRows = await tx.update(schema.placementDocuments).set({
       version: nextVersion,
       document: normalized,
       updatedAt: now,
       updatedBy: user.id,
-    }).where(eq(schema.placementDocuments.workspaceId, workspaceId))
+    }).where(
+      and(
+        eq(schema.placementDocuments.workspaceId, workspaceId),
+        eq(schema.placementDocuments.version, version)
+      )
+    ).returning({
+      version: schema.placementDocuments.version,
+    })
+
+    if (updatedRows.length === 0) {
+      const current = await tx.query.placementDocuments.findFirst({
+        where: eq(schema.placementDocuments.workspaceId, workspaceId),
+      })
+      if (!current) {
+        throw new Error("Document not found.")
+      }
+      return { conflict: true as const, currentVersion: current.version }
+    }
+
     await tx.update(schema.workspaces).set({
       updatedAt: now,
       updatedBy: user.id,
@@ -387,15 +441,15 @@ export async function saveDocument(
       action: auditAction,
       details: { version: nextVersion },
     })
-  })
 
-  return {
-    conflict: false as const,
-    version: nextVersion,
-    updatedAt: now.toISOString(),
-    updatedBy: user.displayName,
-    document: normalized,
-  }
+    return {
+      conflict: false as const,
+      version: nextVersion,
+      updatedAt: now.toISOString(),
+      updatedBy: user.displayName,
+      document: normalized,
+    }
+  })
 }
 
 export async function runAutoPlace(db: Database, workspaceId: string, user: AuthUser, version: number) {
@@ -439,24 +493,22 @@ export async function getLockStatus(db: Database, workspaceId: string, currentUs
 
 export async function acquireLock(db: Database, workspaceId: string, user: AuthUser) {
   const now = Date.now()
-  const current = await getLockStatus(db, workspaceId, user.id)
-  if (current.locked && !current.isCurrentUserHolder) {
+  const expiresAt = new Date(now + LOCK_TTL_MS)
+  const result = await db.execute(sql`
+    INSERT INTO edit_locks (workspace_id, user_id, expires_at, acquired_at)
+    VALUES (${workspaceId}, ${user.id}, ${expiresAt}, ${new Date(now)})
+    ON CONFLICT (workspace_id) DO UPDATE
+      SET user_id = EXCLUDED.user_id,
+          expires_at = EXCLUDED.expires_at,
+          acquired_at = EXCLUDED.acquired_at
+      WHERE edit_locks.user_id = EXCLUDED.user_id
+         OR edit_locks.expires_at <= NOW()
+    RETURNING workspace_id
+  `)
+
+  if (result.rows.length === 0) {
     return null
   }
-
-  const expiresAt = new Date(now + LOCK_TTL_MS)
-  await db.insert(schema.editLocks).values({
-    workspaceId,
-    userId: user.id,
-    expiresAt,
-  }).onConflictDoUpdate({
-    target: schema.editLocks.workspaceId,
-    set: {
-      userId: user.id,
-      expiresAt,
-      acquiredAt: new Date(now),
-    },
-  })
 
   return getLockStatus(db, workspaceId, user.id)
 }
@@ -481,18 +533,14 @@ export async function releaseLock(db: Database, workspaceId: string, userId: str
 
 export async function takeoverLock(db: Database, workspaceId: string, user: AuthUser) {
   const expiresAt = new Date(Date.now() + LOCK_TTL_MS)
-  await db.insert(schema.editLocks).values({
-    workspaceId,
-    userId: user.id,
-    expiresAt,
-  }).onConflictDoUpdate({
-    target: schema.editLocks.workspaceId,
-    set: {
-      userId: user.id,
-      expiresAt,
-      acquiredAt: new Date(),
-    },
-  })
+  await db.execute(sql`
+    INSERT INTO edit_locks (workspace_id, user_id, expires_at, acquired_at)
+    VALUES (${workspaceId}, ${user.id}, ${expiresAt}, ${new Date()})
+    ON CONFLICT (workspace_id) DO UPDATE
+      SET user_id = EXCLUDED.user_id,
+          expires_at = EXCLUDED.expires_at,
+          acquired_at = EXCLUDED.acquired_at
+  `)
 
   return getLockStatus(db, workspaceId, user.id)
 }
