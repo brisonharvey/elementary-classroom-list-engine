@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: classroom_engine
+      POSTGRES_USER: classroom
+      POSTGRES_PASSWORD: classroom
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      DATABASE_URL: postgres://classroom:classroom@postgres:5432/classroom_engine
+      SESSION_SECRET: change-me-in-production
+      COOKIE_SECURE: "false"
+      APP_BASE_URL: http://localhost:8080
+      PORT: 8787
+      HOST: 0.0.0.0
+      BOOTSTRAP_ADMIN_USERNAME: admin
+      BOOTSTRAP_ADMIN_PASSWORD: change-me-now
+      BOOTSTRAP_ADMIN_DISPLAY_NAME: Server Admin
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:

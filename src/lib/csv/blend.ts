@@ -36,6 +36,57 @@ function getRowValue(headers: string[], row: string[], column: string | undefine
   return index >= 0 ? (row[index] ?? "").trim() : ""
 }
 
+function normalizeMatchKey(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+
+  if (/^\d+\.0+$/.test(trimmed)) {
+    return trimmed.replace(/\.0+$/, "").replace(/^0+(\d)/, "$1")
+  }
+
+  if (/^\d+$/.test(trimmed)) {
+    return trimmed.replace(/^0+(\d)/, "$1")
+  }
+
+  return trimmed.toLowerCase()
+}
+
+function translateRelationshipValue(
+  rawValue: string,
+  relationshipLookup: Map<string, string>,
+  issuePrefix: string,
+  issues: CsvValidationIssue[]
+): string {
+  if (!rawValue.trim()) return ""
+
+  const translatedIds: string[] = []
+  const unresolvedTokens: string[] = []
+
+  for (const rawToken of rawValue.split(/[;,|\s]+/)) {
+    const token = rawToken.trim()
+    if (!token) continue
+
+    const translated = relationshipLookup.get(normalizeMatchKey(token))
+    if (!translated) {
+      unresolvedTokens.push(token)
+      continue
+    }
+
+    if (!translatedIds.includes(translated)) {
+      translatedIds.push(translated)
+    }
+  }
+
+  if (unresolvedTokens.length > 0) {
+    issues.push({
+      severity: "warning",
+      message: `${issuePrefix}: could not translate relationship ID(s) ${unresolvedTokens.join(", ")} into master student IDs.`,
+    })
+  }
+
+  return translatedIds.join(";")
+}
+
 export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: StudentBlendSource[]): StudentBlendResult {
   const issues: CsvValidationIssue[] = []
   const headers = master.table.headers
@@ -124,16 +175,31 @@ export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: 
     }
 
     const masterLookup = new Map<string, typeof masterRecords>()
+    const relationshipLookup = new Map<string, string>()
     for (const entry of masterRecords) {
-      const key = getRowValue(master.table.headers, entry.row, identityColumns[supplement.matchType])
-      if (!key) continue
-      const bucket = masterLookup.get(key) ?? []
-      bucket.push(entry)
-      masterLookup.set(key, bucket)
+      const key = normalizeMatchKey(getRowValue(master.table.headers, entry.row, identityColumns[supplement.matchType]))
+      if (key) {
+        const bucket = masterLookup.get(key) ?? []
+        bucket.push(entry)
+        masterLookup.set(key, bucket)
+      }
+
+      for (const idType of REQUIRED_MASTER_IDS) {
+        const identityValue = normalizeMatchKey(getRowValue(master.table.headers, entry.row, identityColumns[idType]))
+        const canonicalId = entry.record.id?.trim()
+        if (!identityValue || !canonicalId) continue
+        relationshipLookup.set(identityValue, canonicalId)
+      }
+
+      const canonicalIdKey = normalizeMatchKey(entry.record.id ?? "")
+      if (canonicalIdKey && entry.record.id?.trim()) {
+        relationshipLookup.set(canonicalIdKey, entry.record.id.trim())
+      }
     }
 
     supplement.table.rows.forEach((row, rowIndex) => {
-      const key = getRowValue(supplement.table.headers, row, supplement.matchColumn)
+      const rawKey = getRowValue(supplement.table.headers, row, supplement.matchColumn)
+      const key = normalizeMatchKey(rawKey)
       if (!key) return
 
       const matches = masterLookup.get(key) ?? []
@@ -151,6 +217,15 @@ export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: 
       for (const [field, column] of Object.entries(supplement.fieldMapping) as Array<[StudentCsvFieldKey, string | undefined]>) {
         const value = getRowValue(supplement.table.headers, row, column)
         if (!value) continue
+        if (field === "noContactWith" || field === "preferredWith") {
+          target.record[field] = translateRelationshipValue(
+            value,
+            relationshipLookup,
+            `${supplement.name} row ${rowIndex + 2} ${field}`,
+            issues
+          )
+          continue
+        }
         target.record[field] = value
       }
     })

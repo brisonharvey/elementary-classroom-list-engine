@@ -373,6 +373,7 @@ const tests = [
 
       assert.equal(result.students.length, 0)
       assert.equal(result.skipped, 1)
+      assert.equal(result.issues[0].severity, "warning")
       assert.match(result.errors[0], /unrecognized grade/i)
     },
   },
@@ -583,6 +584,60 @@ const tests = [
     },
   },
   {
+    name: "blend builder translates relationship IDs from supplement match space into master student IDs",
+    run: () => {
+      const result = buildBlendedStudentCsv(
+        {
+          id: "master-5",
+          name: "master.csv",
+          table: {
+            headers: ["id", "grade", "firstName", "lastName", "personId", "stateId", "studentNumber"],
+            rows: [
+              ["101", "1", "Ada", "Stone", "P-101", "S-101", "000123"],
+              ["102", "1", "Ben", "Reed", "P-102", "S-102", "000124"],
+            ],
+          },
+          matchColumn: "",
+          fieldMapping: {
+            id: "id",
+            grade: "grade",
+            firstName: "firstName",
+            lastName: "lastName",
+          },
+          masterIdColumns: {
+            personId: "personId",
+            stateId: "stateId",
+            studentNumber: "studentNumber",
+          },
+        },
+        [
+          {
+            id: "supp-2",
+            name: "relationships.csv",
+            table: {
+              headers: ["studentNumber", "noContactWith", "preferredWith"],
+              rows: [["123.0", "124", "124"]],
+            },
+            matchColumn: "studentNumber",
+            matchType: "studentNumber",
+            fieldMapping: {
+              noContactWith: "noContactWith",
+              preferredWith: "preferredWith",
+            },
+          },
+        ]
+      )
+
+      const lines = result.csvText.trim().split("\n")
+      const row = lines[1].split(",")
+
+      assert.equal(row[0], "101")
+      assert.equal(row[17], "102")
+      assert.equal(row[18], "102")
+      assert.equal(result.issues.some((issue) => issue.severity === "error"), false)
+    },
+  },
+  {
     name: "student export keeps tier note text when present",
     run: () => {
       const student = createStudent({
@@ -784,6 +839,5 @@ main().catch((error) => {
   console.error(error)
   process.exit(1)
 })
-
 
 

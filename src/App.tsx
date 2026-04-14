@@ -13,6 +13,8 @@ import { GradeSettingsPanel } from "./components/GradeSettingsPanel"
 import { QuickStartGuide } from "./components/QuickStartGuide"
 import { ClassroomDeleteDialog } from "./components/ClassroomDeleteDialog"
 import { StudentCardKey } from "./components/StudentCardKey"
+import { AuthScreen } from "./components/AuthScreen"
+import { WorkspaceManager } from "./components/WorkspaceManager"
 import { getClassroomsForGrade } from "./utils/classroomInit"
 import { getGradeReviewWarnings } from "./utils/gradeReview"
 import { getReferenceViewFromLocation } from "./referenceSeed"
@@ -43,7 +45,42 @@ function PlacementWorkspace() {
 }
 
 export default function App() {
-  const { state, dispatch } = useApp()
+  const {
+    state,
+    dispatch,
+    authStatus,
+    authUser,
+    authError,
+    statusMessage,
+    clearStatus,
+    workspaces,
+    currentWorkspaceId,
+    currentWorkspaceRole,
+    members,
+    auditEvents,
+    latestInviteToken,
+    lockStatus,
+    isSaving,
+    lastSavedAt,
+    collaborationEnabled,
+    canEditWorkspace,
+    hasConflict,
+    isReadOnly,
+    login,
+    logout,
+    acceptInvite,
+    createWorkspace,
+    selectWorkspace,
+    saveNow,
+    reloadWorkspace,
+    runAutoPlace,
+    acquireLock,
+    releaseLock,
+    takeoverLock,
+    createInvite,
+    addMember,
+    updateMemberRole,
+  } = useApp()
   const referenceView = useMemo(() => getReferenceViewFromLocation(), [])
   const hasStudents = state.allStudents.length > 0
   const [activePanel, setActivePanel] = useState<SlidePanel>(referenceView.panel)
@@ -92,8 +129,84 @@ export default function App() {
     setDeleteDialogOpen(false)
   }
 
+  if (authStatus === "loading") {
+    return <div className="app-loading-screen">Loading workspace session...</div>
+  }
+
+  if (collaborationEnabled && authStatus === "unauthenticated") {
+    return <AuthScreen error={authError} onLogin={login} onAcceptInvite={acceptInvite} />
+  }
+
+  if (collaborationEnabled && authStatus === "authenticated" && !currentWorkspaceId) {
+    return (
+      <div className="workspace-empty-screen">
+        <WorkspaceManager
+          user={authUser!}
+          workspaces={workspaces}
+          activeWorkspaceId={currentWorkspaceId}
+          activeWorkspaceRole={currentWorkspaceRole}
+          lockStatus={lockStatus}
+          members={members}
+          auditEvents={auditEvents}
+          inviteToken={latestInviteToken}
+          onSelectWorkspace={selectWorkspace}
+          onCreateWorkspace={createWorkspace}
+          onLogout={logout}
+          onAcquireLock={acquireLock}
+          onReleaseLock={releaseLock}
+          onTakeoverLock={takeoverLock}
+          onCreateInvite={createInvite}
+          onAddMember={addMember}
+          onUpdateMemberRole={updateMemberRole}
+        />
+        <div className="workspace-empty-copy">
+          <h2>Create or open a workspace to start collaborating.</h2>
+          <p>Your shared placement document, edit lock, and audit history will load here.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="app">
+    <div className="app-shell">
+      {collaborationEnabled && authUser ? (
+        <WorkspaceManager
+          user={authUser}
+          workspaces={workspaces}
+          activeWorkspaceId={currentWorkspaceId}
+          activeWorkspaceRole={currentWorkspaceRole}
+          lockStatus={lockStatus}
+          members={members}
+          auditEvents={auditEvents}
+          inviteToken={latestInviteToken}
+          onSelectWorkspace={selectWorkspace}
+          onCreateWorkspace={createWorkspace}
+          onLogout={logout}
+          onAcquireLock={acquireLock}
+          onReleaseLock={releaseLock}
+          onTakeoverLock={takeoverLock}
+          onCreateInvite={createInvite}
+          onAddMember={addMember}
+          onUpdateMemberRole={updateMemberRole}
+        />
+      ) : null}
+      <div className="app">
+      {statusMessage ? (
+        <div className="collaboration-banner">
+          <span>{statusMessage}</span>
+          <button className="btn btn-ghost btn-sm" onClick={clearStatus}>Dismiss</button>
+        </div>
+      ) : null}
+      {collaborationEnabled && isReadOnly ? (
+        <div className="collaboration-banner collaboration-banner-readonly">
+          <span>
+            {lockStatus?.locked
+              ? `Read-only while ${lockStatus.holderDisplayName ?? "another editor"} holds the lock.`
+              : "Read-only until you acquire the workspace lock."}
+          </span>
+          {hasConflict ? <button className="btn btn-warning btn-sm" onClick={() => void reloadWorkspace()}>Reload Latest</button> : null}
+        </div>
+      ) : null}
       <header className="app-header">
         <div className="header-left">
           <h1 className="app-title">Classroom Placement Engine</h1>
@@ -104,6 +217,7 @@ export default function App() {
           )}
         </div>
         <div className="header-right">
+          {collaborationEnabled && currentWorkspaceId ? <div className="workspace-chip">{workspaces.find((workspace) => workspace.id === currentWorkspaceId)?.name}</div> : null}
           <button className={`btn btn-sm ${activePanel === "import" ? "btn-primary" : "btn-ghost"}`} onClick={() => setActivePanel((value) => (value === "import" ? "none" : "import"))}>
             Import CSV
           </button>
@@ -131,6 +245,11 @@ export default function App() {
           onOpenRules={() => setActivePanel("rules")}
           onOpenSettings={() => setActivePanel("settings")}
           onShowSummary={() => setSummaryDrawerOpen(true)}
+          onSave={saveNow}
+          onAutoPlace={runAutoPlace}
+          canEditWorkspace={!collaborationEnabled || canEditWorkspace}
+          isSaving={isSaving}
+          lastSavedAt={lastSavedAt}
         />
         <WeightSliders />
       </div>
@@ -228,8 +347,7 @@ export default function App() {
           onConfirm={confirmDeleteClassroom}
         />
       )}
+      </div>
     </div>
   )
 }
-
-

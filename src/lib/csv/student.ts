@@ -481,7 +481,7 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
     const rawGrade = get(values, "grade")
     const grade = parseGrade(rawGrade)
     if (grade == null) {
-      pushIssue(issues, "error", `Row ${rowIndex + 2}: Unrecognized grade "${rawGrade}" - skipped.`)
+      pushIssue(issues, "warning", `Row ${rowIndex + 2}: Unrecognized grade "${rawGrade}" - skipped.`)
       skipped++
       continue
     }

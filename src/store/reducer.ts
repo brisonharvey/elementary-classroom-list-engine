@@ -22,6 +22,7 @@ import { collectAssignedTeacherPlacementIssues } from "../utils/teacherAssignmen
 import { checkHardConstraints } from "../utils/constraints"
 
 export type Action =
+  | { type: "HYDRATE_STATE"; payload: AppState }
   | { type: "LOAD_STUDENTS"; payload: Student[] }
   | { type: "LOAD_TEACHERS"; payload: TeacherProfile[] }
   | { type: "SET_PLACEMENT_CONTEXT"; payload: { schoolName: string; schoolYear: string } }
@@ -349,6 +350,8 @@ function applyUpsertStudentCore(state: AppState, studentInput: Student, previous
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "HYDRATE_STATE":
+      return action.payload
     case "LOAD_STUDENTS": {
       const incomingStudents = dedupeStudentsById(
         action.payload.map((student) => ({

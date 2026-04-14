@@ -8,9 +8,24 @@ interface ControlBarProps {
   onOpenRules: () => void
   onOpenSettings: () => void
   onShowSummary: () => void
+  onSave: () => Promise<void>
+  onAutoPlace: () => Promise<void>
+  canEditWorkspace: boolean
+  isSaving: boolean
+  lastSavedAt?: string
 }
 
-export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSummary }: ControlBarProps) {
+export function ControlBar({
+  onOpenImport,
+  onOpenRules,
+  onOpenSettings,
+  onShowSummary,
+  onSave,
+  onAutoPlace,
+  canEditWorkspace,
+  isSaving,
+  lastSavedAt,
+}: ControlBarProps) {
   const { state, dispatch } = useApp()
   const [showWarnings, setShowWarnings] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
@@ -25,7 +40,7 @@ export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSu
   }, [state.placementWarnings])
 
   const autoPlace = () => {
-    dispatch({ type: "AUTO_PLACE" })
+    void onAutoPlace()
   }
   const sortClassroomsByLastName = () => {
     dispatch({ type: "SORT_CLASSROOMS_BY_LAST_NAME" })
@@ -82,7 +97,7 @@ export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSu
           <button
             className="btn btn-primary"
             onClick={autoPlace}
-            disabled={!hasStudents}
+            disabled={!hasStudents || !canEditWorkspace}
             title="Auto-place unlocked students for the active grade"
           >
             Auto-Place Grade {state.activeGrade}
@@ -90,7 +105,7 @@ export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSu
           <button
             className="btn btn-warning"
             onClick={resetGrade}
-            disabled={!hasStudents}
+            disabled={!hasStudents || !canEditWorkspace}
             title="Clear unlocked placements for active grade"
           >
             Reset Grade
@@ -143,13 +158,23 @@ export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSu
           <button
             className="btn btn-danger"
             onClick={clearAll}
-            disabled={!hasStudents && state.snapshots.length === 0}
+            disabled={(!hasStudents && state.snapshots.length === 0) || !canEditWorkspace}
             title="Clear all app state"
           >
             Clear All
           </button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => void onSave()}
+            disabled={!canEditWorkspace || isSaving}
+            title="Save the current shared workspace"
+          >
+            {isSaving ? "Saving..." : "Save Now"}
+          </button>
         </div>
       </div>
+
+      {lastSavedAt ? <div className="control-bar-status">Last saved {new Date(lastSavedAt).toLocaleString()}</div> : null}
 
       {showWarnings &&
         state.placementWarnings.length > 0 &&
@@ -178,4 +203,3 @@ export function ControlBar({ onOpenImport, onOpenRules, onOpenSettings, onShowSu
     </div>
   )
 }
-
