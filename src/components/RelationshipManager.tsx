@@ -99,6 +99,7 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
     const activeRules = state.relationshipRules.filter((rule) => appliesToActiveGrade(rule, state.activeGrade, allStudentsById))
     const noContactRules = activeRules.filter((rule) => rule.type === "NO_CONTACT")
     const doNotSeparateRules = activeRules.filter((rule) => rule.type === "DO_NOT_SEPARATE")
+    const linkedRules = activeRules.filter((rule) => rule.type === "LINKED")
     const noContactEntries = new Map<string, PairEntry>()
 
     for (const student of gradeStudents) {
@@ -159,8 +160,27 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
           createdAt: rule.createdAt,
           scope: "grade" as const,
         })),
+      ...linkedRules
+        .filter((rule) => {
+          const left = allStudentsById.get(rule.studentIds[0])
+          const right = allStudentsById.get(rule.studentIds[1])
+          return left?.grade === state.activeGrade && right?.grade === state.activeGrade
+        })
+        .map((rule) => ({
+          key: rule.id,
+          id: rule.id,
+          type: rule.type,
+          studentIds: normalizePair(rule.studentIds),
+          note: rule.note,
+          source: "managed" as const,
+          createdAt: rule.createdAt,
+          scope: "grade" as const,
+        })),
     ].sort((left, right) => {
-      if (left.type !== right.type) return left.type === "NO_CONTACT" ? -1 : 1
+      const typeOrder = { "NO_CONTACT": 0, "LINKED": 1, "DO_NOT_SEPARATE": 2 } as const
+      const leftOrder = typeOrder[left.type as keyof typeof typeOrder] ?? 3
+      const rightOrder = typeOrder[right.type as keyof typeof typeOrder] ?? 3
+      if (leftOrder !== rightOrder) return leftOrder - rightOrder
       const leftA = studentsById.get(left.studentIds[0])
       const rightA = studentsById.get(right.studentIds[0])
       if (leftA && rightA) {
@@ -205,7 +225,7 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
         })
         .join(" ")
         .toLowerCase()
-      const typeLabel = entry.type === "NO_CONTACT" ? "no contact hard" : "do not separate soft"
+      const typeLabel = entry.type === "NO_CONTACT" ? "no contact hard" : entry.type === "LINKED" ? "linked stay together hard" : "do not separate soft"
       const sourceLabel = entry.source === "imported" ? "imported from student import" : "managed rule"
       const scopeLabel = entry.scope === "multiYear" ? "multi year" : "grade only"
       return names.includes(term) || (entry.note ?? "").toLowerCase().includes(term) || typeLabel.includes(term) || sourceLabel.includes(term) || scopeLabel.includes(term)
@@ -330,7 +350,7 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
       </div>
 
       <p className="relationship-manager-intro">
-        Manage hard no-contact pairs, soft keep-together pairs, blocked teacher classrooms, and multi-year no-contact rules that should follow students into future grades within this placement file.
+        Manage hard no-contact pairs, hard linked pairs (must stay together), soft keep-together pairs, blocked teacher classrooms, and multi-year no-contact rules that should follow students into future grades within this placement file.
       </p>
       {(state.schoolName.trim() || state.schoolYear.trim()) && (
         <div className="relationship-manager-context">
@@ -345,6 +365,7 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
             <span>Rule type</span>
             <select value={type} onChange={(e) => setType(e.target.value as RelationshipRule["type"])} className="setting-card-input">
               <option value="NO_CONTACT">No Contact (HARD)</option>
+              <option value="LINKED">Linked — Stay Together (HARD)</option>
               <option value="DO_NOT_SEPARATE">Do Not Separate (SOFT)</option>
             </select>
           </label>
@@ -425,8 +446,8 @@ export function RelationshipManager({ onClose }: RelationshipManagerProps) {
               <div key={entry.key} className="relationship-item">
                 <div className="relationship-item-main">
                   <div className="relationship-item-label-row">
-                    <span className={`relationship-type-chip ${entry.type === "NO_CONTACT" ? "relationship-type-hard" : "relationship-type-soft"}`}>
-                      {entry.type === "NO_CONTACT" ? "No Contact" : "Do Not Separate"}
+                    <span className={`relationship-type-chip ${entry.type === "DO_NOT_SEPARATE" ? "relationship-type-soft" : "relationship-type-hard"}`}>
+                      {entry.type === "NO_CONTACT" ? "No Contact" : entry.type === "LINKED" ? "Linked — Stay Together" : "Do Not Separate"}
                     </span>
                     <span className={`relationship-source relationship-source-${entry.source}`}>
                       {entry.source === "imported" ? "Imported" : "Managed"}

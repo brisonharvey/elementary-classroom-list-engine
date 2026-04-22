@@ -40,6 +40,7 @@ Sample file:
 - `teacherNotes`
 - `assignedTeacher`
 - `avoidTeachers`
+- `linkedClassroom` — see Linked Classroom Group below
 
 ### Student import behavior
 
@@ -77,6 +78,29 @@ Use student IDs separated by commas, semicolons, pipes, or spaces.
 
 `preferredWith` is limited to same-grade peers.
 Multi-year no-contact rules are managed in the app UI rather than the CSV template so they can continue following the same students after grade changes.
+
+### Linked Classroom Group column
+
+Use `linkedClassroom` (or common aliases like `linkedGroup`, `classLink`, `keepTogetherGroup`) to link students together so the engine keeps them in the same classroom.
+
+**Rules:**
+
+- The column value is a label — typically a letter like `A`, `B`, `C`, or `D`, but any consistent text works.
+- Students in the **same grade** with the **same label** are linked together (hard constraint).
+- Students in **different grades** with the same label are **not** linked — the grade always scopes the grouping.
+- Groups of two students produce one LINKED rule. Groups of three or more produce all pairwise combinations so every member is directly constrained to every other.
+- Linked rules are hard: once one student in a group is placed, the rest can only go to that same room.
+- The import review screen shows a count of LINKED pair rules created. A summary note is added to the import confirmation message.
+
+**Example spreadsheet layout:**
+
+| id   | grade | firstName | lastName | linkedClassroom |
+|------|-------|-----------|----------|-----------------|
+| 1001 | 3     | Ana       | Rivera   | B               |
+| 1002 | 3     | Marcus    | Lee      | B               |
+| 1003 | 4     | Jordan    | Kim      | B               |
+
+In this example, Ana and Marcus (both grade 3, both labeled `B`) are linked together and will be placed in the same classroom. Jordan (grade 4, also labeled `B`) is not linked to them because they are in different grades.
 
 ### Kindergarten note
 

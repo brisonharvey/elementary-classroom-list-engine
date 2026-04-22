@@ -109,6 +109,7 @@ export function runPlacement(
       const { valid, reason } = checkHardConstraints(student, room, stats.size, {
         settings: gradeSettings,
         relationshipRules,
+        assignedRoomByStudentId,
       })
       if (!valid) {
         if (reason) reasons.add(reason)
@@ -148,6 +149,7 @@ export function runPlacement(
       const { valid, reason } = checkHardConstraints(student, room, stats.size, {
         settings: gradeSettings,
         relationshipRules,
+        assignedRoomByStudentId,
       })
       if (!valid) {
         if (reason) reasons.add(reason)

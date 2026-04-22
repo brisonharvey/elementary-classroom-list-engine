@@ -6,3 +6,4 @@ dist
 release
 out
 tests/.compiled/src
+server/db/generated

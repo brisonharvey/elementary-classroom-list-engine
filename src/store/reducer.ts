@@ -22,6 +22,7 @@ import { collectAssignedTeacherPlacementIssues } from "../utils/teacherAssignmen
 import { checkHardConstraints } from "../utils/constraints"
 
 export type Action =
+  | { type: "HYDRATE_STATE"; payload: AppState }
   | { type: "LOAD_STUDENTS"; payload: Student[] }
   | { type: "LOAD_TEACHERS"; payload: TeacherProfile[] }
   | { type: "SET_PLACEMENT_CONTEXT"; payload: { schoolName: string; schoolYear: string } }
@@ -44,6 +45,7 @@ export type Action =
   | { type: "EDIT_SNAPSHOT_NOTE"; payload: { id: string; note: string } }
   | { type: "DUPLICATE_SNAPSHOT"; payload: string }
   | { type: "UPSERT_RELATIONSHIP_RULE"; payload: RelationshipRule }
+  | { type: "MERGE_RELATIONSHIP_RULES"; payload: RelationshipRule[] }
   | { type: "DELETE_RELATIONSHIP_RULE"; payload: string }
   | { type: "UPSERT_NO_CONTACT_PAIR"; payload: { grade: Grade; studentIds: [number, number]; note?: string; scope?: "grade" | "multiYear" } }
   | { type: "DELETE_NO_CONTACT_PAIR"; payload: { grade: Grade; studentIds: [number, number] } }
@@ -349,6 +351,8 @@ function applyUpsertStudentCore(state: AppState, studentInput: Student, previous
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "HYDRATE_STATE":
+      return action.payload
     case "LOAD_STUDENTS": {
       const incomingStudents = dedupeStudentsById(
         action.payload.map((student) => ({
@@ -652,6 +656,11 @@ export function reducer(state: AppState, action: Action): AppState {
         ? state.relationshipRules.map((rule) => (rule.id === action.payload.id ? { ...action.payload, scope: "grade" as const } : rule))
         : [...state.relationshipRules, { ...action.payload, scope: "grade" as const }]
       return { ...state, relationshipRules }
+    }
+    case "MERGE_RELATIONSHIP_RULES": {
+      const existingIds = new Set(state.relationshipRules.map((rule) => rule.id))
+      const incoming = action.payload.filter((rule) => !existingIds.has(rule.id))
+      return { ...state, relationshipRules: [...state.relationshipRules, ...incoming] }
     }
     case "DELETE_RELATIONSHIP_RULE":
       return { ...state, relationshipRules: state.relationshipRules.filter((rule) => rule.id !== action.payload) }

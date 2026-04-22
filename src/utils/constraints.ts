@@ -11,6 +11,7 @@ interface HardConstraintOptions {
   settings: GradeSettings
   relationshipRules: RelationshipRule[]
   gradeRooms?: Classroom[]
+  assignedRoomByStudentId?: Map<number, string>
 }
 
 function normalizeTeacherName(name: string): string {
@@ -98,7 +99,7 @@ function getDoNotSeparateWarnings(
   const targetRoomId = classroom?.id ?? null
 
   for (const rule of options.relationshipRules) {
-    if (rule.type !== "DO_NOT_SEPARATE" || !doesRuleApplyToStudentGrade(rule, student.grade)) continue
+    if ((rule.type !== "DO_NOT_SEPARATE" && rule.type !== "LINKED") || !doesRuleApplyToStudentGrade(rule, student.grade)) continue
     if (!rule.studentIds.includes(student.id)) continue
 
     const peerId = rule.studentIds[0] === student.id ? rule.studentIds[1] : rule.studentIds[0]
@@ -110,7 +111,8 @@ function getDoNotSeparateWarnings(
       const peerRoom = options.gradeRooms.find((room) => room.id === peerRoomId)
       const peerName = peer ? `${peer.firstName} ${peer.lastName}` : `#${peerId}`
       const peerRoomLabel = peerRoom ? `${peerRoom.grade}-${peerRoom.label}` : peerRoomId
-      warnings.push(`This move would separate this student from ${peerName}, who is currently in ${peerRoomLabel}.`)
+      const prefix = rule.type === "LINKED" ? "This student is linked (must stay together) with" : "This move would separate this student from"
+      warnings.push(`${prefix} ${peerName}, who is currently in ${peerRoomLabel}.`)
     }
   }
 
@@ -165,6 +167,18 @@ export function checkHardConstraints(
       return {
         valid: false,
         reason: `No-contact rule with ${roomStudent.firstName} ${roomStudent.lastName}`,
+      }
+    }
+  }
+
+  const linkedRules = gradeRules.filter((r) => r.type === "LINKED" && r.studentIds.includes(student.id))
+  for (const rule of linkedRules) {
+    const peerId = rule.studentIds[0] === student.id ? rule.studentIds[1] : rule.studentIds[0]
+    const peerRoomId = options.assignedRoomByStudentId?.get(peerId)
+    if (peerRoomId && peerRoomId !== classroom.id) {
+      return {
+        valid: false,
+        reason: `Linked placement: must be in same room as student #${peerId}`,
       }
     }
   }

@@ -191,6 +191,28 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </span>
               )}
 
+              {student.ell && student.elLevel && (
+                <span className="badge badge-el" title={`EL support: ${student.elLevel}`}>
+                  EL:{student.elLevel}
+                </span>
+              )}
+              {student.elNeedsCoTeach && (
+                <span className="badge badge-el-coteach" title="EL: co-teach room suggested">EL-CT</span>
+              )}
+
+              {student.interventionLevel && (
+                <span className="badge badge-intervention" title={`Intervention support: ${student.interventionLevel}`}>
+                  INT:{student.interventionLevel}
+                </span>
+              )}
+              {student.interventionNeedsCoTeach && (
+                <span className="badge badge-intervention-coteach" title="Intervention: co-teach room suggested">INT-CT</span>
+              )}
+
+              {student.parentRequestedTeacher?.trim() && (
+                <span className="badge badge-parent-request" title={`Parent requested: ${student.parentRequestedTeacher}`}>PR</span>
+              )}
+
               {isTeacherFixed && (
                 <span className="badge badge-assigned-teacher" title={`Assigned teacher: ${student.preassignedTeacher}`}>
                   Teacher Fixed
@@ -385,6 +407,16 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                   <div className="tt-row">
                     <span className="tt-label">Teacher Notes</span>
                     <span className="tt-no-contact">{student.teacherNotes}</span>
+                  </div>
+                </>
+              )}
+
+              {student.parentRequestedTeacher?.trim() && (
+                <>
+                  <hr className="tt-sep" />
+                  <div className="tt-row">
+                    <span className="tt-label">Parent Request</span>
+                    <span>{student.parentRequestedTeacher}</span>
                   </div>
                 </>
               )}
