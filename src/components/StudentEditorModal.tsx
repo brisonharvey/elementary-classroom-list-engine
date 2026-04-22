@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
-import { GRADES, STUDENT_TAGS, Student, StudentTag, Grade, CoTeachCategory } from "../types"
+import { EL_SUPPORT_LEVELS, ELSupportLevel, GRADES, InterventionSupportLevel, INTERVENTION_SUPPORT_LEVELS, STUDENT_TAGS, Student, StudentTag, Grade, CoTeachCategory } from "../types"
 import { useApp } from "../store/AppContext"
 import { CO_TEACH_CATEGORIES, CO_TEACH_LABELS, MAX_COTEACH_MINUTES } from "../utils/coTeach"
 
@@ -32,11 +32,16 @@ interface StudentFormState {
   raceEthnicity: string
   teacherNotes: string
   preassignedTeacher: string
+  parentRequestedTeacher: string
   avoidTeachers: string
   noContactWith: string
   preferredWith: string
   tags: StudentTag[]
   coTeachMinutes: Record<CoTeachCategory, string>
+  elLevel: ELSupportLevel | ""
+  elNeedsCoTeach: boolean
+  interventionLevel: InterventionSupportLevel | ""
+  interventionNeedsCoTeach: boolean
 }
 
 function createEmptyCoTeachMinutes(): Record<CoTeachCategory, string> {
@@ -77,11 +82,16 @@ function buildInitialFormState(student: Student | undefined, defaultGrade: Grade
     raceEthnicity: student?.raceEthnicity ?? "",
     teacherNotes: student?.teacherNotes ?? "",
     preassignedTeacher: student?.preassignedTeacher ?? "",
+    parentRequestedTeacher: student?.parentRequestedTeacher ?? "",
     avoidTeachers: (student?.avoidTeachers ?? []).join("; "),
     noContactWith: (student?.noContactWith ?? []).join(";"),
     preferredWith: (student?.preferredWith ?? []).join(";"),
     tags: student?.tags ? [...student.tags] : [],
     coTeachMinutes,
+    elLevel: student?.elLevel ?? "",
+    elNeedsCoTeach: Boolean(student?.elNeedsCoTeach),
+    interventionLevel: student?.interventionLevel ?? "",
+    interventionNeedsCoTeach: Boolean(student?.interventionNeedsCoTeach),
   }
 }
 
@@ -277,7 +287,12 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
       raceEthnicity: form.raceEthnicity.trim() || undefined,
       teacherNotes: form.teacherNotes.trim() || undefined,
       preassignedTeacher: form.preassignedTeacher.trim() || undefined,
+      parentRequestedTeacher: form.parentRequestedTeacher.trim() || undefined,
       avoidTeachers,
+      elLevel: form.elLevel || undefined,
+      elNeedsCoTeach: form.elNeedsCoTeach || undefined,
+      interventionLevel: form.interventionLevel || undefined,
+      interventionNeedsCoTeach: form.interventionNeedsCoTeach || undefined,
     }
 
     dispatch({
@@ -400,6 +415,36 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
                 <input type="checkbox" checked={form.ell} onChange={(e) => setField("ell", e.target.checked)} />
                 <span>English Learner</span>
               </label>
+              {form.ell && (
+                <>
+                  <label className="student-field">
+                    <span>EL Support Level</span>
+                    <select className="snapshot-input" value={form.elLevel} onChange={(e) => setField("elLevel", e.target.value as ELSupportLevel | "")}>
+                      <option value="">Not specified</option>
+                      {EL_SUPPORT_LEVELS.map((level) => (
+                        <option key={level} value={level}>{level === "low" ? "Low support" : level === "mid" ? "Mid-level support" : "High support"}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="student-check student-check-inline">
+                    <input type="checkbox" checked={form.elNeedsCoTeach} onChange={(e) => setField("elNeedsCoTeach", e.target.checked)} />
+                    <span>EL: Suggest co-teach room</span>
+                  </label>
+                </>
+              )}
+              <label className="student-field">
+                <span>Intervention Support Level</span>
+                <select className="snapshot-input" value={form.interventionLevel} onChange={(e) => setField("interventionLevel", e.target.value as InterventionSupportLevel | "")}>
+                  <option value="">Not specified</option>
+                  {INTERVENTION_SUPPORT_LEVELS.map((level) => (
+                    <option key={level} value={level}>{level === "low" ? "Low support" : level === "mid" ? "Mid-level support" : "High support"}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="student-check student-check-inline">
+                <input type="checkbox" checked={form.interventionNeedsCoTeach} onChange={(e) => setField("interventionNeedsCoTeach", e.target.checked)} />
+                <span>Intervention: Suggest co-teach room</span>
+              </label>
               <label className="student-check student-check-inline">
                 <input type="checkbox" checked={form.section504} onChange={(e) => setField("section504", e.target.checked)} />
                 <span>504 Plan</span>
@@ -457,6 +502,16 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
           <section className="student-form-section">
             <div className="student-form-section-title">Relationships And Notes</div>
             <div className="student-form-grid">
+              <label className="student-field student-field-wide">
+                <span>Parent Requested Teacher</span>
+                <small className="student-field-hint">Optional soft preference — considered last during placement. Does not guarantee assignment.</small>
+                <input
+                  className="snapshot-input"
+                  value={form.parentRequestedTeacher}
+                  onChange={(e) => setField("parentRequestedTeacher", e.target.value)}
+                  placeholder="Optional teacher name"
+                />
+              </label>
               <label className="student-field student-field-wide">
                 <span>Blocked Teacher Classrooms</span>
                 <input

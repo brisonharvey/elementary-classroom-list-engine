@@ -18,7 +18,7 @@ import {
   suggestStudentSupplementMatch,
 } from "../../lib/csv"
 import { CsvValidationIssue } from "../../types/csvImport"
-import { Student } from "../../types"
+import { RelationshipRule, Student } from "../../types"
 import { createDefaultPreprocessConfig, getPreprocessDefaults } from "./preprocess"
 import { collectAssignedTeacherPlacementIssues } from "../../utils/teacherAssignments"
 
@@ -44,6 +44,7 @@ type ReviewState = {
   teacherAssignmentIssueCount: number
   issues: CsvValidationIssue[]
   skipped: number
+  linkedRules: RelationshipRule[]
 }
 
 const MASTER_REQUIRED_FIELDS: StudentCsvFieldKey[] = ["id", "firstName", "lastName"]
@@ -283,6 +284,7 @@ export function StudentBlendImport() {
       teacherAssignmentIssueCount,
       issues: [...blend.issues, ...parsed.issues],
       skipped: parsed.skipped,
+      linkedRules: parsed.linkedRules,
     })
     setStep("review")
   }
@@ -300,9 +302,13 @@ export function StudentBlendImport() {
     }
 
     dispatch({ type: "LOAD_STUDENTS", payload: review.studentsToImport })
+    if (review.linkedRules.length > 0) {
+      dispatch({ type: "MERGE_RELATIONSHIP_RULES", payload: review.linkedRules })
+    }
+    const linkedNote = review.linkedRules.length > 0 ? ` Created ${review.linkedRules.length} linked pair rule${review.linkedRules.length === 1 ? "" : "s"} from the Linked Classroom Group column.` : ""
     reset({
       type: "success",
-      message: `Imported ${review.studentsToImport.length} student${review.studentsToImport.length === 1 ? "" : "s"} from the blended roster.${review.updateCount > 0 ? ` Updated ${review.updateCount} existing record${review.updateCount === 1 ? "" : "s"}.` : ""}${review.teacherAssignmentIssueCount > 0 ? ` ${review.teacherAssignmentIssueCount} teacher-fixed student${review.teacherAssignmentIssueCount === 1 ? "" : "s"} still need matching classrooms.` : ""}`,
+      message: `Imported ${review.studentsToImport.length} student${review.studentsToImport.length === 1 ? "" : "s"} from the blended roster.${review.updateCount > 0 ? ` Updated ${review.updateCount} existing record${review.updateCount === 1 ? "" : "s"}.` : ""}${review.teacherAssignmentIssueCount > 0 ? ` ${review.teacherAssignmentIssueCount} teacher-fixed student${review.teacherAssignmentIssueCount === 1 ? "" : "s"} still need matching classrooms.` : ""}${linkedNote}`,
     })
   }
 
@@ -624,6 +630,12 @@ export function StudentBlendImport() {
               <span className="csv-import-review-label">Skipped</span>
               <strong>{review.skipped}</strong>
             </div>
+            {review.linkedRules.length > 0 && (
+              <div className="csv-import-review-card">
+                <span className="csv-import-review-label">Linked pair rules</span>
+                <strong>{review.linkedRules.length}</strong>
+              </div>
+            )}
           </div>
 
           <div className="csv-import-review-grid">

@@ -52,6 +52,12 @@ export interface TeacherProfile {
   characteristics: TeacherCharacteristics
 }
 
+export const EL_SUPPORT_LEVELS = ["low", "mid", "high"] as const
+export type ELSupportLevel = (typeof EL_SUPPORT_LEVELS)[number]
+
+export const INTERVENTION_SUPPORT_LEVELS = ["low", "mid", "high"] as const
+export type InterventionSupportLevel = (typeof INTERVENTION_SUPPORT_LEVELS)[number]
+
 export interface Student {
   id: number
   grade: Grade
@@ -78,14 +84,19 @@ export interface Student {
   ireadyMath?: string
   tags?: StudentTag[]
   preassignedTeacher?: string
+  parentRequestedTeacher?: string
   noContactWith?: number[]
   preferredWith?: number[]
   locked?: boolean
   ell?: boolean
+  elLevel?: ELSupportLevel
+  elNeedsCoTeach?: boolean
   section504?: boolean
   raceEthnicity?: string
   teacherNotes?: string
   avoidTeachers?: string[]
+  interventionLevel?: InterventionSupportLevel
+  interventionNeedsCoTeach?: boolean
 }
 
 export interface Classroom {
@@ -119,7 +130,7 @@ export interface Snapshot {
 
 export interface RelationshipRule {
   id: string
-  type: "NO_CONTACT" | "DO_NOT_SEPARATE"
+  type: "NO_CONTACT" | "DO_NOT_SEPARATE" | "LINKED"
   studentIds: [number, number]
   note?: string
   createdAt: number
@@ -151,6 +162,7 @@ export interface GradeSettings {
   tagEnergyPenaltyWeight: number
   tagHotspotPenaltyWeight: number
   tagHotspotThreshold: number
+  parentTeacherRequestBonus: number
   showClassroomHeaderTagSupportLoad: boolean
   showClassroomHeaderIepCount: boolean
   showClassroomHeaderGenderCounts: boolean

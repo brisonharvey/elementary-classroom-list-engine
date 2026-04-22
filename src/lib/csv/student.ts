@@ -1,4 +1,4 @@
-import { CoTeachCategory, Grade, LEGACY_STUDENT_TAG_ALIASES, STUDENT_TAGS, Student, StudentTag } from "../../types"
+import { CoTeachCategory, Grade, LEGACY_STUDENT_TAG_ALIASES, RelationshipRule, STUDENT_TAGS, Student, StudentTag } from "../../types"
 import { CsvFieldOption, CsvValidationIssue } from "../../types/csvImport"
 import { MAX_COTEACH_MINUTES, normalizeCoTeachMinutes } from "../../utils/coTeach"
 import type { StudentIdentityColumns, StudentMatchType } from "./blend"
@@ -37,6 +37,7 @@ export const STUDENT_CSV_FIELD_OPTIONS = [
   { key: "raceEthnicity", label: "Race/ethnicity", required: false },
   { key: "studentTags", label: "Student characteristics", required: false },
   { key: "teacherNotes", label: "Teacher notes", required: false },
+  { key: "linkedClassroom", label: "Linked classroom group", required: false },
 ] as const satisfies readonly CsvFieldOption[]
 
 export type StudentCsvFieldKey = (typeof STUDENT_CSV_FIELD_OPTIONS)[number]["key"]
@@ -47,6 +48,7 @@ export interface StudentParseResult {
   issues: CsvValidationIssue[]
   errors: string[]
   skipped: number
+  linkedRules: RelationshipRule[]
 }
 
 const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
@@ -82,6 +84,7 @@ const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   raceEthnicity: ["raceethnicity", "race/ethnicity", "ethnicity", "race", "studentrace", "studentethnicity"],
   studentTags: ["studentcharacteristics", "studenttags", "tags", "placementtags", "supporttags"],
   teacherNotes: ["teachernotes", "teacher notes", "teacher notes placement", "notes", "comments", "placementnotes"],
+  linkedClassroom: ["linkedclassroom", "linkedgroup", "linkgroup", "classlink", "linked", "linkedclass", "staytogethergroup", "keeptogethergroup", "linkedclassroomgroup"],
 }
 
 const STUDENT_IDENTITY_ALIASES: Record<StudentMatchType, string[]> = {
@@ -209,13 +212,57 @@ export function suggestStudentSupplementMatch(
   }
 }
 
-function toResult(students: Student[], issues: CsvValidationIssue[], skipped: number): StudentParseResult {
+function toResult(students: Student[], issues: CsvValidationIssue[], skipped: number, linkedRules: RelationshipRule[] = []): StudentParseResult {
   return {
     students,
     issues,
     errors: issues.map((issue) => issue.message),
     skipped,
+    linkedRules,
   }
+}
+
+function buildLinkedRules(
+  students: Student[],
+  linkedClassroomByStudentId: Map<number, string>
+): RelationshipRule[] {
+  // Group students by (grade, normalized linkedClassroom value)
+  const groups = new Map<string, Student[]>()
+  for (const student of students) {
+    const raw = linkedClassroomByStudentId.get(student.id)
+    if (!raw) continue
+    const normalized = raw.trim().toLowerCase()
+    if (!normalized) continue
+    const key = `${student.grade}:${normalized}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(student)
+  }
+
+  const rules: RelationshipRule[] = []
+  const now = Date.now()
+
+  for (const [key, group] of groups) {
+    if (group.length < 2) continue
+    const grade = group[0].grade
+    // All pairwise combinations so every student in the group is directly linked
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const a = group[i]
+        const b = group[j]
+        const pairId = a.id < b.id ? `${a.id}:${b.id}` : `${b.id}:${a.id}`
+        rules.push({
+          id: `linked-import-${key}-${pairId}-${now}`,
+          type: "LINKED",
+          studentIds: a.id < b.id ? [a.id, b.id] : [b.id, a.id],
+          grade,
+          scope: "grade",
+          createdAt: now,
+        })
+      }
+    }
+  }
+
+  return rules
 }
 
 function pushIssue(issues: CsvValidationIssue[], severity: CsvValidationIssue["severity"], message: string) {
@@ -433,6 +480,7 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
   const issues: CsvValidationIssue[] = []
   const students: Student[] = []
   const seenIds = new Set<number>()
+  const linkedClassroomByStudentId = new Map<number, string>()
   let skipped = 0
 
   const get = (values: string[], field: StudentCsvFieldKey): string => {
@@ -484,6 +532,11 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       pushIssue(issues, "warning", `Row ${rowIndex + 2}: Unrecognized grade "${rawGrade}" - skipped.`)
       skipped++
       continue
+    }
+
+    const linkedClassroomRaw = get(values, "linkedClassroom")
+    if (linkedClassroomRaw.trim()) {
+      linkedClassroomByStudentId.set(id, linkedClassroomRaw.trim())
     }
 
     students.push({
@@ -553,13 +606,24 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       .filter((peerId, index, list) => list.indexOf(peerId) === index)
   }
 
-  return toResult(students, issues, skipped)
+  const linkedRules = buildLinkedRules(students, linkedClassroomByStudentId)
+  if (linkedRules.length > 0) {
+    pushIssue(issues, "warning", `Linked classroom import: created ${linkedRules.length} LINKED rule${linkedRules.length === 1 ? "" : "s"} from the Linked Classroom Group column.`)
+  }
+
+  return toResult(students, issues, skipped, linkedRules)
 }
 
 export function parseStudentCSV(text: string): StudentParseResult {
   const preview = parseCSVPreview(text)
   const mapping = suggestStudentFieldMapping(preview.headers)
   return parseStudentCSVWithMapping(text, mapping)
+}
+
+export function generateLinkedRulesSummary(rules: RelationshipRule[]): string {
+  if (rules.length === 0) return ""
+  const grades = Array.from(new Set(rules.map((r) => r.grade))).sort()
+  return `${rules.length} linked pair rule${rules.length === 1 ? "" : "s"} across grade${grades.length === 1 ? "" : "s"} ${grades.join(", ")}`
 }
 
 const STUDENT_TEMPLATE_HEADER = [

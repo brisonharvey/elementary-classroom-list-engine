@@ -87,6 +87,9 @@ export function getStudentCoTeachLoadScore(student: Student): number {
   return Math.max(0, Math.min(2, getStudentCoTeachTotal(student) / 60))
 }
 
+const EL_LEVEL_WEIGHT: Record<string, number> = { low: 0.5, mid: 1.0, high: 1.5 }
+const INTERVENTION_LEVEL_WEIGHT: Record<string, number> = { low: 0.5, mid: 1.0, high: 1.5 }
+
 export function getStudentSupportLoad(student: Student): number {
   let load = 0
   load += student.intervention.academicTier
@@ -95,6 +98,8 @@ export function getStudentSupportLoad(student: Student): number {
   else if (student.specialEd.status === "Referral") load += 1
   load += student.referrals ?? 0
   load += getStudentCoTeachLoadScore(student)
+  if (student.elLevel) load += EL_LEVEL_WEIGHT[student.elLevel] ?? 0
+  if (student.interventionLevel) load += INTERVENTION_LEVEL_WEIGHT[student.interventionLevel] ?? 0
   return load
 }
 
@@ -328,6 +333,21 @@ export function getTagSupportLoadPenalty(
   return penalty
 }
 
+function getParentTeacherRequestAdjustment(student: Student, classroom: Classroom, settings: GradeSettings): number {
+  if (!student.parentRequestedTeacher?.trim()) return 0
+  const requested = student.parentRequestedTeacher.trim().toLowerCase()
+  const classroomTeacher = classroom.teacherName.trim().toLowerCase()
+  if (!classroomTeacher) return 0
+  return classroomTeacher === requested ? -settings.parentTeacherRequestBonus : 0
+}
+
+function getCoTeachSuggestionAdjustment(student: Student, classroom: Classroom, settings: GradeSettings): number {
+  if (!student.elNeedsCoTeach && !student.interventionNeedsCoTeach) return 0
+  const hasCoTeach = classroom.coTeachCoverage.length > 0
+  const bonus = settings.parentTeacherRequestBonus * 0.75
+  return hasCoTeach ? -bonus : bonus
+}
+
 export function scoreStudentForRoom(
   student: Student,
   classroom: Classroom,
@@ -357,6 +377,8 @@ export function scoreStudentForRoom(
   const tagSupportLoadPenalty = context.gradeRooms
     ? getTagSupportLoadPenalty(student, classroom, context.gradeRooms, settings) * (weights.tagSupportLoad / 100)
     : 0
+  const parentRequestAdjustment = getParentTeacherRequestAdjustment(student, classroom, settings)
+  const coTeachSuggestionAdjustment = getCoTeachSuggestionAdjustment(student, classroom, settings)
 
   return (
     classSizePenalty +
@@ -366,6 +388,8 @@ export function scoreStudentForRoom(
     preferredTogetherAdjustment +
     doNotSeparateAdjustment +
     settingsPenalty +
-    tagSupportLoadPenalty
+    tagSupportLoadPenalty +
+    parentRequestAdjustment +
+    coTeachSuggestionAdjustment
   )
 }
