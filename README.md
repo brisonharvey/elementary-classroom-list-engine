@@ -1,6 +1,6 @@
 # Elementary Classroom List Engine
 
-Elementary Classroom List Engine is a React app with an Electron wrapper and a collaborative Fastify + Postgres backend for building balanced K-5 classroom rosters from separate student and teacher imports.
+Elementary Classroom List Engine is a React app with an Electron wrapper for building balanced K-5 classroom rosters from separate student and teacher imports. It defaults to a local-only install model, with the collaborative Fastify + Postgres backend available as an opt-in mode.
 
 It supports:
 
@@ -17,28 +17,36 @@ It supports:
 - grade snapshots
 - CSV export for one grade or all grades
 - print-ready per-grade PDF packet export with a student-card key
-- shared workspaces with invite-based collaboration
-- optimistic concurrency protection and workspace edit locks
+- local-only roster storage on the current device by default
+- optional shared workspaces with invite-based collaboration
+- optional optimistic concurrency protection and workspace edit locks
 
 ## App workflow
 
-1. Sign in and open a workspace.
-2. Acquire the workspace edit lock if you plan to make shared changes.
-3. Follow the guided setup panel if you are starting from scratch.
-4. Import students.
-5. Import teachers.
-6. Choose the active grade.
-7. Review classrooms, room sizes, co-teach coverage, and relationship rules.
-8. Run auto-placement for that grade.
-9. Review warnings and the grade summary.
-10. Drag students manually as needed.
-11. Lock any placements you want preserved.
-12. Save a snapshot.
-13. Export the final roster.
+1. Follow the guided setup panel if you are starting from scratch.
+2. Import students.
+3. Import teachers.
+4. Choose the active grade.
+5. Review classrooms, room sizes, co-teach coverage, and relationship rules.
+6. Run auto-placement for that grade.
+7. Review warnings and the grade summary.
+8. Drag students manually as needed.
+9. Lock any placements you want preserved.
+10. Save a snapshot.
+11. Export the final roster.
+
+## Install model
+
+The selected install model is `local-only`.
+
+- Roster data is saved in browser `localStorage` on the current device.
+- No sign-in, workspace, backend, or Postgres service is required for normal use.
+- `Save Now` writes the current roster to this device.
+- To opt into shared workspaces, set `VITE_INSTALL_MODEL=collaborative` before building or running the frontend.
 
 ## Collaboration model
 
-This branch is web-first and supports multiple users in the same workspace.
+Collaboration is still available when the install model is set to `collaborative`.
 
 - Shared placement data is stored on the backend in Postgres.
 - Each workspace has roles: `owner`, `editor`, and `viewer`.
@@ -47,7 +55,7 @@ This branch is web-first and supports multiple users in the same workspace.
 - Saves use document version checks so stale browser copies fail with a conflict instead of silently overwriting newer work.
 - Imports and exports still run in the browser, but successful shared changes are persisted through the backend.
 
-In this branch, browser `localStorage` is only used for local UI preferences such as the active grade and whether teacher names are shown.
+In collaborative mode, browser `localStorage` is only used for local UI preferences such as the active grade and whether teacher names are shown.
 
 ## Admin-friendly workflow additions
 
@@ -252,13 +260,22 @@ The backend reads these environment variables:
 npm install
 ```
 
+### Run the local-only app
+
+```bash
+npm run dev
+```
+
+This starts the frontend only and uses the selected local-only install model.
+
 ### Run the collaborative web app
 
 ```bash
+set VITE_INSTALL_MODEL=collaborative
 npm run dev:full
 ```
 
-That starts both the Vite frontend and the Fastify backend.
+That starts both the Vite frontend and the Fastify backend. In PowerShell, use `$env:VITE_INSTALL_MODEL="collaborative"` before the command.
 
 ### Run the frontend only
 
@@ -266,7 +283,7 @@ That starts both the Vite frontend and the Fastify backend.
 npm run dev
 ```
 
-This is mainly useful for reference-seed screenshots or UI-only work that does not require the backend.
+This is the normal local-only workflow and is also useful for reference-seed screenshots or UI-only work that does not require the backend.
 
 ### Run the desktop app
 
@@ -274,7 +291,7 @@ This is mainly useful for reference-seed screenshots or UI-only work that does n
 npm run dev:desktop
 ```
 
-Desktop packaging still exists, but this branch’s collaboration flow is web-first and expects the backend to be available.
+Desktop packaging uses the local-only install model unless `VITE_INSTALL_MODEL=collaborative` is set for the frontend build.
 
 ### Run with Docker Compose
 

@@ -26,7 +26,7 @@ export function ControlBar({
   isSaving,
   lastSavedAt,
 }: ControlBarProps) {
-  const { state, dispatch } = useApp()
+  const { state, dispatch, collaborationEnabled } = useApp()
   const [showWarnings, setShowWarnings] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
 
@@ -167,7 +167,7 @@ export function ControlBar({
             className="btn btn-ghost"
             onClick={() => void onSave()}
             disabled={!canEditWorkspace || isSaving}
-            title="Save the current shared workspace"
+            title={collaborationEnabled ? "Save the current shared workspace" : "Save the current roster to this device"}
           >
             {isSaving ? "Saving..." : "Save Now"}
           </button>
