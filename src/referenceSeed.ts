@@ -45,6 +45,7 @@ function buildGradeSettings(): GradeSettings {
     tagEnergyPenaltyWeight: 0.5,
     tagHotspotPenaltyWeight: 1.5,
     tagHotspotThreshold: 3,
+    parentRequestBonus: 0.75,
     showClassroomHeaderTagSupportLoad: false,
     showClassroomHeaderIepCount: false,
     showClassroomHeaderGenderCounts: false,

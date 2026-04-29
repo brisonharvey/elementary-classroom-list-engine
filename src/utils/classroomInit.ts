@@ -26,7 +26,7 @@ const DEFAULT_GRADE_SETTINGS: GradeSettings = {
   tagEnergyPenaltyWeight: 0.5,
   tagHotspotPenaltyWeight: 1.5,
   tagHotspotThreshold: 3,
-  parentTeacherRequestBonus: 2.0,
+  parentRequestBonus: 0.75,
   showClassroomHeaderTagSupportLoad: false,
   showClassroomHeaderIepCount: false,
   showClassroomHeaderGenderCounts: false,
@@ -80,7 +80,10 @@ export function normalizeGradeSettings(settings: Partial<GradeSettings> | null |
     tagEnergyPenaltyWeight: readNumber(settings?.tagEnergyPenaltyWeight, defaults.tagEnergyPenaltyWeight),
     tagHotspotPenaltyWeight: readNumber(settings?.tagHotspotPenaltyWeight, defaults.tagHotspotPenaltyWeight),
     tagHotspotThreshold: readNumber(settings?.tagHotspotThreshold, defaults.tagHotspotThreshold),
-    parentTeacherRequestBonus: readNumber(settings?.parentTeacherRequestBonus, defaults.parentTeacherRequestBonus),
+    parentRequestBonus: readNumber(
+      settings?.parentRequestBonus ?? (settings as Partial<GradeSettings> & { parentTeacherRequestBonus?: unknown } | null | undefined)?.parentTeacherRequestBonus,
+      defaults.parentRequestBonus
+    ),
     showClassroomHeaderTagSupportLoad: readBoolean(settings?.showClassroomHeaderTagSupportLoad, defaults.showClassroomHeaderTagSupportLoad),
     showClassroomHeaderIepCount: readBoolean(settings?.showClassroomHeaderIepCount, defaults.showClassroomHeaderIepCount),
     showClassroomHeaderGenderCounts: readBoolean(settings?.showClassroomHeaderGenderCounts, defaults.showClassroomHeaderGenderCounts),

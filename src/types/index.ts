@@ -84,9 +84,10 @@ export interface Student {
   ireadyMath?: string
   tags?: StudentTag[]
   preassignedTeacher?: string
-  parentRequestedTeacher?: string
   noContactWith?: number[]
   preferredWith?: number[]
+  parentPreferredWith?: number[]
+  parentAvoidWith?: number[]
   locked?: boolean
   ell?: boolean
   elLevel?: ELSupportLevel
@@ -162,7 +163,7 @@ export interface GradeSettings {
   tagEnergyPenaltyWeight: number
   tagHotspotPenaltyWeight: number
   tagHotspotThreshold: number
-  parentTeacherRequestBonus: number
+  parentRequestBonus: number
   showClassroomHeaderTagSupportLoad: boolean
   showClassroomHeaderIepCount: boolean
   showClassroomHeaderGenderCounts: boolean

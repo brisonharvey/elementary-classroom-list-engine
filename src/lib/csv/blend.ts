@@ -130,6 +130,8 @@ export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: 
         "behaviorTier",
         "noContactWith",
         "preferredWith",
+        "parentPreferredWith",
+        "parentAvoidWith",
         "briganceReadiness",
         "mapReading",
         "mapMath",
@@ -217,7 +219,7 @@ export function buildBlendedStudentCsv(master: StudentBlendSource, supplements: 
       for (const [field, column] of Object.entries(supplement.fieldMapping) as Array<[StudentCsvFieldKey, string | undefined]>) {
         const value = getRowValue(supplement.table.headers, row, column)
         if (!value) continue
-        if (field === "noContactWith" || field === "preferredWith") {
+        if (field === "noContactWith" || field === "preferredWith" || field === "parentPreferredWith" || field === "parentAvoidWith") {
           target.record[field] = translateRelationshipValue(
             value,
             relationshipLookup,

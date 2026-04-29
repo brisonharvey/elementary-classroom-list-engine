@@ -32,10 +32,11 @@ interface StudentFormState {
   raceEthnicity: string
   teacherNotes: string
   preassignedTeacher: string
-  parentRequestedTeacher: string
   avoidTeachers: string
   noContactWith: string
   preferredWith: string
+  parentPreferredWith: string
+  parentAvoidWith: string
   tags: StudentTag[]
   coTeachMinutes: Record<CoTeachCategory, string>
   elLevel: ELSupportLevel | ""
@@ -82,10 +83,11 @@ function buildInitialFormState(student: Student | undefined, defaultGrade: Grade
     raceEthnicity: student?.raceEthnicity ?? "",
     teacherNotes: student?.teacherNotes ?? "",
     preassignedTeacher: student?.preassignedTeacher ?? "",
-    parentRequestedTeacher: student?.parentRequestedTeacher ?? "",
     avoidTeachers: (student?.avoidTeachers ?? []).join("; "),
     noContactWith: (student?.noContactWith ?? []).join(";"),
     preferredWith: (student?.preferredWith ?? []).join(";"),
+    parentPreferredWith: (student?.parentPreferredWith ?? []).join(";"),
+    parentAvoidWith: (student?.parentAvoidWith ?? []).join(";"),
     tags: student?.tags ? [...student.tags] : [],
     coTeachMinutes,
     elLevel: student?.elLevel ?? "",
@@ -229,26 +231,35 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
 
     const parsedNoContact = parseIdInput(form.noContactWith)
     const parsedPreferred = parseIdInput(form.preferredWith)
+    const parsedParentPreferred = parseIdInput(form.parentPreferredWith)
+    const parsedParentAvoid = parseIdInput(form.parentAvoidWith)
     const avoidTeachers = parseTeacherListInput(form.avoidTeachers)
-    if (parsedNoContact.invalidTokens.length > 0 || parsedPreferred.invalidTokens.length > 0) {
-      setError("No-contact and preferred-with fields accept only positive student IDs separated by commas, spaces, or semicolons.")
+    if (
+      parsedNoContact.invalidTokens.length > 0 ||
+      parsedPreferred.invalidTokens.length > 0 ||
+      parsedParentPreferred.invalidTokens.length > 0 ||
+      parsedParentAvoid.invalidTokens.length > 0
+    ) {
+      setError("Relationship fields accept only positive student IDs separated by commas, spaces, or semicolons.")
       return
     }
 
     const peerIds = new Set(state.allStudents.filter((entry) => entry.id !== student?.id).map((entry) => entry.id))
     const missingNoContact = parsedNoContact.ids.filter((peerId) => !peerIds.has(peerId))
     const missingPreferred = parsedPreferred.ids.filter((peerId) => !peerIds.has(peerId))
-    if (missingNoContact.length > 0 || missingPreferred.length > 0) {
+    const missingParentPreferred = parsedParentPreferred.ids.filter((peerId) => !peerIds.has(peerId))
+    const missingParentAvoid = parsedParentAvoid.ids.filter((peerId) => !peerIds.has(peerId))
+    if (missingNoContact.length > 0 || missingPreferred.length > 0 || missingParentPreferred.length > 0 || missingParentAvoid.length > 0) {
       setError("One or more referenced student IDs do not exist in the current roster.")
       return
     }
 
-    const invalidPreferred = parsedPreferred.ids.filter((peerId) => {
+    const invalidSameGradePeers = [...parsedPreferred.ids, ...parsedParentPreferred.ids, ...parsedParentAvoid.ids].filter((peerId) => {
       const peer = state.allStudents.find((entry) => entry.id === peerId)
       return peer != null && peer.grade !== form.grade
     })
-    if (invalidPreferred.length > 0) {
-      setError("Preferred-with students must be in the same grade as this student.")
+    if (invalidSameGradePeers.length > 0) {
+      setError("Preferred-with and parent-requested students must be in the same grade as this student.")
       return
     }
 
@@ -281,13 +292,14 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
       tags: form.tags,
       noContactWith: parsedNoContact.ids,
       preferredWith: parsedPreferred.ids,
+      parentPreferredWith: parsedParentPreferred.ids,
+      parentAvoidWith: parsedParentAvoid.ids,
       locked: form.preassignedTeacher.trim() ? true : (student?.preassignedTeacher ? false : (student?.locked ?? false)),
       ell: form.ell,
       section504: form.section504,
       raceEthnicity: form.raceEthnicity.trim() || undefined,
       teacherNotes: form.teacherNotes.trim() || undefined,
       preassignedTeacher: form.preassignedTeacher.trim() || undefined,
-      parentRequestedTeacher: form.parentRequestedTeacher.trim() || undefined,
       avoidTeachers,
       elLevel: form.elLevel || undefined,
       elNeedsCoTeach: form.elNeedsCoTeach || undefined,
@@ -503,13 +515,23 @@ export function StudentEditorModal({ student, defaultGrade, onClose }: StudentEd
             <div className="student-form-section-title">Relationships And Notes</div>
             <div className="student-form-grid">
               <label className="student-field student-field-wide">
-                <span>Parent Requested Teacher</span>
-                <small className="student-field-hint">Optional soft preference — considered last during placement. Does not guarantee assignment.</small>
+                <span>Parent Requested With IDs</span>
+                <small className="student-field-hint">Soft parent preference. Lower priority than staff relationships and placement rules.</small>
                 <input
                   className="snapshot-input"
-                  value={form.parentRequestedTeacher}
-                  onChange={(e) => setField("parentRequestedTeacher", e.target.value)}
-                  placeholder="Optional teacher name"
+                  value={form.parentPreferredWith}
+                  onChange={(e) => setField("parentPreferredWith", e.target.value)}
+                  placeholder="Same-grade IDs only"
+                />
+              </label>
+              <label className="student-field student-field-wide">
+                <span>Parent Requested Apart IDs</span>
+                <small className="student-field-hint">Soft parent preference to avoid placing these students together.</small>
+                <input
+                  className="snapshot-input"
+                  value={form.parentAvoidWith}
+                  onChange={(e) => setField("parentAvoidWith", e.target.value)}
+                  placeholder="Same-grade IDs only"
                 />
               </label>
               <label className="student-field student-field-wide">

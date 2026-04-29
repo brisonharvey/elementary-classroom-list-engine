@@ -28,6 +28,8 @@ const CO_TEACH_ABBREVIATIONS: Record<CoTeachCategory, string> = {
   vocational: "Voc",
 }
 
+type ParentRequestStatus = "none" | "upheld" | "not-upheld"
+
 export const StudentCard = memo(function StudentCard({ student, classroomId }: StudentCardProps) {
   const { state, dispatch } = useApp()
   const { startDrag, clearDrag } = useDrag()
@@ -118,6 +120,41 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
     const noContact = state.allStudents.find((entry) => entry.id === id)
     return noContact ? `${noContact.firstName} ${noContact.lastName}` : `#${id}`
   })
+  const assignedRoomByStudentId = useMemo(() => {
+    const entries = new Map<number, string>()
+    for (const classroom of state.classrooms) {
+      for (const roomStudent of classroom.students) {
+        entries.set(roomStudent.id, classroom.id)
+      }
+    }
+    return entries
+  }, [state.classrooms])
+  const parentPreferredNames = (student.parentPreferredWith ?? []).map((id) => {
+    const peer = state.allStudents.find((entry) => entry.id === id)
+    return peer ? `${peer.firstName} ${peer.lastName}` : `#${id}`
+  })
+  const parentAvoidNames = (student.parentAvoidWith ?? []).map((id) => {
+    const peer = state.allStudents.find((entry) => entry.id === id)
+    return peer ? `${peer.firstName} ${peer.lastName}` : `#${id}`
+  })
+  const parentRequestStatus: ParentRequestStatus = useMemo(() => {
+    const preferredIds = student.parentPreferredWith ?? []
+    const avoidIds = student.parentAvoidWith ?? []
+    if (preferredIds.length === 0 && avoidIds.length === 0) return "none"
+    if (!classroomId) return "not-upheld"
+
+    const preferredUpheld = preferredIds.every((peerId) => assignedRoomByStudentId.get(peerId) === classroomId)
+    const avoidUpheld = avoidIds.every((peerId) => assignedRoomByStudentId.get(peerId) !== classroomId)
+    return preferredUpheld && avoidUpheld ? "upheld" : "not-upheld"
+  }, [assignedRoomByStudentId, classroomId, student.parentAvoidWith, student.parentPreferredWith])
+  const parentRequestTitle =
+    parentRequestStatus === "none"
+      ? ""
+      : [
+          `Parent request ${parentRequestStatus === "upheld" ? "upheld" : "not upheld"}`,
+          parentPreferredNames.length > 0 ? `With: ${parentPreferredNames.join(", ")}` : "",
+          parentAvoidNames.length > 0 ? `Apart: ${parentAvoidNames.join(", ")}` : "",
+        ].filter(Boolean).join(" | ")
 
   return (
     <>
@@ -209,8 +246,10 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 <span className="badge badge-intervention-coteach" title="Intervention: co-teach room suggested">INT-CT</span>
               )}
 
-              {student.parentRequestedTeacher?.trim() && (
-                <span className="badge badge-parent-request" title={`Parent requested: ${student.parentRequestedTeacher}`}>PR</span>
+              {parentRequestStatus !== "none" && (
+                <span className="badge badge-parent-request" title={parentRequestTitle}>
+                  {parentRequestStatus === "upheld" ? "PR:Yes" : "PR:No"}
+                </span>
               )}
 
               {isTeacherFixed && (
@@ -411,13 +450,27 @@ export const StudentCard = memo(function StudentCard({ student, classroomId }: S
                 </>
               )}
 
-              {student.parentRequestedTeacher?.trim() && (
+              {parentRequestStatus !== "none" && (
                 <>
                   <hr className="tt-sep" />
                   <div className="tt-row">
                     <span className="tt-label">Parent Request</span>
-                    <span>{student.parentRequestedTeacher}</span>
+                    <span className={parentRequestStatus === "upheld" ? "" : "tt-flag"}>
+                      {parentRequestStatus === "upheld" ? "Upheld" : "Not upheld"}
+                    </span>
                   </div>
+                  {parentPreferredNames.length > 0 && (
+                    <div className="tt-row">
+                      <span className="tt-label">Requested With</span>
+                      <span className="tt-no-contact">{parentPreferredNames.join(", ")}</span>
+                    </div>
+                  )}
+                  {parentAvoidNames.length > 0 && (
+                    <div className="tt-row">
+                      <span className="tt-label">Requested Apart</span>
+                      <span className="tt-no-contact">{parentAvoidNames.join(", ")}</span>
+                    </div>
+                  )}
                 </>
               )}
 

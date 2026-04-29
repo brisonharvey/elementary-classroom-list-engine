@@ -24,6 +24,8 @@ export const STUDENT_CSV_FIELD_OPTIONS = [
   { key: "behaviorTier", label: "Behavior tier", required: false },
   { key: "noContactWith", label: "No-contact IDs", required: false },
   { key: "preferredWith", label: "Prefer with IDs", required: false },
+  { key: "parentPreferredWith", label: "Parent request stay-together IDs", required: false },
+  { key: "parentAvoidWith", label: "Parent request keep-apart IDs", required: false },
   { key: "briganceReadiness", label: "Brigance readiness", required: false },
   { key: "mapReading", label: "MAP reading", required: false },
   { key: "mapMath", label: "MAP math", required: false },
@@ -71,6 +73,30 @@ const FIELD_ALIASES: Record<StudentCsvFieldKey, string[]> = {
   behaviorTier: ["behaviortier", "behaviourtier", "behaviorsupporttier", "activeintervention|seb"],
   noContactWith: ["nocontactwith", "separatefrom", "donotpairwith"],
   preferredWith: ["preferredwith", "preferwith", "sameclasswith", "sameroomwith", "keepwith", "withstudents"],
+  parentPreferredWith: [
+    "parentpreferredwith",
+    "parentrequestedwith",
+    "parentpreferwith",
+    "parentrequestwith",
+    "parentstaywith",
+    "parentrequestedstaywith",
+    "parentrequeststaytogether",
+    "parentrequeststaytogetherids",
+    "parent request stay together",
+    "parent request stay together ids",
+  ],
+  parentAvoidWith: [
+    "parentavoidwith",
+    "parentrequestedapart",
+    "parentnotwith",
+    "parentrequestednotwith",
+    "parentdonotplacewith",
+    "parentseparatefrom",
+    "parentrequestkeepapart",
+    "parentrequestkeepapartids",
+    "parent request keep apart",
+    "parent request keep apart ids",
+  ],
   briganceReadiness: ["brigance", "brigancereadiness", "brigancekindergartenreadiness", "brigancereadinessscore"],
   mapReading: ["mapreading", "readingmap", "mapreadingscore", "mapwinterreading|rit", "mapfallreading|rit"],
   mapMath: ["mapmath", "mathmap", "mapmathscore", "mapwintermath|rit", "mapfallmath|rit"],
@@ -510,6 +536,8 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
 
     const parsedNoContact = parseIdList(get(values, "noContactWith"))
     const parsedPreferredWith = parseIdList(get(values, "preferredWith"))
+    const parsedParentPreferredWith = parseIdList(get(values, "parentPreferredWith"))
+    const parsedParentAvoidWith = parseIdList(get(values, "parentAvoidWith"))
     const parsedTags = parseStudentTags(get(values, "studentTags"))
     const parsedAcademicTier = parseTier(get(values, "academicTier"))
     const parsedBehaviorTier = parseTier(get(values, "behaviorTier"))
@@ -520,6 +548,14 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
 
     if (parsedPreferredWith.invalidTokens.length > 0) {
       pushIssue(issues, "warning", `Row ${rowIndex + 2}: Invalid preferredWith token(s): ${parsedPreferredWith.invalidTokens.join(", ")} - expected positive whole-number IDs.`)
+    }
+
+    if (parsedParentPreferredWith.invalidTokens.length > 0) {
+      pushIssue(issues, "warning", `Row ${rowIndex + 2}: Invalid parentPreferredWith token(s): ${parsedParentPreferredWith.invalidTokens.join(", ")} - expected positive whole-number IDs.`)
+    }
+
+    if (parsedParentAvoidWith.invalidTokens.length > 0) {
+      pushIssue(issues, "warning", `Row ${rowIndex + 2}: Invalid parentAvoidWith token(s): ${parsedParentAvoidWith.invalidTokens.join(", ")} - expected positive whole-number IDs.`)
     }
 
     if (parsedTags.invalidTokens.length > 0) {
@@ -566,6 +602,8 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       tags: parsedTags.tags,
       noContactWith: parsedNoContact.ids,
       preferredWith: parsedPreferredWith.ids,
+      parentPreferredWith: parsedParentPreferredWith.ids,
+      parentAvoidWith: parsedParentAvoidWith.ids,
       ell: parseELL(get(values, "ell")),
       section504: parseBool(get(values, "section504")),
       raceEthnicity: parseOptionalString(get(values, "raceEthnicity")),
@@ -604,6 +642,30 @@ export function parseStudentCSVWithMapping(text: string, mapping: StudentCsvFiel
       .filter((peerId) => peerId !== student.id && idSet.has(peerId))
       .filter((peerId) => studentsById.get(peerId)?.grade === student.grade)
       .filter((peerId, index, list) => list.indexOf(peerId) === index)
+
+    for (const [field, label] of [
+      ["parentPreferredWith", "parentPreferredWith"],
+      ["parentAvoidWith", "parentAvoidWith"],
+    ] as const) {
+      const ids = student[field] ?? []
+      const invalidIds = ids.filter((peerId) => !idSet.has(peerId))
+      if (invalidIds.length > 0) {
+        pushIssue(issues, "warning", `Student ${student.id} (${student.firstName} ${student.lastName}): ${label} references unknown IDs: ${invalidIds.join(", ")}`)
+      }
+
+      const crossGradeIds = ids.filter((peerId) => {
+        const peer = studentsById.get(peerId)
+        return peer != null && peer.grade !== student.grade
+      })
+      if (crossGradeIds.length > 0) {
+        pushIssue(issues, "warning", `Student ${student.id} (${student.firstName} ${student.lastName}): ${label} references students in different grades (${crossGradeIds.join(", ")}); these were ignored.`)
+      }
+
+      student[field] = ids
+        .filter((peerId) => peerId !== student.id && idSet.has(peerId))
+        .filter((peerId) => studentsById.get(peerId)?.grade === student.grade)
+        .filter((peerId, index, list) => list.indexOf(peerId) === index)
+    }
   }
 
   const linkedRules = buildLinkedRules(students, linkedClassroomByStudentId)
@@ -644,6 +706,8 @@ const STUDENT_TEMPLATE_HEADER = [
   "behaviorTier",
   "noContactWith",
   "preferredWith",
+  "parentRequestStayTogether",
+  "parentRequestKeepApart",
   "briganceReadiness",
   "mapReading",
   "mapMath",
@@ -696,6 +760,8 @@ export function generateStudentSampleCSV(): string {
       const socialMinutes = index === 5 ? 15 : 0
       const noContact = index === 0 ? `${id + 1}` : ""
       const preferredWith = index === 2 ? `${id + 1}` : ""
+      const parentPreferredWith = index === 4 ? `${id + 1}` : ""
+      const parentAvoidWith = index === 6 ? `${id + 1}` : ""
       const brigance = grade === "K" ? 48 + index * 5 : ""
       const mapReading = grade === "K" ? "" : 155 + index * 3 + grades.indexOf(grade) * 2
       const mapMath = grade === "K" ? "" : 158 + index * 3 + grades.indexOf(grade) * 2
@@ -726,6 +792,8 @@ export function generateStudentSampleCSV(): string {
         behaviorTier,
         noContact,
         preferredWith,
+        parentPreferredWith,
+        parentAvoidWith,
         brigance,
         mapReading,
         mapMath,

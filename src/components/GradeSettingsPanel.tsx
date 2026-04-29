@@ -210,6 +210,14 @@ const SETTINGS_SECTIONS: SettingSection[] = [
         step: 0.25,
         min: 0,
       },
+      {
+        key: "parentRequestBonus",
+        label: "Parent student-request nudge",
+        help: "This lightly rewards parent requested-with placements and lightly penalizes parent requested-apart conflicts.",
+        example: "Example: 0.75 keeps parent requests below staff relationship requests and hard placement rules.",
+        step: 0.25,
+        min: 0,
+      },
     ],
   },
   {
