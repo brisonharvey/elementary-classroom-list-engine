@@ -67,6 +67,7 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null)
 
 export const STORAGE_KEY = "classroom-placement-state-v6"
+type InstallModel = "local-only" | "collaborative"
 
 type LegacyTeacherCharacteristics = {
   classroomStructure?: unknown
@@ -82,6 +83,10 @@ type LegacyTeacherCharacteristics = {
 function isReferenceMode(): boolean {
   if (typeof window === "undefined") return false
   return new URLSearchParams(window.location.search).get("referenceSeed") === "docs"
+}
+
+function getInstallModel(): InstallModel {
+  return import.meta.env.VITE_INSTALL_MODEL === "collaborative" ? "collaborative" : "local-only"
 }
 
 function normalizeIdList(value: unknown): number[] {
@@ -353,8 +358,11 @@ function isUiOnlyAction(action: Action): boolean {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const referenceMode = useMemo(() => isReferenceMode(), [])
-  const [state, baseDispatch] = useReducer(reducer, referenceMode ? loadReferenceState() : initialState)
-  const [authStatus, setAuthStatus] = useState<AppContextValue["authStatus"]>(referenceMode ? "authenticated" : "loading")
+  const installModel = useMemo(() => getInstallModel(), [])
+  const localOnly = installModel === "local-only" || referenceMode
+  const collaborationEnabled = !localOnly
+  const [state, baseDispatch] = useReducer(reducer, localOnly ? loadReferenceState() : initialState)
+  const [authStatus, setAuthStatus] = useState<AppContextValue["authStatus"]>(localOnly ? "authenticated" : "loading")
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [authError, setAuthError] = useState("")
   const [statusMessage, setStatusMessage] = useState(referenceMode ? "Reference seed mode is active." : "")
@@ -380,12 +388,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const activeCollaborativeState = useMemo(() => extractCollaborativeState(state), [state])
   const isDirty = useMemo(
-    () => !referenceMode && !collaborationStateEquals(activeCollaborativeState, baselineDocument),
-    [activeCollaborativeState, baselineDocument, referenceMode]
+    () => collaborationEnabled && !collaborationStateEquals(activeCollaborativeState, baselineDocument),
+    [activeCollaborativeState, baselineDocument, collaborationEnabled]
   )
 
-  const canEditWorkspace = Boolean(currentWorkspaceRole && currentWorkspaceRole !== "viewer")
-  const isReadOnly = referenceMode ? false : !lockStatus?.isCurrentUserHolder
+  const canEditWorkspace = localOnly || Boolean(currentWorkspaceRole && currentWorkspaceRole !== "viewer")
+  const isReadOnly = localOnly ? false : !lockStatus?.isCurrentUserHolder
 
   const hydrateFromEnvelope = (envelope: DocumentEnvelope<CollaborativePlacementState>) => {
     const nextState = buildAppStateFromCollaborativeDocument(envelope.document, readUiPrefs())
@@ -422,7 +430,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshSession = async () => {
-    if (referenceMode) return
+    if (!collaborationEnabled) return
 
     try {
       const me = await api.getMe()
@@ -453,22 +461,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    if (referenceMode) return
+    if (!collaborationEnabled) return
     void refreshSession()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [referenceMode])
+  }, [collaborationEnabled])
 
   useEffect(() => {
     writeUiPrefs(state)
   }, [state.activeGrade, state.showTeacherNames])
 
   useEffect(() => {
-    if (!referenceMode) return
+    if (!localOnly) return
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  }, [referenceMode, state])
+  }, [localOnly, state])
 
   useEffect(() => {
-    if (referenceMode || !currentWorkspaceId || !lockStatus?.isCurrentUserHolder) return
+    if (!collaborationEnabled || !currentWorkspaceId || !lockStatus?.isCurrentUserHolder) return
 
     const interval = window.setInterval(() => {
       void api.heartbeatLock(currentWorkspaceId)
@@ -477,10 +485,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 60_000)
 
     return () => window.clearInterval(interval)
-  }, [currentWorkspaceId, lockStatus?.isCurrentUserHolder, referenceMode])
+  }, [collaborationEnabled, currentWorkspaceId, lockStatus?.isCurrentUserHolder])
 
   const saveNow = async () => {
-    if (referenceMode || !currentWorkspaceId || !lockStatus?.isCurrentUserHolder) return
+    if (localOnly) {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(latestStateRef.current))
+      }
+      setLastSavedAt(new Date().toISOString())
+      setStatusMessage("Saved to this device.")
+      return
+    }
+    if (!currentWorkspaceId || !lockStatus?.isCurrentUserHolder) return
     const currentDocument = extractCollaborativeState(latestStateRef.current)
     if (collaborationStateEquals(currentDocument, baselineDocument)) return
 
@@ -503,7 +519,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    if (referenceMode || !currentWorkspaceId || !lockStatus?.isCurrentUserHolder || !isDirty) return
+    if (!collaborationEnabled || !currentWorkspaceId || !lockStatus?.isCurrentUserHolder || !isDirty) return
 
     if (autosaveTimerRef.current) {
       window.clearTimeout(autosaveTimerRef.current)
@@ -518,10 +534,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         window.clearTimeout(autosaveTimerRef.current)
       }
     }
-  }, [referenceMode, currentWorkspaceId, lockStatus?.isCurrentUserHolder, isDirty, baselineDocument])
+  }, [collaborationEnabled, currentWorkspaceId, lockStatus?.isCurrentUserHolder, isDirty, baselineDocument])
 
   const dispatch: Dispatch<Action> = (action) => {
-    if (referenceMode || isUiOnlyAction(action)) {
+    if (!collaborationEnabled || isUiOnlyAction(action)) {
       baseDispatch(action)
       return
     }
@@ -540,6 +556,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = async (username: string, password: string) => {
+    if (!collaborationEnabled) return
     const response = await api.login(username, password)
     setAuthUser(response.user)
     setAuthStatus("authenticated")
@@ -548,12 +565,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    if (!referenceMode && currentWorkspaceId && lockStatus?.isCurrentUserHolder) {
+    if (!collaborationEnabled) {
+      baseDispatch({ type: "HYDRATE_STATE", payload: initialState })
+      setStatusMessage("Local data cleared from the current session.")
+      return
+    }
+    if (currentWorkspaceId && lockStatus?.isCurrentUserHolder) {
       await api.releaseLock(currentWorkspaceId).catch(() => undefined)
     }
     await api.logout()
     setAuthUser(null)
-    setAuthStatus(referenceMode ? "authenticated" : "unauthenticated")
+    setAuthStatus("unauthenticated")
     setCurrentWorkspaceId(undefined)
     setCurrentWorkspaceRole(undefined)
     setWorkspaces([])
@@ -565,6 +587,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const acceptInvite = async (input: { token: string; username: string; password: string; displayName: string; email?: string }) => {
+    if (!collaborationEnabled) return
     const response = await api.acceptInvite(input)
     setAuthUser(response.user)
     setAuthStatus("authenticated")
@@ -573,6 +596,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const createWorkspace = async (name: string) => {
+    if (!collaborationEnabled) return
     const response = await api.createWorkspace(name)
     const nextWorkspaces = [...workspaces, response.workspace]
     setWorkspaces(nextWorkspaces)
@@ -580,6 +604,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const selectWorkspace = async (workspaceId: string) => {
+    if (!collaborationEnabled) return
     if (currentWorkspaceId === workspaceId) return
     if (isDirty && lockStatus?.isCurrentUserHolder) {
       await saveNow()
@@ -588,12 +613,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const reloadWorkspace = async () => {
+    if (!collaborationEnabled) return
     if (!currentWorkspaceId) return
     await loadWorkspace(currentWorkspaceId)
   }
 
   const runAutoPlace = async () => {
-    if (referenceMode) {
+    if (!collaborationEnabled) {
       baseDispatch({ type: "AUTO_PLACE" })
       return
     }
@@ -616,6 +642,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const acquireLock = async () => {
+    if (!collaborationEnabled) return
     if (!currentWorkspaceId) return
     try {
       const nextLock = await api.acquireLock(currentWorkspaceId)
@@ -628,6 +655,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const releaseLock = async () => {
+    if (!collaborationEnabled) return
     if (!currentWorkspaceId) return
     try {
       await api.releaseLock(currentWorkspaceId)
@@ -640,6 +668,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const takeoverLock = async () => {
+    if (!collaborationEnabled) return
     if (!currentWorkspaceId) return
     try {
       const nextLock = await api.takeoverLock(currentWorkspaceId)
@@ -652,6 +681,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const createInvite = async (role: WorkspaceRole, email?: string) => {
+    if (!collaborationEnabled) return
     if (!currentWorkspaceId) return
     const invite = await api.createInvite(currentWorkspaceId, role, email)
     setLatestInviteToken(invite.token)
@@ -659,6 +689,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const addMember = async (identifier: string, role: WorkspaceRole) => {
+    if (!collaborationEnabled) return
     if (!currentWorkspaceId) return
     const response = await api.addMember(currentWorkspaceId, identifier, role)
     setMembers(response.members)
@@ -666,6 +697,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateMemberRole = async (userId: string, role: WorkspaceRole) => {
+    if (!collaborationEnabled) return
     if (!currentWorkspaceId) return
     const response = await api.updateMemberRole(currentWorkspaceId, userId, role)
     setMembers(response.members)
@@ -680,7 +712,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AppContextValue>(() => ({
     state,
     dispatch,
-    collaborationEnabled: !referenceMode,
+    collaborationEnabled,
     authStatus,
     authUser,
     authError,
@@ -717,7 +749,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     clearStatus,
   }), [
     state,
-    referenceMode,
+    collaborationEnabled,
     authStatus,
     authUser,
     authError,
