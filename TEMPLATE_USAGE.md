@@ -8,6 +8,10 @@ Template file:
 
 - [student-import-template.csv](public/student-import-template.csv)
 
+Full example template:
+
+- [student-import-full-template.csv](public/student-import-full-template.csv)
+
 Sample file:
 
 - [sample-students.csv](public/sample-students.csv)
@@ -28,6 +32,8 @@ Sample file:
 - `referrals`
 - `noContactWith`
 - `preferredWith`
+- `parentRequestStayTogether`
+- `parentRequestKeepApart`
 - `briganceReadiness`
 - `mapReading`
 - `mapMath`
@@ -75,8 +81,10 @@ Use student IDs separated by commas, semicolons, pipes, or spaces.
 
 - `noContactWith`
 - `preferredWith`
+- `parentRequestStayTogether`
+- `parentRequestKeepApart`
 
-`preferredWith` is limited to same-grade peers.
+`preferredWith`, `parentRequestStayTogether`, and `parentRequestKeepApart` are limited to same-grade peers. Parent request columns are soft, lower-priority requests; staff no-contact rules and managed relationship rules stay stronger.
 Multi-year no-contact rules are managed in the app UI rather than the CSV template so they can continue following the same students after grade changes.
 
 ### Linked Classroom Group column

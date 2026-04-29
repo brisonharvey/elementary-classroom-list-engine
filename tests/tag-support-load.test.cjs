@@ -44,6 +44,8 @@ function createStudent(overrides = {}) {
     tags: [],
     noContactWith: [],
     preferredWith: [],
+    parentPreferredWith: [],
+    parentAvoidWith: [],
     locked: false,
     ell: false,
     section504: false,
@@ -424,6 +426,30 @@ const tests = [
       assert.equal(result.errors.length, 0)
       assert.deepEqual(result.students[0].noContactWith, [102, 103])
       assert.deepEqual(result.students[0].preferredWith, [102, 103])
+    },
+  },
+  {
+    name: "student import accepts parent request relationship ids",
+    run: () => {
+      const csv = [
+        "id,grade,firstName,lastName,parentPreferredWith,parentAvoidWith",
+        '101,1,Ada,Stone,"102  103","103"',
+        "102,1,Ben,Reed,,",
+        "103,1,Cam,Jones,,",
+      ].join("\n")
+
+      const result = parseStudentCSVWithMapping(csv, {
+        id: "id",
+        grade: "grade",
+        firstName: "firstName",
+        lastName: "lastName",
+        parentPreferredWith: "parentPreferredWith",
+        parentAvoidWith: "parentAvoidWith",
+      })
+
+      assert.equal(result.errors.length, 0)
+      assert.deepEqual(result.students[0].parentPreferredWith, [102, 103])
+      assert.deepEqual(result.students[0].parentAvoidWith, [103])
     },
   },
   {
@@ -820,6 +846,33 @@ const tests = [
 
       assert.ok(baselinePenalty > 0)
       assert.equal(softenedPenalty, 0)
+    },
+  },
+  {
+    name: "parent requests score below staff preferred peer requests",
+    run: () => {
+      const peer = createStudent({ id: 2 })
+      const candidate = createStudent({ id: 1, preferredWith: [2], parentPreferredWith: [2], parentAvoidWith: [3] })
+      const avoidPeer = createStudent({ id: 3 })
+      const preferredRoom = createClassroom("1-A", [peer])
+      const avoidRoom = createClassroom("1-B", [avoidPeer])
+      const settings = createDefaultGradeSettingsMap()["1"]
+      const weights = { academic: 0, behavioral: 0, demographic: 0, tagSupportLoad: 0 }
+      const assignedRoomByStudentId = new Map([[2, "1-A"], [3, "1-B"]])
+
+      const preferredScore = scoreStudentForRoom(candidate, preferredRoom, computeRoomStats(preferredRoom), weights, {
+        assignedRoomByStudentId,
+        gradeSettings: settings,
+        gradeRooms: [preferredRoom, avoidRoom],
+      })
+      const avoidScore = scoreStudentForRoom(candidate, avoidRoom, computeRoomStats(avoidRoom), weights, {
+        assignedRoomByStudentId,
+        gradeSettings: settings,
+        gradeRooms: [preferredRoom, avoidRoom],
+      })
+
+      assert.equal(settings.parentRequestBonus < settings.preferredPeerBonus, true)
+      assert.ok(preferredScore < avoidScore)
     },
   },
 ]

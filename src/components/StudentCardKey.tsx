@@ -14,6 +14,8 @@ export function StudentCardKey() {
         <span className="student-card-key-item"><span className="badge badge-coteach-total">CT:60</span> Total co-teach minutes</span>
         <span className="student-card-key-item"><span className="badge badge-coteach badge-coteach-reading">R:30</span> Co-teach area and minutes</span>
         <span className="student-card-key-item"><span className="badge badge-tags">Chars:3</span> Student characteristics count</span>
+        <span className="student-card-key-item"><span className="badge badge-parent-request">PR:Yes</span> Parent request upheld</span>
+        <span className="student-card-key-item"><span className="badge badge-parent-request">PR:No</span> Parent request not upheld</span>
         <span className="student-card-key-item"><span className="badge badge-poor-fit">Poor Fit</span> Teacher fit warning</span>
       </div>
     </details>

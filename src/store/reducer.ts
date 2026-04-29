@@ -121,6 +121,8 @@ function normalizeStudentRecord(student: Student): Student {
     coTeachMinutes: normalizeCoTeachMinutes(student.coTeachMinutes),
     noContactWith: uniqueStudentIds(student.noContactWith, student.id),
     preferredWith: uniqueStudentIds(student.preferredWith, student.id),
+    parentPreferredWith: uniqueStudentIds(student.parentPreferredWith, student.id),
+    parentAvoidWith: uniqueStudentIds(student.parentAvoidWith, student.id),
     avoidTeachers: uniqueTeacherNames(student.avoidTeachers),
     locked: Boolean(student.locked),
   }
@@ -133,6 +135,14 @@ function normalizeStudentRelationships(students: Student[]): Student[] {
     ...student,
     noContactWith: uniqueStudentIds(student.noContactWith, student.id).filter((peerId) => studentsById.has(peerId)),
     preferredWith: uniqueStudentIds(student.preferredWith, student.id).filter((peerId) => {
+      const peer = studentsById.get(peerId)
+      return peer != null && peer.grade === student.grade
+    }),
+    parentPreferredWith: uniqueStudentIds(student.parentPreferredWith, student.id).filter((peerId) => {
+      const peer = studentsById.get(peerId)
+      return peer != null && peer.grade === student.grade
+    }),
+    parentAvoidWith: uniqueStudentIds(student.parentAvoidWith, student.id).filter((peerId) => {
       const peer = studentsById.get(peerId)
       return peer != null && peer.grade === student.grade
     }),
@@ -292,6 +302,8 @@ function applyUpsertStudentCore(state: AppState, studentInput: Student, previous
             ...student,
             noContactWith: replaceStudentId(student.noContactWith, previousStudentId, nextStudent.id, student.id),
             preferredWith: replaceStudentId(student.preferredWith, previousStudentId, nextStudent.id, student.id),
+            parentPreferredWith: replaceStudentId(student.parentPreferredWith, previousStudentId, nextStudent.id, student.id),
+            parentAvoidWith: replaceStudentId(student.parentAvoidWith, previousStudentId, nextStudent.id, student.id),
           }
     )
   }
@@ -462,6 +474,8 @@ export function reducer(state: AppState, action: Action): AppState {
             ...student,
             noContactWith: (student.noContactWith ?? []).filter((peerId) => peerId !== studentId),
             preferredWith: (student.preferredWith ?? []).filter((peerId) => peerId !== studentId),
+            parentPreferredWith: (student.parentPreferredWith ?? []).filter((peerId) => peerId !== studentId),
+            parentAvoidWith: (student.parentAvoidWith ?? []).filter((peerId) => peerId !== studentId),
           }))
       )
 

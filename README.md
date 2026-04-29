@@ -109,6 +109,8 @@ Common optional columns:
 - `ireadyMath`
 - `noContactWith`
 - `preferredWith`
+- `parentRequestStayTogether`
+- `parentRequestKeepApart`
 - `ell`
 - `section504`
 - `raceEthnicity`
@@ -129,7 +131,8 @@ Important behavior:
 - Kindergarten uses `briganceReadiness` in placement scoring instead of MAP/i-Ready.
 - `academicTier` and `behaviorTier` can be numeric or note text that contains one or more `Tier X` values.
 - `studentCharacteristics` accepts the current supported labels and also tolerates legacy aliases.
-- `noContactWith` and `preferredWith` accept comma-, semicolon-, pipe-, or space-separated student IDs.
+- `noContactWith`, `preferredWith`, `parentRequestStayTogether`, and `parentRequestKeepApart` accept comma-, semicolon-, pipe-, or space-separated student IDs.
+- Parent request columns are lower-priority soft requests; the student card shows whether they are currently upheld.
 - The Rules Manager can store no-contact pairs as either grade-only rules or multi-year rules that follow the same students into later grades.
 
 To update an existing student, either edit the student directly in the app or re-import that student with the same `id`.

@@ -125,11 +125,20 @@ function normalizeTeacherList(value: unknown): string[] {
   return normalized
 }
 
-function normalizeStudentLists<T extends { noContactWith?: unknown; preferredWith?: unknown; tags?: unknown; avoidTeachers?: unknown }>(student: T): T {
+function normalizeStudentLists<T extends {
+  noContactWith?: unknown
+  preferredWith?: unknown
+  parentPreferredWith?: unknown
+  parentAvoidWith?: unknown
+  tags?: unknown
+  avoidTeachers?: unknown
+}>(student: T): T {
   return {
     ...student,
     noContactWith: normalizeIdList(student.noContactWith),
     preferredWith: normalizeIdList(student.preferredWith),
+    parentPreferredWith: normalizeIdList(student.parentPreferredWith),
+    parentAvoidWith: normalizeIdList(student.parentAvoidWith),
     tags: normalizeTagList(student.tags),
     avoidTeachers: normalizeTeacherList(student.avoidTeachers),
   }

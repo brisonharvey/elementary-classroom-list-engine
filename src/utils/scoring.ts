@@ -222,6 +222,34 @@ function getPreferredTogetherAdjustment(student: Student, classroomId: string, c
   return adjustment
 }
 
+function getParentRequestAdjustment(student: Student, classroom: Classroom, context: PlacementSoftContext): number {
+  const assignedRoomByStudentId = context.assignedRoomByStudentId
+  const settings = getPlacementSettings(context.gradeSettings)
+  const preferredPeerIds = student.parentPreferredWith ?? []
+  const avoidPeerIds = student.parentAvoidWith ?? []
+  let adjustment = 0
+
+  if (assignedRoomByStudentId) {
+    for (const peerId of preferredPeerIds) {
+      const assignedRoomId = assignedRoomByStudentId.get(peerId)
+      if (!assignedRoomId) continue
+      adjustment += assignedRoomId === classroom.id ? -settings.parentRequestBonus : settings.parentRequestBonus
+    }
+  }
+
+  const roomStudentIds = new Set(classroom.students.map((roomStudent) => roomStudent.id))
+  for (const peerId of avoidPeerIds) {
+    if (roomStudentIds.has(peerId)) adjustment += settings.parentRequestBonus
+  }
+
+  for (const roomStudent of classroom.students) {
+    if ((roomStudent.parentPreferredWith ?? []).includes(student.id)) adjustment -= settings.parentRequestBonus
+    if ((roomStudent.parentAvoidWith ?? []).includes(student.id)) adjustment += settings.parentRequestBonus
+  }
+
+  return adjustment
+}
+
 function getDoNotSeparateAdjustment(student: Student, classroomId: string, context: PlacementSoftContext): number {
   const assignedRoomByStudentId = context.assignedRoomByStudentId
   const rules = context.relationshipRules ?? []
@@ -333,18 +361,10 @@ export function getTagSupportLoadPenalty(
   return penalty
 }
 
-function getParentTeacherRequestAdjustment(student: Student, classroom: Classroom, settings: GradeSettings): number {
-  if (!student.parentRequestedTeacher?.trim()) return 0
-  const requested = student.parentRequestedTeacher.trim().toLowerCase()
-  const classroomTeacher = classroom.teacherName.trim().toLowerCase()
-  if (!classroomTeacher) return 0
-  return classroomTeacher === requested ? -settings.parentTeacherRequestBonus : 0
-}
-
 function getCoTeachSuggestionAdjustment(student: Student, classroom: Classroom, settings: GradeSettings): number {
   if (!student.elNeedsCoTeach && !student.interventionNeedsCoTeach) return 0
   const hasCoTeach = classroom.coTeachCoverage.length > 0
-  const bonus = settings.parentTeacherRequestBonus * 0.75
+  const bonus = settings.parentRequestBonus * 0.75
   return hasCoTeach ? -bonus : bonus
 }
 
@@ -377,7 +397,7 @@ export function scoreStudentForRoom(
   const tagSupportLoadPenalty = context.gradeRooms
     ? getTagSupportLoadPenalty(student, classroom, context.gradeRooms, settings) * (weights.tagSupportLoad / 100)
     : 0
-  const parentRequestAdjustment = getParentTeacherRequestAdjustment(student, classroom, settings)
+  const parentRequestAdjustment = getParentRequestAdjustment(student, classroom, context)
   const coTeachSuggestionAdjustment = getCoTeachSuggestionAdjustment(student, classroom, settings)
 
   return (

@@ -78,7 +78,7 @@ The weighted scoring layer balances:
 - preferred-peer requests
 - do-not-separate rules
 - characteristic-based support load
-- parent teacher requests (lowest priority — small bonus toward the requested teacher, never blocks placement)
+- parent student requests (lowest priority — small nudge for requested-with and requested-apart peers, never blocks placement)
 - EL and intervention co-teach suggestions (small bonus toward rooms with co-teach coverage)
 
 The top-level weight sliders control academic, behavioral, class-size-plus-demographic, and characteristic-load pressure.
@@ -125,9 +125,9 @@ Students can be tagged with:
 
 These show as badges on student cards (`EL:low`, `EL-CT`, `INT:mid`, `INT-CT`).
 
-## Parent teacher requests
+## Parent student requests
 
-A parent can request a specific teacher for a student. This is treated as a low-priority soft bonus — the engine prefers the requested room when all other constraints are balanced, but it never overrides hard constraints or teacher-fit results. The badge `PR` appears on the student card when a request is set.
+A parent can request students they would like their child to stay with and students they would prefer their child not share a class with. These requests are low-priority soft scoring nudges; they never override hard constraints, teacher fit, or staff relationship rules. Student cards show whether the parent request is currently upheld.
 
 ## Kindergarten behavior
 
@@ -145,7 +145,7 @@ Student import:
 - can seed students into a matching teacher room using `assignedTeacher`
 - can store blocked teacher classrooms through `avoidTeachers`
 - keeps teacher-fixed students unresolved when the matching room is unavailable or blocked instead of auto-placing them elsewhere
-- accepts `noContactWith` and `preferredWith` lists separated by commas, semicolons, pipes, or spaces
+- accepts `noContactWith`, `preferredWith`, `parentPreferredWith`, and `parentAvoidWith` lists separated by commas, semicolons, pipes, or spaces
 - generates LINKED relationship rules from a `linkedClassroom` column: students in the same grade with the same letter (e.g. `B`) are hard-linked together; students in different grades with the same letter are not linked to each other
 
 Teacher import:
